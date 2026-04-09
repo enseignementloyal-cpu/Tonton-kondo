@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion Pro - Vente & Stock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(145deg, #f8fafc 0%, #eef2ff 100%);
+            color: #0f172a;
+            min-height: 100vh;
+        }
+        /* Header glassmorph */
+        .header {
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(12px);
+            padding: 0.8rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .company-info { display: flex; align-items: center; gap: 1rem; }
+        .company-logo { width: 48px; height: 48px; object-fit: contain; border-radius: 16px; background: white; padding: 6px; }
+        .company-details h2 { font-size: 1.3rem; font-weight: 800; background: linear-gradient(135deg, #3b82f6, #8b5cf6); background-clip: text; -webkit-background-clip: text; color: transparent; }
+        .company-details p { font-size: 0.7rem; color: #475569; }
+        .user-info { background: #f1f5f9; padding: 0.4rem 1rem; border-radius: 40px; display: flex; gap: 1rem; align-items: center; }
+        .logout-btn { background: #ef4444; border: none; padding: 0.4rem 1rem; border-radius: 40px; color: white; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .logout-btn:hover { background: #dc2626; transform: scale(1.02); }
+        /* Navigation */
+        nav {
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(8px);
+            padding: 0.6rem 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        nav button {
+            background: transparent;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #334155;
+            cursor: pointer;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            transition: 0.2s;
+        }
+        nav button:hover, nav button.active-nav {
+            background: white;
+            color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(59,130,246,0.15);
+        }
+        /* Vues */
+        .view { display: none; padding: 2rem; max-width: 1400px; margin: 0 auto; animation: fadeUp 0.3s ease; }
+        .active-view { display: block; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Cartes */
+        .card {
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(4px);
+            border-radius: 32px;
+            padding: 1.8rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 20px 35px -12px rgba(0,0,0,0.1); }
+        h2 { font-size: 1.6rem; font-weight: 800; display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; }
+        h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem; }
+        /* Formulaires */
+        form {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-radius: 28px;
+            margin-bottom: 1.5rem;
+        }
+        form label { font-weight: 600; font-size: 0.8rem; color: #334155; display: block; margin-bottom: 0.3rem; }
+        form input, form select {
+            width: 100%;
+            padding: 0.7rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            background: white;
+        }
+        form input:focus, form select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 40px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        button:hover { background: #2563eb; transform: translateY(-2px); box-shadow: 0 6px 14px rgba(59,130,246,0.3); }
+        button.danger { background: #ef4444; }
+        button.warning { background: #f59e0b; }
+        button.secondary { background: #64748b; }
+        /* Tableaux */
+        .table-container { overflow-x: auto; border-radius: 28px; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 28px; overflow: hidden; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #f0f2f5; }
+        th { background: #fefce8; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; color: #475569; }
+        tr:hover { background: #fef9e3; }
+        .badge { display: inline-block; padding: 0.2rem 0.7rem; border-radius: 40px; font-size: 0.7rem; font-weight: 600; }
+        .badge-success { background: #dcfce7; color: #166534; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .stock-alert { background: #fff1f0; border-left: 5px solid #ef4444; padding: 0.9rem; border-radius: 20px; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.6rem; }
+        /* Panier */
+        .cart-item { background: #f8fafc; padding: 0.8rem 1rem; border-radius: 20px; margin-bottom: 0.6rem; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eef2ff; }
+        .total { font-size: 1.4rem; font-weight: 800; margin: 1rem 0; color: #3b82f6; }
+        .search-results { border: 1px solid #e2e8f0; border-radius: 24px; max-height: 260px; overflow-y: auto; background: white; position: absolute; z-index: 10; width: 100%; box-shadow: 0 12px 28px rgba(0,0,0,0.1); }
+        .search-result-item { padding: 0.8rem 1rem; cursor: pointer; border-bottom: 1px solid #f1f5f9; }
+        .search-result-item:hover { background: #eef2ff; }
+        /* Impression */
+        .invoice { font-family: 'Courier New', monospace; background: white; padding: 1.5rem; border-radius: 28px; max-width: 400px; margin: 1rem auto; display: none; }
+        @media print { body * { visibility: hidden; } .invoice, .invoice * { visibility: visible; } .invoice { position: absolute; top: 0; left: 0; width: 100%; margin: 0; padding: 15px; } }
+        /* Dashboard stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { background: white; border-radius: 28px; padding: 1.2rem 1.5rem; display: flex; align-items: center; gap: 1rem; box-shadow: 0 8px 20px rgba(0,0,0,0.03); }
+        .stat-icon { width: 56px; height: 56px; background: #eef2ff; border-radius: 40px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #3b82f6; }
+        .stat-info h4 { font-size: 0.8rem; font-weight: 600; color: #64748b; margin-bottom: 0.3rem; }
+        .stat-info .value { font-size: 1.6rem; font-weight: 800; color: #0f172a; }
+        canvas { max-height: 280px; width: 100%; }
+        /* Notifications */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1f2937;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .rate-badge {
+            background: #eef2ff;
+            padding: 0.3rem 0.8rem;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-left: 1rem;
+        }
+        @media (max-width: 768px) { .view { padding: 1rem; } form { grid-template-columns: 1fr; } .header { flex-direction: column; text-align: center; } nav { justify-content: center; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-info">
+            <img id="companyLogo" class="company-logo" src="" alt="Logo">
+            <div class="company-details">
+                <h2 id="companyName">Nom de l'entreprise</h2>
+                <p id="companyAddress">Adresse</p>
+                <p id="companyPhone">Téléphone</p>
+                <p id="companySlogan">Slogan</p>
+            </div>
+        </div>
+        <div class="user-info">
+            <span><i class="fas fa-user-circle"></i> <span id="userNameDisplay"></span></span>
+            <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Déconnexion</button>
+        </div>
+    </div>
+
+    <nav id="navMenu"></nav>
+
+    <!-- Vues existantes -->
+    <div id="viewDashboard" class="view">
+        <div class="stats-grid" id="dashboardStats"></div>
+        <div class="card"><h3><i class="fas fa-chart-line"></i> Évolution des ventes (7 jours)</h3><canvas id="salesChart"></canvas></div>
+        <div class="card"><h3><i class="fas fa-chart-pie"></i> Répartition par mode de paiement</h3><canvas id="paymentChart"></canvas></div>
+    </div>
+
+    <div id="viewStock" class="view">
+        <div class="card">
+            <h2><i class="fas fa-boxes"></i> Gestion des stocks</h2>
+            <div id="stockAlerts"></div>
+            <form id="productForm">
+                <input type="hidden" id="productId">
+                <div><label>Nom *</label><input type="text" id="productName" required></div>
+                <div><label>Nom populaire</label><input type="text" id="productPopularName"></div>
+                <div><label>Prix d'achat *</label><input type="number" id="productPurchasePrice" step="0.01" required></div>
+                <div><label>Prix de vente</label><input type="number" id="productSalePrice" step="0.01"></div>
+                <div><label>Marge % (auto)</label><input type="number" id="productMarginPercent" step="0.01" placeholder="Ex: 30"></div>
+                <div><label>Quantité *</label><input type="number" id="productQuantity" step="1" required></div>
+                <div><label>Seuil d'alerte</label><input type="number" id="productAlertThreshold" step="1" value="5"></div>
+                <div><label>Date d'expiration</label><input type="date" id="productExpiry"></div>
+                <div><label>Fournisseur</label><select id="productSupplier"></select></div>
+                <div><label>Type d'achat</label><select id="productPurchaseType"><option value="cash">Cash</option><option value="credit">Crédit</option><option value="general">Général</option></select></div>
+                <div><label>Emplacement</label><input type="text" id="productLocation"></div>
+                <div style="grid-column: span 2;"><button type="submit"><i class="fas fa-save"></i> Enregistrer</button><button type="button" id="cancelProductBtn" class="secondary">Annuler</button></div>
+            </form>
+            <div class="table-container">
+                <input type="text" id="searchProduct" placeholder="Rechercher un produit..." style="margin-bottom: 1rem; padding: 0.7rem; border-radius: 40px; border: 1px solid #e2e8f0; width: 100%;">
+                <table id="productsTable"><thead><tr><th>ID</th><th>Nom</th><th>Prix vente</th><th>Stock</th><th>Seuil</th><th>Expiration</th><th>Actions</th></tr></thead><tbody></tbody></table>
+            </div>
+        </div>
+    </div>
+
+    <div id="viewInvoice" class="view">
+        <div class="card">
+            <h2><i class="fas fa-shopping-cart"></i> Facturation</h2>
+            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                <div><label>Type de vente:</label><select id="saleType"><option value="cash">Cash</option><option value="credit">Crédit</option></select></div>
+                <div><label>Mode de vente:</label><select id="saleMode"><option value="retail">Détail</option><option value="bulk">Gros</option></select></div>
+                <div><label>Devise du client:</label><select id="saleCurrency"><option value="Gdes">Gourdes (Gdes)</option><option value="USD">Dollars US (USD)</option></select></div>
+            </div>
+            <div style="position: relative;">
+                <label>Rechercher produit (2 lettres min)</label>
+                <input type="text" id="productSearchInput" placeholder="Tapez au moins 2 lettres" style="width:100%; padding:0.7rem; border-radius:40px; border:1px solid #e2e8f0;">
+                <div id="searchResults" class="search-results" style="display:none;"></div>
+            </div>
+            <div style="margin-top:1.5rem;">
+                <h3>Panier</h3>
+                <div id="cartItems"></div>
+                <div class="total">Total: <span id="cartTotal">0.00</span> <span id="cartCurrency">Gdes</span></div>
+                <div><label>Remise (montant):</label><input type="number" id="discountAmount" step="0.01" value="0" style="width:150px;"><button id="applyDiscountBtn">Appliquer</button></div>
+                <div><label>Mode de paiement:</label><select id="paymentMethod"><option value="cash">Cash</option><option value="moncash">Moncash</option><option value="natcash">Natcash</option><option value="virement">Virement</option><option value="credit">Crédit client</option></select></div>
+                <button id="saveSaleBtn" style="margin-top:1rem;"><i class="fas fa-receipt"></i> Enregistrer et imprimer</button>
+            </div>
+            <div id="invoicePreview" class="invoice"></div>
+        </div>
+    </div>
+
+    <!-- NOUVELLE VUE : CHANGE DE DEVISES -->
+    <div id="viewExchange" class="view">
+        <div class="card">
+            <h2><i class="fas fa-exchange-alt"></i> Change de devises</h2>
+            <div class="rate-badge" style="margin-bottom:1rem;">Taux du jour : 1 USD = <span id="exchangeRateDisplay">130</span> Gdes</div>
+            <form id="exchangeForm">
+                <div><label>Montant en USD reçu</label><input type="number" id="usdAmount" step="0.01" required></div>
+                <div><label>Converti en Gdes</label><input type="text" id="gdesConverted" readonly style="background:#f1f5f9;"></div>
+                <div><label>Client / Référence</label><input type="text" id="exchangeRef"></div>
+                <div><button type="submit" class="success"><i class="fas fa-save"></i> Enregistrer</button>
+                <button type="button" id="exchangePrintBtn" class="warning"><i class="fas fa-print"></i> Enregistrer et imprimer</button></div>
+            </form>
+            <h3>Historique des changes</h3>
+            <div class="table-container">
+                <table id="exchangeHistoryTable"><thead><tr><th>Date</th><th>USD reçus</th><th>Gdes remises</th><th>Taux</th><th>Référence</th><th>Par</th></tr></thead><tbody></tbody></table>
+            </div>
+        </div>
+    </div>
+
+    <div id="viewSuppliers" class="view">
+        <div class="card">
+            <h2><i class="fas fa-truck"></i> Fournisseurs & Dettes</h2>
+            <form id="supplierForm">
+                <input type="hidden" id="supplierId">
+                <div><label>Nom *</label><input type="text" id="supplierName" required></div>
+                <div><label>Contact</label><input type="text" id="supplierContact"></div>
+                <div><label>Adresse</label><input type="text" id="supplierAddress"></div>
+                <div><button type="submit"><i class="fas fa-save"></i> Enregistrer</button><button type="button" id="cancelSupplierBtn" class="secondary">Annuler</button></div>
+            </form>
+            <h3>Liste des fournisseurs</h3>
+            <div class="table-container"><table id="suppliersTable"><thead><tr><th>ID</th><th>Nom</th><th>Contact</th><th>Dette actuelle</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+            <h3>Payer une dette fournisseur</h3>
+            <div style="display:flex; gap:1rem; flex-wrap:wrap; align-items:flex-end;">
+                <div><label>Fournisseur</label><select id="paySupplierSelect"></select></div>
+                <div><label>Montant</label><input type="number" id="paySupplierAmount" step="0.01"></div>
+                <div><label>Compte débité</label><select id="paySupplierAccount"></select></div>
+                <div><button id="paySupplierBtn">Payer</button></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="viewEmployees" class="view">
+        <div class="card">
+            <h2><i class="fas fa-users"></i> Employés & Paiements</h2>
+            <form id="employeeForm">
+                <input type="hidden" id="employeeId">
+                <div><label>Nom d'utilisateur *</label><input type="text" id="empUsername" required></div>
+                <div><label>Mot de passe</label><input type="password" id="empPassword"></div>
+                <div><label>Rôle</label><select id="empRole"><option value="vendeur">Vendeur</option><option value="admin">Administrateur</option></select></div>
+                <div><label>Salaire mensuel (Gdes)</label><input type="number" id="empSalary" step="0.01" value="0"></div>
+                <div><label>Actif</label><select id="empActive"><option value="1">Oui</option><option value="0">Non</option></select></div>
+                <div style="grid-column: span 2;"><button type="submit">Enregistrer</button><button type="button" id="cancelEmployeeBtn" class="secondary">Annuler</button></div>
+            </form>
+            <h3>Liste des employés</h3>
+            <div class="table-container"><table id="employeesTable"><thead><tr><th>ID</th><th>Nom</th><th>Rôle</th><th>Salaire</th><th>Actif</th><th>Dernière connexion</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+            <h3>Payer un employé</h3>
+            <div style="display:flex; gap:1rem; flex-wrap:wrap; align-items:flex-end;">
+                <div><label>Employé</label><select id="payEmployeeSelect"></select></div>
+                <div><label>Montant</label><input type="number" id="payEmployeeAmount" step="0.01"></div>
+                <div><label>Compte débité</label><select id="payEmployeeAccount"></select></div>
+                <div><button id="payEmployeeBtn">Payer salaire</button></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="viewAccounts" class="view">
+        <div class="card">
+            <h2><i class="fas fa-coins"></i> Gestion des comptes</h2>
+            <div class="table-container"><table id="accountsTable"><thead><tr><th>Compte</th><th>Solde (Gdes)</th></tr></thead><tbody></tbody></table></div>
+            <h3>Opérations sur petite caisse</h3>
+            <div style="display:flex; gap:1rem; flex-wrap:wrap; align-items:flex-end;">
+                <div><label>Ajouter à la petite caisse</label><input type="number" id="pettyCashAdd" step="0.01" placeholder="Montant"></div>
+                <div><label>Compte source</label><select id="pettyCashSource"></select></div>
+                <div><button id="addPettyCashBtn">Ajouter</button></div>
+            </div>
+            <h3>Journal des transactions</h3>
+            <div class="table-container"><table id="transactionsTable"><thead><tr><th>Date</th><th>Type</th><th>Compte</th><th>Montant</th><th>Description</th></tr></thead><tbody></tbody></table></div>
+        </div>
+    </div>
+
+    <div id="viewReports" class="view">
+        <div class="card">
+            <h2><i class="fas fa-chart-line"></i> Rapports de vente</h2>
+            <div style="display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
+                <div><label>Vendeur</label><select id="reportUserFilter"><option value="all">Tous</option></select></div>
+                <div><label>Période (jours)</label><select id="reportDays"><option value="1">1 jour</option><option value="3">3 jours</option><option value="7" selected>7 jours</option><option value="30">30 jours</option></select></div>
+                <div><button id="refreshReportsBtn"><i class="fas fa-sync-alt"></i> Actualiser</button></div>
+            </div>
+            <div class="table-container"><table id="reportsTable"><thead><tr><th>Date</th><th>Vendeur</th><th>Type</th><th>Mode</th><th>Total</th><th>Remise</th><th>Paiement</th><th>Détails</th></tr></thead><tbody></tbody></table></div>
+        </div>
+    </div>
+
+    <div id="viewSettings" class="view">
+        <div class="card">
+            <h2><i class="fas fa-cog"></i> Paramètres</h2>
+            <form id="companyForm">
+                <div><label>Nom entreprise</label><input type="text" id="settingsName" required></div>
+                <div><label>Adresse</label><input type="text" id="settingsAddress" required></div>
+                <div><label>Téléphone</label><input type="text" id="settingsPhone" required></div>
+                <div><label>Slogan</label><input type="text" id="settingsSlogan"></div>
+                <div><label>Logo (URL)</label><input type="text" id="settingsLogo"></div>
+                <div><button type="submit">Enregistrer</button></div>
+            </form>
+            <h3>Paramètres financiers</h3>
+            <form id="financialForm">
+                <div><label>Taux de change (1 USD = ? Gdes)</label><input type="number" id="exchangeRateSetting" step="0.01" value="130"></div>
+                <div><label>Activer marge automatique</label><select id="autoMarginEnabled"><option value="0">Non</option><option value="1">Oui</option></select></div>
+                <div><label>Pourcentage de marge (%)</label><input type="number" id="autoMarginPercent" step="0.01" value="10"></div>
+                <div><button type="submit">Enregistrer paramètres</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="viewLogin" class="view active-view">
+        <div class="card" style="max-width:420px; margin:2rem auto;">
+            <h2><i class="fas fa-lock"></i> Connexion</h2>
+            <form id="loginForm">
+                <div><label>Nom d'utilisateur</label><input type="text" id="loginUsername" required></div>
+                <div><label>Mot de passe</label><input type="password" id="loginPassword" required></div>
+                <button type="submit">Se connecter</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // ---------- INITIALISATION (avec nouveaux comptes) ----------
+        function initData() {
+            if (!localStorage.getItem('users')) {
+                localStorage.setItem('users', JSON.stringify([{ id:1, username:'admin', password:btoa('admin123'), role:'admin', active:1, salary:0, lastLogin:null }]));
+            }
+            if (!localStorage.getItem('products')) localStorage.setItem('products', JSON.stringify([]));
+            if (!localStorage.getItem('suppliers')) localStorage.setItem('suppliers', JSON.stringify([]));
+            if (!localStorage.getItem('sales')) localStorage.setItem('sales', JSON.stringify([]));
+            if (!localStorage.getItem('company')) localStorage.setItem('company', JSON.stringify({ name:'Ma Boutique', address:'123 Rue', phone:'+509 1234 5678', slogan:'La qualité', logo:'' }));
+            // Nouveaux comptes
+            if (!localStorage.getItem('accounts')) {
+                localStorage.setItem('accounts', JSON.stringify({
+                    cash_sales: { name:'Caisse Ventes Cash', balance:0 },
+                    cash_purchases: { name:'Caisse Achats Cash', balance:0 },
+                    moncash: { name:'Moncash', balance:0 },
+                    natcash: { name:'Natcash', balance:0 },
+                    virement: { name:'Virement bancaire', balance:0 },
+                    credit_sales: { name:'Crédit clients', balance:0 },
+                    credit_suppliers: { name:'Crédit fournisseurs', balance:0 },
+                    petty_cash: { name:'Petite caisse', balance:0 },
+                    general_account: { name:'Compte Général', balance:0 },
+                    investment: { name:'Investissement (Stocks)', balance:0 },
+                    usd_stock: { name:'Stock Dollars US', balance:0 },
+                    usd_purchase_gdes: { name:'Gourdes dépensées USD', balance:0 }
+                }));
+            }
+            if (!localStorage.getItem('transactions')) localStorage.setItem('transactions', JSON.stringify([]));
+            if (!localStorage.getItem('exchangeHistory')) localStorage.setItem('exchangeHistory', JSON.stringify([]));
+            if (!localStorage.getItem('appSettings')) {
+                localStorage.setItem('appSettings', JSON.stringify({ exchangeRate:130, autoMarginEnabled:0, autoMarginPercent:10 }));
+            }
+        }
+        initData();
+
+        function getUsers() { return JSON.parse(localStorage.getItem('users')); }
+        function saveUsers(u) { localStorage.setItem('users', JSON.stringify(u)); }
+        function getProducts() { return JSON.parse(localStorage.getItem('products')); }
+        function saveProducts(p) { localStorage.setItem('products', JSON.stringify(p)); }
+        function getSuppliers() { return JSON.parse(localStorage.getItem('suppliers')); }
+        function saveSuppliers(s) { localStorage.setItem('suppliers', JSON.stringify(s)); }
+        function getSales() { return JSON.parse(localStorage.getItem('sales')); }
+        function saveSales(s) { localStorage.setItem('sales', JSON.stringify(s)); }
+        function getCompany() { return JSON.parse(localStorage.getItem('company')); }
+        function saveCompany(c) { localStorage.setItem('company', JSON.stringify(c)); }
+        function getAccounts() { return JSON.parse(localStorage.getItem('accounts')); }
+        function saveAccounts(a) { localStorage.setItem('accounts', JSON.stringify(a)); }
+        function getTransactions() { return JSON.parse(localStorage.getItem('transactions')); }
+        function saveTransactions(t) { localStorage.setItem('transactions', JSON.stringify(t)); }
+        function getExchangeHistory() { return JSON.parse(localStorage.getItem('exchangeHistory')); }
+        function saveExchangeHistory(h) { localStorage.setItem('exchangeHistory', JSON.stringify(h)); }
+        function getAppSettings() { return JSON.parse(localStorage.getItem('appSettings')); }
+        function saveAppSettings(s) { localStorage.setItem('appSettings', JSON.stringify(s)); }
+
+        function addTransaction(type, account, amount, desc) {
+            let t = getTransactions();
+            t.push({ id:Date.now(), date:new Date().toISOString(), type, account, amount, description:desc });
+            saveTransactions(t);
+        }
+
+        function updateBalance(accountKey, delta) {
+            let acc = getAccounts();
+            if (!acc[accountKey]) throw new Error('Compte inconnu');
+            if (delta < 0 && acc[accountKey].balance + delta < 0) throw new Error(`Solde insuffisant sur ${acc[accountKey].name}`);
+            acc[accountKey].balance += delta;
+            saveAccounts(acc);
+        }
+
+        // Fonction pour mettre à jour l'affichage de la "Grande Caisse"
+        function getTreasury() {
+            let acc = getAccounts();
+            return acc.cash_sales.balance + acc.moncash.balance + acc.natcash.balance + acc.virement.balance + acc.petty_cash.balance;
+        }
+
+        let currentUser = null, cart = [], discount = 0;
+        let salesChart, paymentChart;
+
+        function showToast(message, isError = false) {
+            let toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.background = isError ? '#ef4444' : '#10b981';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function updateCompanyHeader() {
+            let c = getCompany();
+            document.getElementById('companyName').innerText = c.name;
+            document.getElementById('companyAddress').innerText = c.address;
+            document.getElementById('companyPhone').innerText = c.phone;
+            document.getElementById('companySlogan').innerText = c.slogan;
+            let logo = document.getElementById('companyLogo');
+            if (c.logo) { logo.src = c.logo; logo.style.display = 'block'; } else logo.style.display = 'none';
+        }
+
+        function showView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active-view'));
+            document.getElementById(viewId).classList.add('active-view');
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('active-nav'));
+            let activeBtn = Array.from(document.querySelectorAll('nav button')).find(b => b.getAttribute('data-view') === viewId);
+            if (activeBtn) activeBtn.classList.add('active-nav');
+            if (viewId === 'viewDashboard') refreshDashboard();
+            if (viewId === 'viewStock') { loadProductsTable(); checkStockAlerts(); }
+            if (viewId === 'viewSuppliers') { loadSuppliersTable(); loadSupplierSelects(); }
+            if (viewId === 'viewEmployees') { loadEmployeesTable(); loadEmployeeSelects(); }
+            if (viewId === 'viewAccounts') { loadAccountsTable(); loadPettyCashSources(); loadTransactionsTable(); }
+            if (viewId === 'viewReports') loadReports();
+            if (viewId === 'viewInvoice') { updateCartDisplay(); loadSuppliersSelect(); }
+            if (viewId === 'viewExchange') { loadExchangeHistory(); updateRateDisplay(); }
+            if (viewId === 'viewSettings') loadSettingsForm();
+        }
+
+        function generateNavMenu() {
+            let nav = document.getElementById('navMenu');
+            nav.innerHTML = '';
+            let items = [];
+            if (currentUser.role === 'admin') {
+                items = [
+                    { name:'Dashboard', icon:'fa-chart-pie', view:'viewDashboard' },
+                    { name:'Stock', icon:'fa-boxes', view:'viewStock' },
+                    { name:'Facturation', icon:'fa-cart-shopping', view:'viewInvoice' },
+                    { name:'Change', icon:'fa-exchange-alt', view:'viewExchange' },
+                    { name:'Fournisseurs', icon:'fa-truck', view:'viewSuppliers' },
+                    { name:'Employés', icon:'fa-users', view:'viewEmployees' },
+                    { name:'Comptes', icon:'fa-coins', view:'viewAccounts' },
+                    { name:'Rapports', icon:'fa-chart-line', view:'viewReports' },
+                    { name:'Paramètres', icon:'fa-cog', view:'viewSettings' }
+                ];
+            } else {
+                items = [
+                    { name:'Facturation', icon:'fa-cart-shopping', view:'viewInvoice' },
+                    { name:'Change', icon:'fa-exchange-alt', view:'viewExchange' },
+                    { name:'Mes ventes', icon:'fa-chart-line', view:'viewReports' }
+                ];
+            }
+            items.forEach(i => {
+                let btn = document.createElement('button');
+                btn.innerHTML = `<i class="fas ${i.icon}"></i> ${i.name}`;
+                btn.setAttribute('data-view', i.view);
+                btn.onclick = () => showView(i.view);
+                nav.appendChild(btn);
+            });
+        }
+
+        function login(username, password) {
+            let users = getUsers();
+            let user = users.find(u => u.username === username && atob(u.password) === password && u.active === 1);
+            if (user) {
+                currentUser = user;
+                user.lastLogin = new Date().toISOString();
+                saveUsers(users);
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                showApp();
+                return true;
+            }
+            return false;
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('currentUser');
+            showView('viewLogin');
+            document.getElementById('navMenu').innerHTML = '';
+            cart = []; discount = 0;
+            updateCartDisplay();
+            showToast('Déconnecté');
+        }
+
+        function showApp() {
+            updateCompanyHeader();
+            generateNavMenu();
+            document.getElementById('userNameDisplay').innerText = currentUser.username;
+            if (currentUser.role === 'admin') showView('viewDashboard');
+            else showView('viewInvoice');
+            refreshDashboard();
+        }
+
+        // Dashboard (inchangé)
+        function refreshDashboard() {
+            if (currentUser?.role !== 'admin') return;
+            let sales = getSales();
+            let totalSales = sales.reduce((s, v) => s + v.total, 0);
+            let productCount = getProducts().length;
+            let suppliersDebt = getSuppliers().reduce((s, sup) => s + (sup.debt || 0), 0);
+            document.getElementById('dashboardStats').innerHTML = `
+                <div class="stat-card"><div class="stat-icon"><i class="fas fa-chart-line"></i></div><div class="stat-info"><h4>Ventes totales</h4><div class="value">${totalSales.toFixed(2)} Gdes</div></div></div>
+                <div class="stat-card"><div class="stat-icon"><i class="fas fa-box"></i></div><div class="stat-info"><h4>Produits</h4><div class="value">${productCount}</div></div></div>
+                <div class="stat-card"><div class="stat-icon"><i class="fas fa-users"></i></div><div class="stat-info"><h4>Employés actifs</h4><div class="value">${getUsers().filter(u => u.active).length}</div></div></div>
+                <div class="stat-card"><div class="stat-icon"><i class="fas fa-truck"></i></div><div class="stat-info"><h4>Dettes fournisseurs</h4><div class="value">${suppliersDebt.toFixed(2)} Gdes</div></div></div>
+            `;
+            let last7 = [];
+            for (let i=6; i>=0; i--) { let d = new Date(); d.setDate(d.getDate()-i); last7.push(d.toISOString().slice(0,10)); }
+            let daily = last7.map(day => sales.filter(s => s.date.slice(0,10) === day).reduce((s,v)=> s+v.total,0));
+            if (salesChart) salesChart.destroy();
+            salesChart = new Chart(document.getElementById('salesChart'), { type:'line', data:{ labels:last7, datasets:[{ label:'Ventes (Gdes)', data:daily, borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,0.1)', fill:true, tension:0.3 }] }, options:{ responsive:true } });
+            let pay = { cash:0, moncash:0, natcash:0, virement:0, credit:0 };
+            sales.forEach(s => pay[s.payment] = (pay[s.payment]||0) + s.total);
+            if (paymentChart) paymentChart.destroy();
+            paymentChart = new Chart(document.getElementById('paymentChart'), { type:'doughnut', data:{ labels:['Cash','Moncash','Natcash','Virement','Crédit'], datasets:[{ data:[pay.cash, pay.moncash, pay.natcash, pay.virement, pay.credit], backgroundColor:['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444'] }] }, options:{ responsive:true } });
+        }
+
+        // Produits (avec ajout investissement)
+        function loadProductsTable() {
+            let products = getProducts();
+            let tbody = document.querySelector('#productsTable tbody');
+            tbody.innerHTML = '';
+            let search = document.getElementById('searchProduct')?.value.toLowerCase() || '';
+            products.filter(p => p.name.toLowerCase().includes(search) || (p.popularName && p.popularName.toLowerCase().includes(search))).forEach(p => {
+                let row = tbody.insertRow();
+                row.insertCell(0).innerText = p.id;
+                row.insertCell(1).innerText = `${p.name} ${p.popularName ? '('+p.popularName+')' : ''}`;
+                row.insertCell(2).innerText = p.salePrice;
+                row.insertCell(3).innerHTML = p.quantity <= (p.alertThreshold||5) ? `<span class="badge badge-danger">${p.quantity}</span>` : p.quantity;
+                row.insertCell(4).innerText = p.alertThreshold||5;
+                row.insertCell(5).innerText = p.expiry||'';
+                let actions = row.insertCell(6);
+                let editBtn = document.createElement('button'); editBtn.innerHTML = '<i class="fas fa-edit"></i>'; editBtn.onclick = () => editProduct(p.id);
+                let delBtn = document.createElement('button'); delBtn.innerHTML = '<i class="fas fa-trash"></i>'; delBtn.classList.add('danger'); delBtn.onclick = () => deleteProduct(p.id);
+                actions.appendChild(editBtn); actions.appendChild(delBtn);
+            });
+            checkStockAlerts();
+        }
+
+        function editProduct(id) {
+            let p = getProducts().find(p => p.id === id);
+            if(p){
+                document.getElementById('productId').value = p.id;
+                document.getElementById('productName').value = p.name;
+                document.getElementById('productPopularName').value = p.popularName||'';
+                document.getElementById('productPurchasePrice').value = p.purchasePrice;
+                document.getElementById('productSalePrice').value = p.salePrice;
+                document.getElementById('productQuantity').value = p.quantity;
+                document.getElementById('productAlertThreshold').value = p.alertThreshold||5;
+                document.getElementById('productExpiry').value = p.expiry||'';
+                document.getElementById('productSupplier').value = p.supplierId;
+                document.getElementById('productPurchaseType').value = p.purchaseType;
+                document.getElementById('productLocation').value = p.location||'';
+            }
+        }
+
+        function deleteProduct(id) {
+            if(confirm('Supprimer ?')){
+                let products = getProducts().filter(p => p.id !== id);
+                saveProducts(products);
+                loadProductsTable();
+                showToast('Produit supprimé');
+            }
+        }
+
+        function checkStockAlerts() {
+            let products = getProducts();
+            let alerts = products.filter(p => p.quantity <= (p.alertThreshold||5));
+            let div = document.getElementById('stockAlerts');
+            if(alerts.length) div.innerHTML = `<div class="stock-alert"><i class="fas fa-exclamation-triangle"></i> ⚠️ Rupture imminente : ${alerts.map(p=>p.name).join(', ')}</div>`;
+            else div.innerHTML = '';
+        }
+
+        document.getElementById('productForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            let id = document.getElementById('productId').value;
+            let name = document.getElementById('productName').value;
+            let popularName = document.getElementById('productPopularName').value;
+            let purchasePrice = parseFloat(document.getElementById('productPurchasePrice').value);
+            let salePrice = parseFloat(document.getElementById('productSalePrice').value);
+            let margin = parseFloat(document.getElementById('productMarginPercent').value);
+            let settings = getAppSettings();
+            if (settings.autoMarginEnabled == 1 && margin === 0) salePrice = purchasePrice * (1 + settings.autoMarginPercent / 100);
+            else if (!isNaN(margin) && margin>0) salePrice = purchasePrice * (1 + margin/100);
+            let quantity = parseInt(document.getElementById('productQuantity').value);
+            let alertThreshold = parseInt(document.getElementById('productAlertThreshold').value);
+            let expiry = document.getElementById('productExpiry').value;
+            let supplierId = parseInt(document.getElementById('productSupplier').value);
+            let purchaseType = document.getElementById('productPurchaseType').value;
+            let location = document.getElementById('productLocation').value;
+            let products = getProducts();
+            if(id){
+                let idx = products.findIndex(p => p.id == id);
+                if(idx !== -1) products[idx] = { ...products[idx], name, popularName, purchasePrice, salePrice, quantity, alertThreshold, expiry, supplierId, purchaseType, location };
+            } else {
+                let newId = products.length ? Math.max(...products.map(p=>p.id))+1 : 1;
+                products.push({ id:newId, name, popularName, purchasePrice, salePrice, quantity, alertThreshold, expiry, supplierId, purchaseType, location });
+            }
+            saveProducts(products);
+            let totalAchat = purchasePrice * quantity;
+            // Ajout au compte Investissement
+            let acc = getAccounts();
+            acc.investment.balance += totalAchat;
+            saveAccounts(acc);
+            addTransaction('Investissement', 'investment', totalAchat, `Achat ${name} (qty ${quantity})`);
+            if(purchaseType === 'credit' && supplierId){
+                let suppliers = getSuppliers();
+                let supplier = suppliers.find(s => s.id === supplierId);
+                if(supplier){
+                    supplier.debt = (supplier.debt||0) + totalAchat;
+                    saveSuppliers(suppliers);
+                    addTransaction('Dette fournisseur', 'credit_suppliers', totalAchat, `Achat ${name} (qty ${quantity})`);
+                    updateBalance('credit_suppliers', totalAchat);
+                }
+            } else if(purchaseType === 'cash'){
+                try {
+                    updateBalance('cash_purchases', -totalAchat);
+                    addTransaction('Achat cash', 'cash_purchases', -totalAchat, `Achat ${name} (qty ${quantity})`);
+                } catch(err) { showToast(err.message, true); return; }
+            } else if(purchaseType === 'general') {
+                updateBalance('general_account', -totalAchat);
+                addTransaction('Achat général', 'general_account', -totalAchat, `Achat ${name} (qty ${quantity})`);
+            }
+            document.getElementById('productForm').reset();
+            document.getElementById('productId').value = '';
+            loadProductsTable();
+            showToast('Produit enregistré');
+        });
+        document.getElementById('cancelProductBtn').addEventListener('click', () => {
+            document.getElementById('productForm').reset();
+            document.getElementById('productId').value = '';
+        });
+        document.getElementById('searchProduct').addEventListener('input', loadProductsTable);
+        function loadSuppliersSelect() {
+            let suppliers = getSuppliers();
+            let select = document.getElementById('productSupplier');
+            select.innerHTML = '<option value="">Choisir</option>';
+            suppliers.forEach(s => { select.innerHTML += `<option value="${s.id}">${s.name}</option>`; });
+        }
+
+        // Facturation (inchangée mais avec devise)
+        function updateCartDisplay() {
+            let container = document.getElementById('cartItems');
+            container.innerHTML = '';
+            let totalGdes = cart.reduce((s,i) => s + i.quantity * i.salePrice, 0);
+            let totalAfterDiscount = totalGdes - discount;
+            let currency = document.getElementById('saleCurrency').value;
+            let rate = getAppSettings().exchangeRate;
+            let displayTotal = (currency === 'USD') ? totalAfterDiscount / rate : totalAfterDiscount;
+            document.getElementById('cartTotal').innerText = displayTotal.toFixed(2);
+            document.getElementById('cartCurrency').innerText = currency;
+            cart.forEach((item, idx) => {
+                let div = document.createElement('div');
+                div.className = 'cart-item';
+                let itemTotalGdes = item.quantity * item.salePrice;
+                let itemTotalDisplay = (currency === 'USD') ? itemTotalGdes / rate : itemTotalGdes;
+                div.innerHTML = `<span>${item.name} x ${item.quantity}</span><span>${itemTotalDisplay.toFixed(2)} ${currency}</span><button onclick="removeFromCart(${idx})" class="danger" style="padding:0.2rem 0.6rem;">X</button>`;
+                container.appendChild(div);
+            });
+        }
+        window.removeFromCart = (idx) => { cart.splice(idx,1); updateCartDisplay(); };
+        document.getElementById('applyDiscountBtn').addEventListener('click', () => {
+            discount = parseFloat(document.getElementById('discountAmount').value) || 0;
+            updateCartDisplay();
+        });
+        document.getElementById('saleCurrency').addEventListener('change', updateCartDisplay);
+        let searchTimeout;
+        document.getElementById('productSearchInput').addEventListener('input', (e) => {
+            let val = e.target.value.trim();
+            let resultsDiv = document.getElementById('searchResults');
+            if(val.length < 2){ resultsDiv.style.display = 'none'; return; }
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                let products = getProducts();
+                let filtered = products.filter(p => p.name.toLowerCase().includes(val.toLowerCase()) || (p.popularName && p.popularName.toLowerCase().includes(val.toLowerCase())));
+                if(filtered.length){
+                    resultsDiv.innerHTML = filtered.map(p => `<div class="search-result-item" onclick="addToCart(${p.id}, '${p.name}', ${p.salePrice})">${p.name} - ${p.salePrice} Gdes (stock: ${p.quantity})</div>`).join('');
+                    resultsDiv.style.display = 'block';
+                } else resultsDiv.style.display = 'none';
+            }, 300);
+        });
+        window.addToCart = (id, name, price) => {
+            let product = getProducts().find(p => p.id === id);
+            if(!product) return;
+            let qty = prompt(`Quantité pour ${name} (stock: ${product.quantity})`, 1);
+            qty = parseInt(qty);
+            if(isNaN(qty) || qty <= 0 || qty > product.quantity) { showToast('Quantité invalide', true); return; }
+            let existing = cart.find(item => item.productId === id);
+            if(existing) existing.quantity += qty;
+            else cart.push({ productId:id, name, salePrice:price, quantity:qty });
+            updateCartDisplay();
+            document.getElementById('productSearchInput').value = '';
+            document.getElementById('searchResults').style.display = 'none';
+        };
+        document.getElementById('saveSaleBtn').addEventListener('click', () => {
+            if(cart.length === 0){ showToast('Panier vide', true); return; }
+            let saleType = document.getElementById('saleType').value;
+            let saleMode = document.getElementById('saleMode').value;
+            let paymentMethod = document.getElementById('paymentMethod').value;
+            let currency = document.getElementById('saleCurrency').value;
+            let totalGdes = cart.reduce((s,i) => s + i.quantity * i.salePrice, 0);
+            let finalTotalGdes = totalGdes - discount;
+            let exchangeRate = getAppSettings().exchangeRate;
+            let totalInCurrency = (currency === 'USD') ? finalTotalGdes / exchangeRate : finalTotalGdes;
+            let products = getProducts();
+            for(let item of cart){
+                let prod = products.find(p => p.id === item.productId);
+                if(prod.quantity < item.quantity) { showToast(`Stock insuffisant pour ${prod.name}`, true); return; }
+            }
+            for(let item of cart){
+                let prod = products.find(p => p.id === item.productId);
+                prod.quantity -= item.quantity;
+            }
+            saveProducts(products);
+            let sale = {
+                id: Date.now(),
+                date: new Date().toISOString(),
+                userId: currentUser.id,
+                username: currentUser.username,
+                type: saleType,
+                mode: saleMode,
+                payment: paymentMethod,
+                total: finalTotalGdes,
+                originalTotal: totalInCurrency,
+                currency: currency,
+                exchangeRate: exchangeRate,
+                discount: discount,
+                items: cart.map(i => ({ productId:i.productId, name:i.name, quantity:i.quantity, price:i.salePrice }))
+            };
+            let sales = getSales();
+            sales.push(sale);
+            saveSales(sales);
+            try {
+                if(saleType === 'cash'){
+                    if(paymentMethod === 'cash') updateBalance('cash_sales', finalTotalGdes);
+                    else if(paymentMethod === 'moncash') updateBalance('moncash', finalTotalGdes);
+                    else if(paymentMethod === 'natcash') updateBalance('natcash', finalTotalGdes);
+                    else if(paymentMethod === 'virement') updateBalance('virement', finalTotalGdes);
+                    else if(paymentMethod === 'credit') updateBalance('credit_sales', finalTotalGdes);
+                    addTransaction('Vente', paymentMethod, finalTotalGdes, `Vente #${sale.id} (${currency})`);
+                } else {
+                    updateBalance('credit_sales', finalTotalGdes);
+                    addTransaction('Vente à crédit', 'credit_sales', finalTotalGdes, `Vente crédit #${sale.id}`);
+                }
+            } catch(err) { showToast(err.message, true); return; }
+            printInvoice(sale);
+            cart = []; discount = 0;
+            updateCartDisplay();
+            document.getElementById('discountAmount').value = '0';
+            showToast('Vente enregistrée');
+            if(currentUser.role === 'admin') refreshDashboard();
+        });
+        function printInvoice(sale) {
+            let company = getCompany();
+            let invoiceDiv = document.getElementById('invoicePreview');
+            let itemsHtml = '';
+            sale.items.forEach(i => {
+                let priceInCurrency = (sale.currency === 'USD') ? i.price / sale.exchangeRate : i.price;
+                itemsHtml += `${i.name} x ${i.quantity} = ${(i.quantity * priceInCurrency).toFixed(2)} ${sale.currency}\n`;
+            });
+            invoiceDiv.innerHTML = `
+                <div style="text-align:center;">
+                    <h3>${company.name}</h3>
+                    <p>${company.address}</p>
+                    <p>Tel: ${company.phone}</p>
+                    <p>${company.slogan}</p>
+                    <hr>
+                    <p>Ticket #${sale.id}</p>
+                    <p>${new Date(sale.date).toLocaleString()}</p>
+                    <p>Vendeur: ${sale.username}</p>
+                    <p>Type: ${sale.type} | Mode: ${sale.mode}</p>
+                    <p>Paiement: ${sale.payment}</p>
+                    ${sale.currency === 'USD' ? `<p>Taux: 1 USD = ${sale.exchangeRate} Gdes</p>` : ''}
+                    <hr>
+                    <pre>${itemsHtml}</pre>
+                    <hr>
+                    <p>Sous-total: ${(sale.originalTotal + sale.discount).toFixed(2)} ${sale.currency}</p>
+                    <p>Remise: ${sale.discount.toFixed(2)} ${sale.currency}</p>
+                    <p><strong>TOTAL: ${sale.originalTotal.toFixed(2)} ${sale.currency}</strong></p>
+                    ${sale.currency === 'USD' ? `<p>Soit ${(sale.originalTotal * sale.exchangeRate).toFixed(2)} Gdes</p>` : ''}
+                    <hr>
+                    <p>Merci de votre visite !</p>
+                </div>
+            `;
+            invoiceDiv.style.display = 'block';
+            window.print();
+            invoiceDiv.style.display = 'none';
+        }
+
+        // Fournisseurs (correction paiement dette)
+        function loadSuppliersTable() {
+            let suppliers = getSuppliers();
+            let tbody = document.querySelector('#suppliersTable tbody');
+            tbody.innerHTML = '';
+            suppliers.forEach(s => {
+                let row = tbody.insertRow();
+                row.insertCell(0).innerText = s.id;
+                row.insertCell(1).innerText = s.name;
+                row.insertCell(2).innerText = s.contact || '';
+                row.insertCell(3).innerText = (s.debt||0).toFixed(2);
+                let actions = row.insertCell(4);
+                let editBtn = document.createElement('button'); editBtn.innerHTML = '<i class="fas fa-edit"></i>'; editBtn.onclick = () => editSupplier(s.id);
+                let delBtn = document.createElement('button'); delBtn.innerHTML = '<i class="fas fa-trash"></i>'; delBtn.classList.add('danger'); delBtn.onclick = () => deleteSupplier(s.id);
+                actions.appendChild(editBtn); actions.appendChild(delBtn);
+            });
+        }
+        function editSupplier(id) {
+            let s = getSuppliers().find(s => s.id === id);
+            if(s){
+                document.getElementById('supplierId').value = s.id;
+                document.getElementById('supplierName').value = s.name;
+                document.getElementById('supplierContact').value = s.contact||'';
+                document.getElementById('supplierAddress').value = s.address||'';
+            }
+        }
+        function deleteSupplier(id) {
+            if(confirm('Supprimer ?')) {
+                let suppliers = getSuppliers().filter(s => s.id !== id);
+                saveSuppliers(suppliers);
+                loadSuppliersTable();
+                showToast('Fournisseur supprimé');
+            }
+        }
+        document.getElementById('supplierForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            let id = document.getElementById('supplierId').value;
+            let name = document.getElementById('supplierName').value;
+            let contact = document.getElementById('supplierContact').value;
+            let address = document.getElementById('supplierAddress').value;
+            let suppliers = getSuppliers();
+            if(id){
+                let idx = suppliers.findIndex(s => s.id == id);
+                if(idx !== -1) suppliers[idx] = { ...suppliers[idx], name, contact, address };
+            } else {
+                let newId = suppliers.length ? Math.max(...suppliers.map(s=>s.id))+1 : 1;
+                suppliers.push({ id:newId, name, contact, address, debt:0 });
+            }
+            saveSuppliers(suppliers);
+            document.getElementById('supplierForm').reset();
+            document.getElementById('supplierId').value = '';
+            loadSuppliersTable();
+            showToast('Fournisseur enregistré');
+        });
+        document.getElementById('cancelSupplierBtn').addEventListener('click', () => {
+            document.getElementById('supplierForm').reset();
+            document.getElementById('supplierId').value = '';
+        });
+        function loadSupplierSelects() {
+            let suppliers = getSuppliers();
+            let select = document.getElementById('paySupplierSelect');
+            select.innerHTML = '<option value="">Choisir</option>';
+            suppliers.forEach(s => { select.innerHTML += `<option value="${s.id}">${s.name} (dette: ${(s.debt||0).toFixed(2)})</option>`; });
+        }
+        document.getElementById('paySupplierBtn').addEventListener('click', () => {
+            let supplierId = parseInt(document.getElementById('paySupplierSelect').value);
+            let amount = parseFloat(document.getElementById('paySupplierAmount').value);
+            let accountKey = document.getElementById('paySupplierAccount').value;
+            if(!supplierId || isNaN(amount) || amount<=0) { showToast('Données invalides', true); return; }
+            let suppliers = getSuppliers();
+            let supplier = suppliers.find(s => s.id === supplierId);
+            if(!supplier || (supplier.debt||0) < amount) { showToast('Montant supérieur à la dette', true); return; }
+            try { updateBalance(accountKey, -amount); } catch(err) { showToast(err.message, true); return; }
+            supplier.debt -= amount;
+            saveSuppliers(suppliers);
+            addTransaction('Paiement fournisseur', accountKey, -amount, `Paiement à ${supplier.name} de ${amount} Gdes`);
+            loadSuppliersTable();
+            loadSupplierSelects();
+            document.getElementById('paySupplierAmount').value = '';
+            showToast('Paiement effectué');
+        });
+
+        // Employés (inchangé)
+        function loadEmployeesTable() {
+            let users = getUsers();
+            let tbody = document.querySelector('#employeesTable tbody');
+            tbody.innerHTML = '';
+            users.forEach(u => {
+                let row = tbody.insertRow();
+                row.insertCell(0).innerText = u.id;
+                row.insertCell(1).innerText = u.username;
+                row.insertCell(2).innerText = u.role;
+                row.insertCell(3).innerText = (u.salary||0).toFixed(2);
+                row.insertCell(4).innerHTML = u.active ? '<span class="badge badge-success">Actif</span>' : '<span class="badge badge-danger">Suspendu</span>';
+                row.insertCell(5).innerText = u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'Jamais';
+                let actions = row.insertCell(6);
+                let editBtn = document.createElement('button'); editBtn.innerHTML = '<i class="fas fa-edit"></i>'; editBtn.onclick = () => editEmployee(u.id);
+                let suspendBtn = document.createElement('button'); suspendBtn.innerHTML = u.active ? '<i class="fas fa-ban"></i>' : '<i class="fas fa-check"></i>'; suspendBtn.classList.add('warning'); suspendBtn.onclick = () => toggleSuspend(u.id);
+                let delBtn = document.createElement('button'); delBtn.innerHTML = '<i class="fas fa-trash"></i>'; delBtn.classList.add('danger'); delBtn.onclick = () => deleteEmployee(u.id);
+                actions.appendChild(editBtn); actions.appendChild(suspendBtn); actions.appendChild(delBtn);
+            });
+        }
+        function editEmployee(id) {
+            let u = getUsers().find(u => u.id === id);
+            if(u){
+                document.getElementById('employeeId').value = u.id;
+                document.getElementById('empUsername').value = u.username;
+                document.getElementById('empPassword').value = '';
+                document.getElementById('empRole').value = u.role;
+                document.getElementById('empSalary').value = u.salary||0;
+                document.getElementById('empActive').value = u.active;
+            }
+        }
+        function toggleSuspend(id){
+            let users = getUsers();
+            let u = users.find(u => u.id === id);
+            if(u){ u.active = u.active ? 0 : 1; saveUsers(users); loadEmployeesTable(); showToast(`Employé ${u.active ? 'activé' : 'suspendu'}`); }
+        }
+        function deleteEmployee(id){
+            if(confirm('Supprimer ?')) {
+                let users = getUsers().filter(u => u.id !== id);
+                saveUsers(users);
+                loadEmployeesTable();
+                showToast('Employé supprimé');
+            }
+        }
+        document.getElementById('employeeForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            let id = document.getElementById('employeeId').value;
+            let username = document.getElementById('empUsername').value;
+            let password = document.getElementById('empPassword').value;
+            let role = document.getElementById('empRole').value;
+            let salary = parseFloat(document.getElementById('empSalary').value);
+            let active = parseInt(document.getElementById('empActive').value);
+            let users = getUsers();
+            if(id){
+                let idx = users.findIndex(u => u.id == id);
+                if(idx !== -1){
+                    users[idx].username = username;
+                    if(password) users[idx].password = btoa(password);
+                    users[idx].role = role;
+                    users[idx].salary = salary;
+                    users[idx].active = active;
+                }
+            } else {
+                let newId = users.length ? Math.max(...users.map(u=>u.id))+1 : 1;
+                users.push({ id:newId, username, password:btoa(password), role, salary, active, lastLogin:null });
+            }
+            saveUsers(users);
+            document.getElementById('employeeForm').reset();
+            document.getElementById('employeeId').value = '';
+            loadEmployeesTable();
+            showToast('Employé enregistré');
+        });
+        document.getElementById('cancelEmployeeBtn').addEventListener('click', () => {
+            document.getElementById('employeeForm').reset();
+            document.getElementById('employeeId').value = '';
+        });
+        function loadEmployeeSelects() {
+            let users = getUsers();
+            let select = document.getElementById('payEmployeeSelect');
+            select.innerHTML = '<option value="">Choisir</option>';
+            users.forEach(u => { select.innerHTML += `<option value="${u.id}">${u.username} (salaire: ${(u.salary||0).toFixed(2)})</option>`; });
+        }
+        document.getElementById('payEmployeeBtn').addEventListener('click', () => {
+            let userId = parseInt(document.getElementById('payEmployeeSelect').value);
+            let amount = parseFloat(document.getElementById('payEmployeeAmount').value);
+            let accountKey = document.getElementById('payEmployeeAccount').value;
+            if(!userId || isNaN(amount) || amount<=0) { showToast('Données invalides', true); return; }
+            try { updateBalance(accountKey, -amount); } catch(err) { showToast(err.message, true); return; }
+            addTransaction('Paiement salaire', accountKey, -amount, `Salaire versé à ${getUsers().find(u=>u.id===userId).username} de ${amount} Gdes`);
+            showToast('Paiement effectué');
+            document.getElementById('payEmployeeAmount').value = '';
+        });
+
+        // Comptes (avec Grande Caisse)
+        function loadAccountsTable() {
+            let acc = getAccounts();
+            let tbody = document.querySelector('#accountsTable tbody');
+            tbody.innerHTML = '';
+            for(let [key, val] of Object.entries(acc)){
+                let row = tbody.insertRow();
+                row.insertCell(0).innerText = val.name;
+                row.insertCell(1).innerText = val.balance.toFixed(2);
+            }
+            let treasury = getTreasury();
+            let row = tbody.insertRow();
+            row.insertCell(0).innerHTML = '<strong>🏦 GRANDE CAISSE (Total liquidités)</strong>';
+            row.insertCell(1).innerHTML = `<strong>${treasury.toFixed(2)} Gdes</strong>`;
+        }
+        function loadPettyCashSources() {
+            let acc = getAccounts();
+            let select = document.getElementById('pettyCashSource');
+            select.innerHTML = '';
+            for(let key in acc){
+                if(key !== 'petty_cash') select.innerHTML += `<option value="${key}">${acc[key].name}</option>`;
+            }
+        }
+        document.getElementById('addPettyCashBtn').addEventListener('click', () => {
+            let amount = parseFloat(document.getElementById('pettyCashAdd').value);
+            let sourceKey = document.getElementById('pettyCashSource').value;
+            if(isNaN(amount) || amount<=0 || !sourceKey) { showToast('Montant invalide', true); return; }
+            try { updateBalance(sourceKey, -amount); updateBalance('petty_cash', amount); } catch(err) { showToast(err.message, true); return; }
+            addTransaction('Alimentation petite caisse', sourceKey, -amount, `Versement à petite caisse de ${amount}`);
+            addTransaction('Alimentation petite caisse', 'petty_cash', amount, `Reçu de ${getAccounts()[sourceKey].name}`);
+            loadAccountsTable();
+            document.getElementById('pettyCashAdd').value = '';
+            showToast('Petite caisse alimentée');
+        });
+        function loadTransactionsTable() {
+            let trans = getTransactions().slice(-50).reverse();
+            let tbody = document.querySelector('#transactionsTable tbody');
+            tbody.innerHTML = '';
+            trans.forEach(t => {
+                let row = tbody.insertRow();
+                row.insertCell(0).innerText = new Date(t.date).toLocaleString();
+                row.insertCell(1).innerText = t.type;
+                row.insertCell(2).innerText = t.account;
+                row.insertCell(3).innerText = t.amount.toFixed(2);
+                row.insertCell(4).innerText = t.description;
+            });
+        }
+
+        // Rapports
+        function loadReports() {
+            let sales = getSales();
+            let filtered = sales;
+            if(currentUser.role !== 'admin') filtered = sales.filter(s => s.userId === currentUser.id);
+            else {
+                let userId = document.getElementById('reportUserFilter').value;
+                if(userId !== 'all') filtered = sales.filter(s => s.userId == userId);
+            }
+            let days = parseInt(document.getElementById('reportDays').value);
+            let cutoff = new Date(); cutoff.setDate(cutoff.getDate() - days);
+            filtered = filtered.filter(s => new Date(s.date) >= cutoff);
+            let tbody = document.querySelector('#reportsTable tbody');
+            tbody.innerHTML = '';
+            filtered.forEach(s => {
+                let row = tbody.insertRow();
+                row.insertCell(0).innerText = new Date(s.date).toLocaleString();
+                row.insertCell(1).innerText = s.username;
+                row.insertCell(2).innerText = s.type;
+                row.insertCell(3).innerText = s.mode;
+                row.insertCell(4).innerText = s.total.toFixed(2);
+                row.insertCell(5).innerText = s.discount.toFixed(2);
+                row.insertCell(6).innerText = s.payment;
+                row.insertCell(7).innerHTML = `<button onclick="viewSaleDetails(${s.id})">Détails</button>`;
+            });
+            if(currentUser.role === 'admin'){
+                let filter = document.getElementById('reportUserFilter');
+                let users = getUsers();
+                filter.innerHTML = '<option value="all">Tous</option>';
+                users.forEach(u => { if(u.role === 'vendeur' || u.role === 'admin') filter.innerHTML += `<option value="${u.id}">${u.username}</option>`; });
+            }
+        }
+        window.viewSaleDetails = (id) => { let sale = getSales().find(s => s.id === id); if(sale) printInvoice(sale); };
+        document.getElementById('refreshReportsBtn').addEventListener('click', loadReports);
+
+        // Paramètres
+        function loadCompanySettings() {
+            let c = getCompany();
+            document.getElementById('settingsName').value = c.name;
+            document.getElementById('settingsAddress').value = c.address;
+            document.getElementById('settingsPhone').value = c.phone;
+            document.getElementById('settingsSlogan').value = c.slogan;
+            document.getElementById('settingsLogo').value = c.logo||'';
+        }
+        document.getElementById('companyForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            let company = {
+                name: document.getElementById('settingsName').value,
+                address: document.getElementById('settingsAddress').value,
+                phone: document.getElementById('settingsPhone').value,
+                slogan: document.getElementById('settingsSlogan').value,
+                logo: document.getElementById('settingsLogo').value
+            };
+            saveCompany(company);
+            updateCompanyHeader();
+            showToast('Paramètres enregistrés');
+        });
+        function loadSettingsForm() {
+            let s = getAppSettings();
+            document.getElementById('exchangeRateSetting').value = s.exchangeRate;
+            document.getElementById('autoMarginEnabled').value = s.autoMarginEnabled;
+            document.getElementById('autoMarginPercent').value = s.autoMarginPercent;
+        }
+        document.getElementById('financialForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            let settings = {
+                exchangeRate: parseFloat(document.getElementById('exchangeRateSetting').value),
+                autoMarginEnabled: parseInt(document.getElementById('autoMarginEnabled').value),
+                autoMarginPercent: parseFloat(document.getElementById('autoMarginPercent').value)
+            };
+            saveAppSettings(settings);
+            updateRateDisplay();
+            showToast('Paramètres financiers enregistrés');
+        });
+        function updateRateDisplay() {
+            let rate = getAppSettings().exchangeRate;
+            document.getElementById('exchangeRateDisplay').innerText = rate;
+        }
+
+        // Change de devises
+        function performExchange(usdAmount, ref, printAfter) {
+            if(usdAmount <= 0) { showToast("Montant invalide", true); return false; }
+            let rate = getAppSettings().exchangeRate;
+            let gdesAmount = usdAmount * rate;
+            try {
+                updateBalance('usd_stock', usdAmount);
+                updateBalance('general_account', -gdesAmount);
+                addTransaction('Change USD->Gdes', 'usd_stock', usdAmount, `Achat de ${usdAmount} USD - ${ref}`);
+                addTransaction('Change USD->Gdes', 'general_account', -gdesAmount, `Dépense de ${gdesAmount} Gdes pour change USD`);
+                let history = getExchangeHistory();
+                history.push({
+                    id: Date.now(),
+                    date: new Date().toISOString(),
+                    usd: usdAmount,
+                    gdes: gdesAmount,
+                    rate: rate,
+                    reference: ref,
+                    userId: currentUser.id,
+                    username: currentUser.username
+                });
+                saveExchangeHistory(history);
+                showToast(`Change effectué : ${usdAmount} USD → ${gdesAmount.toFixed(2)} Gdes`);
+                if(printAfter) printExchangeTicket(usdAmount, gdesAmount, rate, ref);
+                return true;
+            } catch(e) { showToast(e.message, true); return false; }
+        }
+        function printExchangeTicket(usd, gdes, rate, ref) {
+            let company = getCompany();
+            let content = `
+                <div style="text-align:center; font-family: monospace;">
+                    <h3>${company.name}</h3>
+                    <p>${company.address}</p>
+                    <p>Tel: ${company.phone}</p>
+                    <hr>
+                    <h4>REÇU DE CHANGE</h4>
+                    <p>Date: ${new Date().toLocaleString()}</p>
+                    <p>Vendeur: ${currentUser.username}</p>
+                    <p>Montant USD reçu: ${usd.toFixed(2)} USD</p>
+                    <p>Taux: 1 USD = ${rate} Gdes</p>
+                    <p><strong>Montant remis: ${gdes.toFixed(2)} Gdes</strong></p>
+                    <p>Référence: ${ref || '---'}</p>
+                    <hr>
+                    <p>Merci de votre confiance</p>
+                </div>
+            `;
+            let printWin = window.open('', '_blank');
+            printWin.document.write(content);
+            printWin.document.close();
+            printWin.print();
+            printWin.close();
+        }
+        function loadExchangeHistory() {
+            let history = getExchangeHistory();
+            let tbody = document.querySelector('#exchangeHistoryTable tbody');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            history.slice().reverse().forEach(h => {
+                let row = tbody.insertRow();
+                row.insertCell(0).innerText = new Date(h.date).toLocaleString();
+                row.insertCell(1).innerText = h.usd.toFixed(2);
+                row.insertCell(2).innerText = h.gdes.toFixed(2);
+                row.insertCell(3).innerText = h.rate;
+                row.insertCell(4).innerText = h.reference || '';
+                row.insertCell(5).innerText = h.username;
+            });
+        }
+        document.getElementById('exchangeForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            let usd = parseFloat(document.getElementById('usdAmount').value);
+            let ref = document.getElementById('exchangeRef').value;
+            if(performExchange(usd, ref, false)) {
+                document.getElementById('usdAmount').value = '';
+                document.getElementById('exchangeRef').value = '';
+                document.getElementById('gdesConverted').value = '';
+                loadExchangeHistory();
+            }
+        });
+        document.getElementById('exchangePrintBtn').addEventListener('click', () => {
+            let usd = parseFloat(document.getElementById('usdAmount').value);
+            let ref = document.getElementById('exchangeRef').value;
+            if(performExchange(usd, ref, true)) {
+                document.getElementById('usdAmount').value = '';
+                document.getElementById('exchangeRef').value = '';
+                document.getElementById('gdesConverted').value = '';
+                loadExchangeHistory();
+            }
+        });
+        document.getElementById('usdAmount').addEventListener('input', () => {
+            let usd = parseFloat(document.getElementById('usdAmount').value) || 0;
+            let rate = getAppSettings().exchangeRate;
+            document.getElementById('gdesConverted').value = (usd * rate).toFixed(2);
+        });
+
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            let username = document.getElementById('loginUsername').value;
+            let password = document.getElementById('loginPassword').value;
+            if(login(username, password)) showApp();
+            else showToast('Identifiants incorrects', true);
+        });
+        document.getElementById('logoutBtn').addEventListener('click', logout);
+
+        let storedUser = localStorage.getItem('currentUser');
+        if(storedUser){
+            currentUser = JSON.parse(storedUser);
+            let fresh = getUsers().find(u => u.id === currentUser.id && u.active === 1);
+            if(fresh){ currentUser = fresh; showApp(); }
+            else logout();
+        } else logout();
+
+        function loadAccountSelects() {
+            let acc = getAccounts();
+            let selSup = document.getElementById('paySupplierAccount');
+            let selEmp = document.getElementById('payEmployeeAccount');
+            selSup.innerHTML = ''; selEmp.innerHTML = '';
+            for(let key in acc){
+                if(key !== 'credit_suppliers' && key !== 'credit_sales'){
+                    let opt = document.createElement('option');
+                    opt.value = key;
+                    opt.text = acc[key].name;
+                    selSup.appendChild(opt.cloneNode(true));
+                    selEmp.appendChild(opt);
+                }
+            }
+        }
+        loadAccountSelects();
+    </script>
+</body>
+</html>
