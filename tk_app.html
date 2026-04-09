@@ -100,6 +100,7 @@
   </div>
   <div class="app-tabs">
     <div class="atab on" data-tab="casino">🎰 Casino</div>
+    <div class="atab" data-tab="roulette">🎡 Roulette</div>
     <div class="atab" data-tab="borlette">🎯 Borlette</div>
     <div class="atab" data-tab="sports" id="tab-sports-btn">⚽ Sports</div>
     <div class="atab" data-tab="recharge" id="tab-recharge-btn">💳 Recharge</div>
@@ -777,8 +778,11 @@
     <div class="psec" id="dtab-caissiers">
       <div class="card">
         <h3>Créer un Caissier</h3>
-        <div class="fg"><label>Nom</label><input type="text" id="new-caiss-name" placeholder="Jean Pierre"></div>
-        <div class="fg"><label>Mot de passe</label><input type="password" id="new-caiss-pwd"></div>
+        <div class="fg"><label>Nom complet</label><input type="text" id="new-caiss-name" placeholder="Jean Pierre"></div>
+        <div class="fg"><label>Code / Identifiant</label><input type="text" id="new-caiss-code" placeholder="Ex: CAISS-01, CAISS-NORD..." style="font-weight:800;letter-spacing:1px"></div>
+        <div class="fg"><label>Téléphone</label><input type="tel" id="new-caiss-phone" placeholder="50912345678"></div>
+        <div class="fg"><label>Mot de passe <button type="button" onclick="togglePwdInline('new-caiss-pwd',this)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;margin-left:5px"><i class="fas fa-eye"></i></button></label>
+          <input type="password" id="new-caiss-pwd" placeholder="••••••••"></div>
         <div class="fg"><label>Jeu assigné</label>
           <select id="new-caiss-jeu">
             <option value="keno">🎯 Keno Lucky</option>
@@ -894,9 +898,12 @@
     <div class="psec" id="atab-dirs">
       <div class="card">
         <h3>Créer un Directeur</h3>
-        <div class="fg"><label>Nom</label><input type="text" id="adm-dir-name" placeholder="Marie Pierre"></div>
+        <div class="fg"><label>Nom complet</label><input type="text" id="adm-dir-name" placeholder="Marie Pierre"></div>
+        <div class="fg"><label>Code / Identifiant</label><input type="text" id="adm-dir-code" placeholder="Ex: DIR-NORD, DIR-CENTRE..." style="font-weight:800;letter-spacing:1px"></div>
         <div class="fg"><label>Zone / Espace de jeu</label><input type="text" id="adm-dir-zone" placeholder="Ex: Zone Nord, Casino Central..."></div>
-        <div class="fg"><label>Mot de passe</label><input type="password" id="adm-dir-pwd"></div>
+        <div class="fg"><label>Téléphone</label><input type="tel" id="adm-dir-phone" placeholder="50912345678"></div>
+        <div class="fg"><label>Mot de passe <button type="button" onclick="togglePwdInline('adm-dir-pwd',this)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;margin-left:5px"><i class="fas fa-eye"></i></button></label>
+          <input type="password" id="adm-dir-pwd" placeholder="••••••••"></div>
         <button onclick="admCreerDirecteur()" style="padding:10px 18px;background:linear-gradient(135deg,var(--blue),#0a2070);color:#fff;border:none;border-radius:7px;font-weight:700;cursor:pointer">+ Créer Directeur</button>
       </div>
       <div class="card">
@@ -934,39 +941,48 @@
       </div>
     </div>
     <div class="psec" id="atab-params">
+      <!-- Difficulté par DIRECTEUR -->
       <div class="card">
-        <h3>⚙️ Difficulté par jeu</h3>
+        <h3>🎮 Difficulté des jeux par Directeur</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Réglez le taux de gain de 0% à 80% pour chaque bureau/directeur. 0% = impossible de gagner, 80% = gain très facile.</p>
+        <div id="dir-diff-list">
+          <div style="color:var(--muted);font-size:13px;padding:10px">Aucun directeur — créez d'abord un directeur.</div>
+        </div>
+      </div>
+      <!-- Difficulté GLOBALE (fallback) -->
+      <div class="card">
+        <h3>⚙️ Difficulté Globale (par défaut)</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Appliquée si aucune difficulté n'est définie pour le directeur.</p>
         <div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #5b8ef5;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><div><div style="font-weight:800">🎯 Keno Lucky</div></div><div style="font-weight:900;color:#5b8ef5" id="keno-pct-lbl">45%</div></div>
-          <input type="range" id="keno-diff-range" min="1" max="4" step="1" value="2" style="width:100%;accent-color:#5b8ef5" oninput="updateDiffLabel('keno',this.value)">
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>Facile 60%</span><span>Moyen 45%</span><span>Difficile 30%</span><span>Très dur 10%</span></div>
-          <button onclick="saveGameDiff('keno')" style="margin-top:8px;padding:6px 14px;background:var(--blue);color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>🎱 Keno Lucky</b><span style="color:#5b8ef5;font-weight:900" id="keno-pct-lbl">45%</span></div>
+          <input type="range" id="keno-diff-range" min="0" max="80" step="5" value="45" style="width:100%;accent-color:#5b8ef5" oninput="updateDiffLabel('keno',this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span></div>
+          <button onclick="saveGameDiff('keno')" style="margin-top:8px;padding:5px 14px;background:var(--blue);color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
         </div>
         <div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid var(--gold);">
-          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><div><div style="font-weight:800">🍀 Lucky 6</div></div><div style="font-weight:900;color:var(--gold)" id="lucky6-pct-lbl">45%</div></div>
-          <input type="range" id="lucky6-diff-range" min="1" max="4" step="1" value="2" style="width:100%;accent-color:var(--gold)" oninput="updateDiffLabel('lucky6',this.value)">
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>Facile 60%</span><span>Moyen 45%</span><span>Difficile 30%</span><span>Très dur 10%</span></div>
-          <button onclick="saveGameDiff('lucky6')" style="margin-top:8px;padding:6px 14px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>🍀 Lucky 6</b><span style="color:var(--gold);font-weight:900" id="lucky6-pct-lbl">45%</span></div>
+          <input type="range" id="lucky6-diff-range" min="0" max="80" step="5" value="45" style="width:100%;accent-color:var(--gold)" oninput="updateDiffLabel('lucky6',this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span></div>
+          <button onclick="saveGameDiff('lucky6')" style="margin-top:8px;padding:5px 14px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
         </div>
         <div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid var(--red);">
-          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><div><div style="font-weight:800">🏎️ Course Auto</div></div><div style="font-weight:900;color:var(--red)" id="course-pct-lbl">45%</div></div>
-          <input type="range" id="course-diff-range" min="1" max="4" step="1" value="2" style="width:100%;accent-color:var(--red)" oninput="updateDiffLabel('course',this.value)">
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>Facile 60%</span><span>Moyen 45%</span><span>Difficile 30%</span><span>Très dur 10%</span></div>
-          <button onclick="saveGameDiff('course')" style="margin-top:8px;padding:6px 14px;background:var(--red);color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>🏎️ Course Auto</b><span style="color:var(--red);font-weight:900" id="course-pct-lbl">45%</span></div>
+          <input type="range" id="course-diff-range" min="0" max="80" step="5" value="45" style="width:100%;accent-color:var(--red)" oninput="updateDiffLabel('course',this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span></div>
+          <button onclick="saveGameDiff('course')" style="margin-top:8px;padding:5px 14px;background:var(--red);color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
         </div>
         <div style="background:var(--bg2);border-radius:10px;padding:14px;border-left:4px solid var(--green2);">
-          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><div><div style="font-weight:800">🚁 Hélicoptère</div></div><div style="font-weight:900;color:var(--green2)" id="helico-pct-lbl">45%</div></div>
-          <input type="range" id="helico-diff-range" min="1" max="4" step="1" value="2" style="width:100%;accent-color:var(--green2)" oninput="updateDiffLabel('helico',this.value)">
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>Facile 60%</span><span>Moyen 45%</span><span>Difficile 30%</span><span>Très dur 10%</span></div>
-          <button onclick="saveGameDiff('helico')" style="margin-top:8px;padding:6px 14px;background:var(--green2);color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>🚁 Hélicoptère</b><span style="color:var(--green2);font-weight:900" id="helico-pct-lbl">45%</span></div>
+          <input type="range" id="helico-diff-range" min="0" max="80" step="5" value="45" style="width:100%;accent-color:var(--green2)" oninput="updateDiffLabel('helico',this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span></div>
+          <button onclick="saveGameDiff('helico')" style="margin-top:8px;padding:5px 14px;background:var(--green2);color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
         </div>
       </div>
       <div class="card">
-        <h3>🔐 Identifiants système</h3>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Admin: <strong style="color:var(--gold)">admin</strong> · Les directeurs et caissiers sont créés dans l'interface.</p>
+        <h3>🔐 Identifiants Admin</h3>
+        <p style="font-size:13px;color:var(--muted)">Admin: <strong style="color:var(--gold)">mot de passe: admin</strong></p>
+        <p style="font-size:12px;color:var(--muted);margin-top:5px">Code secret accès staff: <strong style="color:var(--gold)">TONTONKONDO12</strong></p>
       </div>
-    </div>
-  </div>
 </div>
 
 <!-- OVERLAY TICKETS GAGNANTS -->
@@ -988,98 +1004,129 @@
 
 <!-- INFO MODAL -->
 <div class="info-modal" id="info-modal">
-  <div class="info-modal-inner">
-    <button onclick="fermerInfo()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:#888;font-size:24px;cursor:pointer;z-index:2">✕</button>
-    <div class="info-logo-header">
-      <img src="logo.png" onerror="this.src='logo.jpeg';this.onerror=null" alt="Tonton Kondo">
-      <h1>TONTON KONDO</h1>
-      <p>Lotto · Paryaj · Casino · Sports</p>
+  <div class="info-modal-inner" style="background:#fff;color:#1a1a2e;border-radius:20px;padding:28px;max-width:750px;width:100%;margin:auto;position:relative;">
+    <button onclick="fermerInfo()" style="position:absolute;top:16px;right:16px;background:#f0f0f0;border:none;color:#555;font-size:20px;cursor:pointer;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:2">✕</button>
+
+    <!-- Logo header -->
+    <div style="text-align:center;margin-bottom:24px;padding-bottom:20px;border-bottom:2px solid #f0f0f0;">
+      <img src="logo.png" onerror="this.src='logo.jpeg';this.onerror=null" alt="Tonton Kondo" style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:4px solid #1a3a8f;box-shadow:0 0 0 6px rgba(26,58,143,.1),0 8px 30px rgba(0,0,0,.15);margin-bottom:12px;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:2em;font-weight:900;color:#1a3a8f;letter-spacing:3px">TONTON KONDO</div>
+      <div style="font-size:13px;color:#888;margin-top:4px">Lotto · Paryaj · Casino · Sports</div>
     </div>
 
-    <div class="info-section">
-      <h3>🏢 Prezantasyon</h3>
-      <p><strong>Tonton Kondo Lotto Paryaj</strong> se yon sosyete paryaj sportif ki fonksyone dapre lwa ayisyen. Syèj sosyal li se nan Flon 7 #32, Léogane, Lwès, Ayiti. Li dirije pa <strong>Mesye Lafleur Dutheau</strong>.</p>
-      <p>Tonton Kondo Lotto Paryaj patisipe nan divès aktivite kiltirèl espesyalman nan espò, mizik ak lòt aktivite.</p>
-    </div>
-
-    <div class="info-section">
-      <h3>📍 Kontakt & Rezo Sosyal</h3>
-      <div class="info-contact-grid">
-        <div class="info-contact-item">
-          <div class="ic2">🏠</div>
-          <div class="label">Siège Social</div>
-          <div class="val">32 Flon 7, Léogane<br>Lwès, Ayiti</div>
+    <!-- Contact info -->
+    <div class="info-section" style="margin-bottom:22px;">
+      <h3 style="color:#1a3a8f;font-size:15px;font-weight:800;margin-bottom:10px;padding-bottom:7px;border-bottom:2px solid #f0f0f0">📍 Kontakt & Siège Social</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:12px;">
+        <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:10px;padding:13px;">
+          <div style="font-size:1.4em;margin-bottom:4px">🏠</div>
+          <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px">Siège Social</div>
+          <div style="font-size:14px;font-weight:700;color:#1a3a8f;margin-top:3px">32 Flon 7, Léogane<br>Lwès, Ayiti</div>
         </div>
-        <div class="info-contact-item">
-          <div class="ic2">📧</div>
-          <div class="label">Email</div>
-          <div class="val"><a href="mailto:tontonkondo@gmail.com">tontonkondo@gmail.com</a></div>
+        <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:10px;padding:13px;">
+          <div style="font-size:1.4em;margin-bottom:4px">📧</div>
+          <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px">Email</div>
+          <div style="font-size:14px;font-weight:700;color:#1a3a8f;margin-top:3px"><a href="mailto:tontonkondo@gmail.com" style="color:#1a3a8f">tontonkondo@gmail.com</a></div>
         </div>
-        <div class="info-contact-item">
-          <div class="ic2">🎵</div>
-          <div class="label">TikTok</div>
-          <div class="val"><a href="https://www.tiktok.com/@tontonkondo" target="_blank">@tontonkondo</a></div>
+        <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:10px;padding:13px;">
+          <div style="font-size:1.4em;margin-bottom:4px">🎵</div>
+          <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px">TikTok</div>
+          <div style="font-size:14px;font-weight:700;color:#1a3a8f;margin-top:3px"><a href="https://www.tiktok.com/@tontonkondo" target="_blank" style="color:#1a3a8f">@tontonkondo</a></div>
         </div>
-        <div class="info-contact-item">
-          <div class="ic2">📸</div>
-          <div class="label">Instagram</div>
-          <div class="val"><a href="https://www.instagram.com/tontonkondo" target="_blank">@tontonkondo</a></div>
-        </div>
-        <div class="info-contact-item">
-          <div class="ic2">🕐</div>
-          <div class="label">Horaires</div>
-          <div class="val">7j/7 · 8h00 – 22h00</div>
-        </div>
-        <div class="info-contact-item">
-          <div class="ic2">💳</div>
-          <div class="label">Paiements</div>
-          <div class="val">MonCash · NatCash · Cash</div>
+        <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:10px;padding:13px;">
+          <div style="font-size:1.4em;margin-bottom:4px">📸</div>
+          <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px">Instagram</div>
+          <div style="font-size:14px;font-weight:700;color:#1a3a8f;margin-top:3px"><a href="https://www.instagram.com/tontonkondo" target="_blank" style="color:#1a3a8f">@tontonkondo</a></div>
         </div>
       </div>
     </div>
 
-    <div class="info-section">
-      <h3>🎮 Jeux Disponibles</h3>
-      <div class="info-partner">
-        <span class="info-partner-chip">🎯 Borlette/Lotto</span>
-        <span class="info-partner-chip">🎱 Keno Lucky</span>
-        <span class="info-partner-chip">🍀 Lucky 6</span>
-        <span class="info-partner-chip">🏎️ Course Auto</span>
-        <span class="info-partner-chip">🚁 Hélicoptère</span>
-        <span class="info-partner-chip">🎡 Roulette</span>
-        <span class="info-partner-chip">⚽ Paris Sportifs</span>
+    <!-- Jeux -->
+    <div style="margin-bottom:22px;">
+      <h3 style="color:#1a3a8f;font-size:15px;font-weight:800;margin-bottom:10px;padding-bottom:7px;border-bottom:2px solid #f0f0f0">🎮 Nos Jeux</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:7px;">
+        <span style="background:#f0f4ff;border:1px solid #d0d8ff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;color:#1a3a8f">🎯 Borlette/Lotto</span>
+        <span style="background:#f0f4ff;border:1px solid #d0d8ff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;color:#1a3a8f">🎱 Keno Lucky</span>
+        <span style="background:#f0f4ff;border:1px solid #d0d8ff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;color:#1a3a8f">🍀 Lucky 6</span>
+        <span style="background:#f0f4ff;border:1px solid #d0d8ff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;color:#1a3a8f">🏎️ Course Auto</span>
+        <span style="background:#f0f4ff;border:1px solid #d0d8ff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;color:#1a3a8f">🚁 Hélicoptère</span>
+        <span style="background:#f0f4ff;border:1px solid #d0d8ff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;color:#1a3a8f">🎡 Roulette</span>
+        <span style="background:#f0f4ff;border:1px solid #d0d8ff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;color:#1a3a8f">⚽ Paris Sportifs</span>
       </div>
     </div>
 
+    <!-- Full text content -->
+    
     <div class="info-section">
-      <h3>🤝 Partenaires</h3>
-      <div class="info-partner">
-        <span class="info-partner-chip">📱 MonCash (Digicel)</span>
-        <span class="info-partner-chip">💳 NatCash (Natcom)</span>
-        <span class="info-partner-chip">🏦 BNC Haïti</span>
-      </div>
+      <h3 style="color:#1a3a8f;font-size:15px;font-weight:800;margin-bottom:10px;padding-bottom:7px;border-bottom:2px solid #f0f0f0">Prezantasyon</h3>
+      <p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Tonton kondo lotto paryaj 
+C'est une société de Paris sportif régie selon la loi haïtienne 
+Don le siège social Est a flon 7 # 32  TONTON KONDO LOTTO PARYAJ participé dans différentes activités culturelles spécialement dans le sport musique et autres DIRIGÉ PAR MONSIEUR LAFLEUR DUTHEAU</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">L’essentiel
+Bien que limitées, les estimations mondiales standardisées des méfaits des jeux d’argent 
+et de hasard semblent indiquer que 1,2 % de la population adulte mondiale souffre d’un trouble du jeu. En outre, la pratique de jeux d’argent et de hasard est en général nuisible pour les personnes qui ne jouent pas.
+Les analystes de l’industrie estiment que les revenus mondiaux tirés des jeux d’argent atteindront 700 milliards de dollars des États-Unis (USD) d’ici à 2028 (1). Cet essor sera favorisé en grande partie par l’utilisation des smartphones dans les pays à revenu faible ou intermédiaire.
+Les personnes qui s’adonnent aux jeux d’argent à des niveaux nocifs sont à l’origine d’environ 60 % des pertes de revenus (2).
+Les jeux d’argent et de hasard peuvent menacer la santé, dans la mesure où ils entraînent une augmentation de l’incidence des maladies mentales et du suicide. Ils peuvent contribuer à la pauvreté, car les ménages dépensent pour ces jeux des sommes qu’ils auraient pu consacrer à des biens et des services essentiels.
+Les jeux d’argent et de hasard ont aussi d’autres méfaits, dont la rupture des relations, la violence familiale, de graves difficultés financières, la stigmatisation, la commission de délits en vue d’obtenir de l’argent (vol, fraude), la négligence des enfants et l’érosion des institutions civiles en raison de la corruption et d’activités politiques menées par les entreprises de l’industrie du jeu. Les jeux de hasard sont également un moyen courant de blanchir de l’argent obtenu par le biais d’activités illégales.
+La commercialisation et la numérisation accélèrent la normalisation des jeux d’argent et de hasard. Le parrainage et le marketing sont également des facteurs clés de l’essor mondial rapide des jeux d’argent.
+Vue d’ensemble
+Les jeux d’argent et de hasard consistent à miser de l’argent (ou un autre objet de valeur), avec la possibilité d’obtenir un intéressement financier lors d’une partie à l’issue incertaine. Les paris, les machines à sous, les jeux de casino, les loteries et les lotos sont des jeux d’argent et de hasard. On considère souvent que les plus grands méfaits sont causés par les machines de jeu électroniques et les jeux de casino. Ceux-ci sont disponibles à la fois dans des lieux physiques et en ligne. Bien que de nombreuses juridictions aient maintenant légalisé les jeux d’argent et de hasard, le statut juridique de ces jeux varie d’un pays à l’autre et à l’intérieur d’un même pays. Comme les jeux d’argent sont disponibles en ligne, ils sont accessibles presque partout, à tout moment, même dans les pays où ils sont interdits.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Ils peuvent entraîner de graves problèmes de santé liés à des difficultés financières, à des ruptures, à la violence familiale, à une maladie mentale ou au suicide. Les conséquences des méfaits des jeux d’argent et de hasard peuvent perdurer toute la vie et même toucher plusieurs générations. Les interventions à l’échelle de la population peuvent aider à prévenir et à atténuer ces méfaits. On peut, par exemple, mettre fin à la publicité et à la promotion et mettre en place la création de comptes centralisés pour obliger les personnes qui jouent à fixer des limites de perte et imposer des restrictions à l’accès (heures d’ouverture, densité). En outre, la réglementation doit être stricte et bien appliquée pour garantir le respect des lois existantes.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Ampleur du problème
+Les jeux d’argent et de hasard sont aujourd’hui autorisés par la loi dans de nombreux pays. Ils ont été normalisés par la mise en place de nouvelles associations commerciales avec des activités sportives et culturelles dont la promotion est maintenant très vive. Environ 5,5 % des femmes et 11,9 % des hommes dans le monde souffrent, à des degrés variables, des méfaits des jeux d’argent et de hasard (3). Selon une étude suédoise, les personnes atteintes d’un trouble du jeu étaient 15 fois plus susceptibles de se suicider que les membres de la population générale (4). Dans l’État de Victoria, en Australie, au moins 4,2 % des suicides étaient liés aux jeux d’argent et de hasard (5).</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Quand une personne s’adonne aux jeux à un haut niveau de risque, six autres personnes en moyenne (généralement des non-joueurs) en subissent les conséquences (6). Ce nombre est probablement beaucoup plus élevé dans les cultures fondées sur la parenté, y compris dans les peuples autochtones. Les jeux d’argent et de hasard peuvent également priver d’autres entreprises de revenus tirés des dépenses de consommation normales.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">La réglementation des jeux d’argent est un moyen courant d’autorégulation du secteur. Cependant, il existe de nombreux exemples de l’échec de cette approche. Le fonctionnement de nombreux produits de jeu est souvent peu transparent. Les machines de jeu électroniques sont parfois conçues pour pousser les utilisateurs et les utilisatrices à jouer longtemps. Les messages de promotion de la santé sont souvent inadaptés et reposent parfois sur le « nudge » qui encourage la consommation de produits nocifs (par exemple, en exploitant les biais cognitifs des joueurs et des joueuses) et peuvent favoriser la normalisation. Parallèlement à une réglementation stricte des produits de jeu et de leur disponibilité, des mises en garde claires sur les méfaits associés au jeu sont susceptibles d’être plus efficaces que les messages suggérant d’arrêter simplement lorsque le jeu n’est plus amusant, par exemple.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Il n’y a pas de consensus mondial sur la réglementation des jeux d’argent et de hasard en ligne. Des prestataires non agréés proposent régulièrement des produits de jeu non réglementés, et il est urgent de réglementer les jeux d’argent et de hasard en ligne.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Quelles sont les personnes à risque ?
+Lors d’événements importants de leur vie, notamment une séparation, un départ à la retraite, un accident ou le décès d’un être cher, certaines personnes peuvent être exposées à un risque accru. Les facteurs de stress sociaux tels que la pauvreté, la discrimination ou d’autres circonstances défavorables augmentent également les risques. La forte promotion des jeux d’argent et de hasard en ligne et dans le cadre du sport risque également de normaliser les jeux d’argent pour les enfants et les jeunes.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Signes et symptômes
+Le trouble du jeu est décrit aux côtés des troubles dus à l’utilisation de substances dans la cinquième édition du Manuel diagnostique et statistique des troubles mentaux (DSM-5), et dans la onzième révision de la Classification internationale des maladies (CIM-11). La CIM-11 décrit trois critères diagnostiques :</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">1) contrôle altéré sur les jeux ;</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">2) priorité croissante donnée aux jeux au point que ceux-ci dominent les autres aspects de la vie et les activités quotidiennes ; et</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">3) poursuite ou escalade de la pratique de jeux malgré l’occurrence de conséquences négatives.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Les méfaits du jeu apparaissent également bien en deçà des seuils cliniques. Par exemple, certaines personnes renoncent à des dépenses essentielles pour leur famille au profit du jeu. Ceci peut entraîner de l’insécurité alimentaire, des problèmes de logement et des difficultés d’accès aux soins et à l’éducation.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Transmission
+La facilité d’accès aux produits de jeu augmente le risque de s’y adonner. Les possibilités de jouer sont souvent disponibles de manière disproportionnée dans les zones les plus défavorisées. Les produits à haute intensité, dont les machines de jeu électroniques, les plateformes de pari rapide et les jeux de casino, y compris en ligne, sont facilement accessibles presque partout.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">La commercialisation des jeux d’argent et de hasard dans de nombreux pays non seulement favorise la normalisation, mais aussi augmente l’incidence des méfaits. Le parrainage ou toute autre association avec des ligues sportives populaires, ainsi que la colocation de produits de jeu dans des contextes sociaux, sont des mécanismes clés de promotion. La promotion agressive des jeux d’argent dans les médias sociaux et à forte audience augmente également le recours au jeu.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Prévention et lutte
+La prévention des méfaits des jeux d’argent et de hasard repose sur des approches de santé publique universelles à l’échelle de la population. On peut citer en exemple :</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">mettre fin à la publicité des jeux d’argent, à la promotion et au parrainage des sports et d’autres activités culturelles ;
+combattre la stigmatisation et la honte vécues par les personnes victimes des méfaits du jeu ;
+mettre en place la création de comptes centralisés et d’outils contraignants de pré-engagement et d’auto-exclusion efficaces ;
+instaurer des mesures de sécurité, y compris une limitation universelle des pertes, des mises maximales et des pauses obligatoires pendant les sessions de jeu ;
+réglementer efficacement l’activité des fournisseurs de jeux d’argent et de hasard, y compris grâce à des dispositifs suffisamment financés pour faire appliquer la loi ;
+lutter contre l’activité politique et l’influence de l’industrie du jeu sur la recherche ; et
+diffuser des mises en garde sur les méfaits associés aux produits de jeu.
+Traitement
+Il existe une gamme de thérapies pour les personnes atteintes de troubles du jeu. À l’heure actuelle, les plus efficaces sont la thérapie cognitivo-comportementale à long terme et les entretiens motivationnels. L’efficacité de l’auto-assistance, des interventions pharmacologiques et du soutien mutuel est moins avérée, bien que ces interventions soient parmi les plus utilisées. Certaines données montrent l’intérêt des thérapies sur Internet, bien que l’attrition soit un problème important.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Le taux de recours aux traitements des troubles du jeu est faible, environ 0,14 % de la population cherchant une aide officielle ou informelle pour régler ce type de problèmes. La stigmatisation et la honte empêchent souvent de demander de l’aide. L’approche réglementaire privilégiée par l’industrie des jeux d’argent et de hasard – le jeu dit « responsable » – aggrave le problème en rejetant la faute sur les personnes victimes des méfaits. Les interventions en matière de jeu responsable sont généralement inefficaces, en particulier lorsque l’adoption de mesures est facultative.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Les personnes qui cherchent à mieux maîtriser leur pratique des jeux d’argent ou à arrêter de jouer devraient disposer d’outils qui les y aident. Il s’agit notamment du pré-engagement universel (obligeant à fixer des limites contraignantes de temps et de dépenses) et de l’auto-exclusion (permettant de s’interdire l’accès aux fournisseurs de jeux d’argent). Les systèmes universels (également appelés obligatoires) sont les plus efficaces. Les systèmes volontaires sont peu utilisés et ne sont pas exécutoires. La prévention est la stratégie la plus rentable pour minimiser les méfaits des jeux d’argent et de hasard.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Problèmes
+Dans les pays où les jeux d’argent et de hasard ont été légalisés, les pouvoirs publics en tirent généralement des recettes fiscales substantielles. Cela peut créer une certaine dépendance et dissuader de lutter contre les méfaits. Les avantages économiques perçus des marchés des jeux d’argent et de hasard peuvent l’emporter sur les effets mal compris sur la santé et le bien-être.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">En général, les groupes de l’industrie des jeux d’argent s’opposent fermement aux réglementations à fort impact et à d’autres mesures qui nuisent à leurs intérêts commerciaux. Ces entreprises usent généralement de leur influence politique pour préserver leurs intérêts. L’industrie a aussi utilisé des fonds et d’autres formes d’aide pour influer sur le monde de la recherche. L’un des principaux objectifs de santé publique est de limiter la capacité des intérêts particuliers à influer sur le programme de recherche et les politiques publiques.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Impact mondial
+Les méfaits des jeux d’argent et de hasard augmentent à mesure que les marchés de ces jeux se développent, ce qui nuit à la santé et au bien-être des populations. Les jeux d’argent et de hasard non autorisés, illégaux ou délocalisés posent d’importants problèmes réglementaires à tous les gouvernements. Pour y faire face efficacement, les gouvernements doivent coopérer afin d’échanger des données, de protéger les consommateurs et les consommatrices contre les pratiques non réglementées et de percevoir les recettes fiscales légales. En l’absence de mesures de protection efficaces, les jeux d’argent et de hasard peuvent compromettre les progrès vers la réalisation des objectifs de développement durable (ODD), en particulier les objectifs 3, 10 et 16.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Action de l’OMS
+L’OMS est consciente des effets négatifs des jeux d’argent et de hasard sur la santé. Il faut mener une action multisectorielle visant à atténuer les méfaits de ces jeux pour éviter qu’ils n’entravent la réalisation des ODD. L’OMS reconnaît la nécessité pour les États Membres de surveiller de près et de réglementer efficacement les opérations, les produits et les activités liés aux jeux d’argent et de hasard. Il faut notamment lutter contre la stigmatisation et la honte liées aux jeux d’argent et de hasard, éliminer la publicité et la promotion et privilégier d’autres démarches en amont pour prévenir et atténuer les méfaits du jeu.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">L’OMS coordonne un groupe d’experts et d’expertes mondiaux pour renforcer les capacités afin de faire face aux conséquences des jeux d’argent et de hasard sur la santé publique. Les premières démarches comprennent la mise au point de nouveaux instruments de diagnostic des troubles du jeu afin de mieux tenir compte des populations ailleurs qu’en Amérique du Nord et la recherche d’un consensus entre experts sur les limites diagnostiques. L’OMS reconnaît que certaines juridictions ont mis en place des systèmes efficaces de réglementation des jeux d’argent et de hasard. Des démarches sont en cours pour documenter et diffuser les enseignements qui en ont été tirés, en particulier pour soutenir les pays à revenu faible ou intermédiaire où l’activité commerciale liée aux jeux d’argent augmente rapidement.</p>
     </div>
 
-    <div class="info-section">
-      <h3>📋 Jeu Responsable — OMS</h3>
-      <p>Selon l'Organisation Mondiale de la Santé, 1,2% de la population adulte mondiale souffre d'un trouble du jeu. Les revenus mondiaux des jeux d'argent pourraient atteindre 700 milliards USD d'ici 2028.</p>
-      <p>Les jeux d'argent peuvent entraîner des problèmes de santé mentale, des difficultés financières et des ruptures familiales. Tonton Kondo encourage le jeu responsable.</p>
-      <div class="info-warning">
-        <p>⚠️ <strong>Le jeu peut créer une dépendance.</strong> Jouez de manière responsable. Ne misez que ce que vous pouvez vous permettre de perdre. Jeux réservés aux personnes de <strong>18 ans et plus</strong>.</p>
-      </div>
+    <!-- Warning -->
+    <div style="background:#fff8e1;border:1px solid #ffd54f;border-radius:10px;padding:14px;margin-bottom:20px;">
+      <p style="color:#7a5f00;font-size:14px;line-height:1.7">⚠️ <strong>Le jeu peut créer une dépendance.</strong> Jouez de manière responsable. Ne misez que ce que vous pouvez vous permettre de perdre. Les jeux sont réservés aux personnes de <strong>18 ans et plus</strong>.</p>
     </div>
 
-    <div class="info-section">
-      <h3>⚖️ Statut Légal</h3>
-      <p>Tonton Kondo Lotto Paryaj est une société régie selon la loi haïtienne, opérant légalement sur le territoire de la République d'Haïti.</p>
+    <!-- Footer -->
+    <div style="text-align:center;padding-top:16px;border-top:2px solid #f0f0f0;">
+      <p style="font-size:13px;color:#888">© 2024 Tonton Kondo Lotto Paryaj · Tous droits réservés</p>
+      <p style="font-size:13px;color:#888;margin-top:5px">Développé par <strong style="color:#1a3a8f">La Nova Technologie</strong></p>
     </div>
 
-    <div class="info-nova">
-      <p>© 2024 Tonton Kondo Lotto Paryaj · Tous droits réservés</p>
-      <p style="margin-top:6px">Développé par <strong>La Nova Technologie</strong></p>
-    </div>
-    <button class="btn-info-close" onclick="fermerInfo()">Fermer</button>
+    <button onclick="fermerInfo()" style="width:100%;padding:13px;background:#e63946;color:#fff;border:none;border-radius:10px;font-weight:800;font-size:16px;cursor:pointer;margin-top:20px;letter-spacing:1px;">Fermer</button>
   </div>
+</div>
+
 </div>
 
 <div class="notif" id="notif"></div>
@@ -1107,8 +1154,6 @@ const gCB=()=>JSON.parse(localStorage.getItem(SK.caissBets))||[];
 const sCB=v=>localStorage.setItem(SK.caissBets,JSON.stringify(v));
 const getDiff=()=>localStorage.getItem(SK.diff)||'medium';
 const setDiff=d=>localStorage.setItem(SK.diff,d);
-const getGameDiff=g=>localStorage.getItem('tk_diff_'+g)||getDiff();
-const setGameDiff=(g,d)=>localStorage.setItem('tk_diff_'+g,d);
 
 const JEU_LABELS={keno:'🎯 Keno Lucky',lucky6:'🍀 Lucky 6',course:'🏎️ Course Auto',sports:'⚽ Paris Sportifs',helico:'🚁 Hélicoptère',all:'🎰 Tous les jeux'};
 
@@ -1495,21 +1540,7 @@ function refreshDir(){
   </tr>`).join('')||'<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:14px">Aucune transaction</td></tr>';
 }
 
-function creerCaissier(){
-  if(!CDir)return;
-  const name=document.getElementById('new-caiss-name').value.trim();
-  const pwd=document.getElementById('new-caiss-pwd').value;
-  const jeu=document.getElementById('new-caiss-jeu').value;
-  if(!name||!pwd){showNotif('Remplissez tous les champs','err');return;}
-  const caiss=gCaiss();
-  const n=Object.values(caiss).length+1;
-  const code='CAISS-'+String(n).padStart(3,'0');
-  caiss[code]={code,name,pwd,jeu,dirCode:CDir.code,dirName:CDir.name,zone:CDir.zone,createdAt:new Date().toLocaleString()};
-  sCaiss(caiss);
-  ['new-caiss-name','new-caiss-pwd'].forEach(id=>document.getElementById(id).value='');
-  showNotif('✅ Caissier créé: '+code+' — MdP: '+pwd,'ok');
-  refreshDir();
-}
+
 
 function supprimerCaissier(code){
   if(!confirm('Supprimer ce caissier ?'))return;
@@ -1529,31 +1560,10 @@ function authAdmin(){
 
 
 
-function admCreerDirecteur(){
-  const name=document.getElementById('adm-dir-name').value.trim();
-  const zone=document.getElementById('adm-dir-zone').value.trim();
-  const pwd=document.getElementById('adm-dir-pwd').value;
-  if(!name||!zone||!pwd){showNotif('Remplissez tous les champs','err');return;}
-  const dirs=gDirs();
-  const n=Object.values(dirs).length+1;
-  const code='DIR-'+String(n).padStart(3,'0');
-  dirs[code]={code,name,zone,pwd,createdAt:new Date().toLocaleString()};
-  sDirs(dirs);
-  ['adm-dir-name','adm-dir-zone','adm-dir-pwd'].forEach(id=>document.getElementById(id).value='');
-  showNotif('✅ Directeur créé: '+code+' — MdP: '+pwd,'ok');
-  refreshAdmin();renderLandingDirs();
-}
 
-function admSuppDir(code){
-  if(!confirm('Supprimer ce directeur et tous ses caissiers ?'))return;
-  const dirs=gDirs();delete dirs[code];sDirs(dirs);
-  const caiss=gCaiss();Object.keys(caiss).forEach(k=>{if(caiss[k].dirCode===code)delete caiss[k];});sCaiss(caiss);
-  refreshAdmin();renderLandingDirs();showNotif('Directeur supprimé','ok');
-}
-function admSuppCaiss(code){
-  if(!confirm('Supprimer ce caissier ?'))return;
-  const caiss=gCaiss();delete caiss[code];sCaiss(caiss);refreshAdmin();showNotif('Caissier supprimé','ok');
-}
+
+
+
 
 function resoudrePari(betId,statut){
   const bets=gB();const bet=bets.find(b=>b.id==betId);
@@ -1573,8 +1583,8 @@ function resoudrePari(betId,statut){
 // ADMIN PARAMS
 const DIFF_VALS=['easy','medium','hard','veryhard'];
 const DIFF_PCTS={easy:'60%',medium:'45%',hard:'30%',veryhard:'10%'};
-function updateDiffLabel(game,val){const d=DIFF_VALS[parseInt(val)-1]||'medium';document.getElementById(game+'-pct-lbl').textContent=DIFF_PCTS[d];}
-function saveGameDiff(game){const r=document.getElementById(game+'-diff-range');const d=DIFF_VALS[parseInt(r.value)-1]||'medium';setGameDiff(game,d);showNotif('✅ '+game+' : difficulté '+DIFF_PCTS[d],'ok');}
+
+
 function loadAdminDiffs(){['keno','lucky6','course','helico'].forEach(game=>{const d=getGameDiff(game);const idx=DIFF_VALS.indexOf(d)+1;const r=document.getElementById(game+'-diff-range');if(r)r.value=idx||2;const l=document.getElementById(game+'-pct-lbl');if(l)l.textContent=DIFF_PCTS[d]||'45%';});}
 
 // ===== UTILS =====
@@ -3143,28 +3153,7 @@ function renderJHist(){
 }
 
 // ==================== ADMIN: COMPTES MONCASH/NATCASH/CASH ====================
-function refreshAdminComptes(){
-  const rch=gRch();
-  const at=gAT();
-  // MonCash
-  const mc=rch.filter(r=>r.method==='moncash'&&r.statut==='Validé');
-  const mcTotal=mc.reduce((s,r)=>s+r.amount,0);
-  // NatCash
-  const nc=rch.filter(r=>r.method==='natcash'&&r.statut==='Validé');
-  const ncTotal=nc.reduce((s,r)=>s+r.amount,0);
-  // Cash bureau (transactions de type Dépôt via caissier, pas moncash/natcash)
-  const cashTx=at.filter(t=>t.type==='Dépôt'&&t.montant>0&&!t.type.includes('MonCash')&&!t.type.includes('NatCash'));
-  const cashTotal=cashTx.reduce((s,t)=>s+t.montant,0);
-  const total=mcTotal+ncTotal+cashTotal;
-  const el=n=>document.getElementById(n);
-  if(el('adm-moncash-total'))el('adm-moncash-total').textContent=mcTotal.toLocaleString('fr-FR')+' Gd';
-  if(el('adm-moncash-count'))el('adm-moncash-count').textContent=mc.length+' recharges';
-  if(el('adm-natcash-total'))el('adm-natcash-total').textContent=ncTotal.toLocaleString('fr-FR')+' Gd';
-  if(el('adm-natcash-count'))el('adm-natcash-count').textContent=nc.length+' recharges';
-  if(el('adm-cash-total'))el('adm-cash-total').textContent=cashTotal.toLocaleString('fr-FR')+' Gd';
-  if(el('adm-cash-count'))el('adm-cash-count').textContent=cashTx.length+' transactions';
-  if(el('adm-total-encaisse'))el('adm-total-encaisse').textContent=total.toLocaleString('fr-FR')+' Gd';
-}
+
 
 // ==================== CAISSE: GRILLES KENO & LUCKY6 ====================
 let caisseKenoSel=[];
@@ -3408,83 +3397,7 @@ function updateCaisseDisplay(){
 }
 
 // ==================== PATCH: refreshAdmin inclut comptes ====================
-function refreshAdmin(){
-  loadAdminDiffs();
-  const j=gJ(),dirs=gDirs(),caiss=gCaiss(),bets=gB(),st=gSt(),at=gAT();
-  const tSol=Object.values(j).reduce((a,x)=>a+(x.solde||0),0);
-  const pending=bets.filter(b=>b.statut==='En attente');
 
-  const el=n=>document.getElementById(n);
-  if(el('admin-stats'))el('admin-stats').innerHTML=[
-    {v:Object.keys(dirs).length,l:'Directeurs',c:'sblue'},
-    {v:Object.keys(caiss).length,l:'Caissiers',c:'spurp'},
-    {v:Object.keys(j).length,l:'Joueurs',c:'sgreen'},
-    {v:tSol+' Gd',l:'Solde joueurs',c:'sgold'},
-    {v:(st.dep||0)+' Gd',l:'Total dépôts',c:'sgreen'},
-    {v:(st.pay||0)+' Gd',l:'Total payés',c:'sred'},
-    {v:((st.dep||0)-(st.pay||0))+' Gd',l:'Profit maison',c:'sgold'},
-    {v:pending.length,l:'Paris en attente',c:'sblue'},
-  ].map(s=>`<div class="statcard"><div class="sv ${s.c}">${s.v}</div><div class="sl">${s.l}</div></div>`).join('');
-
-  // Performance par directeur
-  const perfBody=el('adm-dirs-perf');
-  if(perfBody)perfBody.innerHTML=Object.values(dirs).map(d=>{
-    const mc=Object.values(caiss).filter(c=>c.dirCode===d.code).length;
-    const mj=Object.values(j).filter(jj=>jj.dirCode===d.code).length;
-    const myAt=at.filter(t=>t.dirCode===d.code);
-    const dep=myAt.filter(t=>t.montant>0).reduce((a,t)=>a+t.montant,0);
-    const pay=myAt.filter(t=>t.montant<0).reduce((a,t)=>a+Math.abs(t.montant),0);
-    const profit=dep-pay;
-    return`<tr><td><b>${d.name}</b></td><td>${d.zone}</td><td>${mc}</td><td>${mj}</td><td style="color:var(--green2)">${dep} Gd</td><td style="color:${profit>=0?'var(--green2)':'var(--red)'}">${profit} Gd</td></tr>`;
-  }).join('')||'<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:14px">Aucun directeur</td></tr>';
-
-  // Directeurs table
-  const dirsBody=el('adm-dirs-body');
-  if(dirsBody)dirsBody.innerHTML=Object.values(dirs).map(d=>{
-    const cnt=Object.values(caiss).filter(c=>c.dirCode===d.code).length;
-    return`<tr><td><b>${d.name}</b></td><td>${d.zone}</td><td><code style="color:var(--gold)">${d.code}</code></td><td style="color:var(--muted)">${d.pwd}</td><td>${cnt}</td><td><button class="tbtn r" onclick="admSuppDir('${d.code}')">Supprimer</button></td></tr>`;
-  }).join('')||'<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:14px">Aucun directeur</td></tr>';
-
-  // Caissiers table
-  const caissBody=el('adm-caiss-body');
-  if(caissBody)caissBody.innerHTML=Object.values(caiss).map(c=>{
-    const dir=Object.values(dirs).find(d=>d.code===c.dirCode);
-    return`<tr><td><b>${c.name}</b></td><td><code style="color:var(--gold)">${c.code}</code></td><td style="color:var(--muted)">${c.pwd}</td><td>${JEU_LABELS[c.jeu]||c.jeu}</td><td>${dir?dir.name:'—'}</td><td>${c.zone||'—'}</td><td><button class="tbtn r" onclick="admSuppCaiss('${c.code}')">Supprimer</button></td></tr>`;
-  }).join('')||'<tr><td colspan="7" style="color:var(--muted);text-align:center;padding:14px">Aucun caissier</td></tr>';
-
-  // Joueurs
-  const jBody=el('tadm-joueurs-body');
-  if(jBody)jBody.innerHTML=Object.values(j).map(jj=>{
-    const dir=Object.values(dirs).find(d=>d.code===jj.dirCode);
-    return`<tr><td>${jj.name}</td><td>${jj.phone}</td><td style="color:var(--gold)">${jj.solde||0} Gd</td><td>${jj.createdAt||'—'}</td><td>${dir?dir.name:'—'}</td></tr>`;
-  }).join('')||'<tr><td colspan="5" style="color:var(--muted);text-align:center">Aucun joueur</td></tr>';
-
-  // Bets
-  const tw=bets.reduce((a,b)=>a+b.mise,0),tp=bets.filter(b=>b.statut==='Gagné').reduce((a,b)=>a+b.gainPotentiel,0);
-  const bsEl=el('admin-bets-stats');
-  if(bsEl)bsEl.innerHTML=[{v:bets.length,l:'Total paris',c:'sblue'},{v:tw+' Gd',l:'Total misé',c:'sgold'},{v:tp+' Gd',l:'Gains payés',c:'sgreen'},{v:pending.length,l:'En attente',c:'spurp'}].map(s=>`<div class="statcard"><div class="sv ${s.c}">${s.v}</div><div class="sl">${s.l}</div></div>`).join('');
-  const bBody=el('tadm-bets-body');
-  if(bBody)bBody.innerHTML=bets.map(b=>`<tr>
-    <td style="font-size:10px">${b.date}</td><td><b>${b.joueurName}</b></td>
-    <td style="font-size:11px">${b.match}</td><td><b>${b.selection}</b></td>
-    <td style="color:var(--gold)">${b.odd.toFixed(2)}</td><td>${b.mise} Gd</td>
-    <td style="color:var(--green2)">${b.gainPotentiel} Gd</td>
-    <td><span class="sbadge ${b.statut==='En attente'?'sbp':b.statut==='Gagné'?'sbw':'sbl'}">${b.statut}</span>
-    ${b.statut==='En attente'?`<br><button class="tbtn g" style="margin-top:2px" onclick="resoudrePari('${b.id}','Gagné')">✔</button><button class="tbtn r" style="margin-top:2px" onclick="resoudrePari('${b.id}','Perdu')">✘</button>`:''}
-    </td></tr>`).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:14px">Aucun pari</td></tr>';
-
-  // Transactions
-  const tBody=el('tadm-trans-body');
-  if(tBody)tBody.innerHTML=at.slice(0,100).map(t=>`<tr>
-    <td style="font-size:10px">${t.date}</td><td><b>${t.joueurName}</b></td>
-    <td><span class="sbadge ${t.montant>0?'sbd':'sbr'}">${t.type}</span></td>
-    <td style="${t.montant>0?'color:var(--green2)':'color:var(--red)'}">${t.montant>0?'+':''}${t.montant} Gd</td>
-    <td>${t.soldeApres} Gd</td><td>${t.caissName||'—'}</td>
-  </tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:14px">Aucune transaction</td></tr>';
-
-  loadAdminDiffs();
-  refreshAdminComptes();
-}
 
 // Init résultats au démarrage
 loadBorResultats();
@@ -3743,6 +3656,363 @@ function loginStaff(){
   }
 }
 
+
+// ============================================================
+// FIX: togglePwdInline (for forms inside admin)
+// ============================================================
+function togglePwdInline(inputId, btn){
+  const inp = document.getElementById(inputId);
+  if(!inp) return;
+  if(inp.type==='password'){ inp.type='text'; btn.innerHTML='<i class="fas fa-eye-slash"></i>'; }
+  else { inp.type='password'; btn.innerHTML='<i class="fas fa-eye"></i>'; }
+}
+
+// ============================================================
+// FIX: admCreerDirecteur — use custom code + phone
+// ============================================================
+function admCreerDirecteur(){
+  const name = document.getElementById('adm-dir-name')?.value.trim();
+  const code = document.getElementById('adm-dir-code')?.value.trim().toUpperCase();
+  const zone = document.getElementById('adm-dir-zone')?.value.trim();
+  const phone= document.getElementById('adm-dir-phone')?.value.trim();
+  const pwd  = document.getElementById('adm-dir-pwd')?.value;
+  if(!name||!code||!zone||!pwd){ showNotif('Tous les champs obligatoires','err'); return; }
+  const dirs = gDirs();
+  if(dirs[code]){ showNotif('Ce code existe déjà','err'); return; }
+  dirs[code] = {name, code, zone, phone:phone||'', pwd, createdAt:new Date().toLocaleString()};
+  sDirs(dirs);
+  showNotif('✅ Directeur créé: '+name+' ('+code+')','ok');
+  ['adm-dir-name','adm-dir-code','adm-dir-zone','adm-dir-phone','adm-dir-pwd'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  refreshAdmin();
+}
+
+// ============================================================
+// FIX: creerCaissier — use custom code + phone
+// ============================================================
+function creerCaissier(){
+  if(!CDir){ showNotif('Erreur: pas de directeur connecté','err'); return; }
+  const name = document.getElementById('new-caiss-name')?.value.trim();
+  const code = document.getElementById('new-caiss-code')?.value.trim().toUpperCase();
+  const phone= document.getElementById('new-caiss-phone')?.value.trim();
+  const pwd  = document.getElementById('new-caiss-pwd')?.value;
+  const jeu  = document.getElementById('new-caiss-jeu')?.value || 'all';
+  if(!name||!code||!pwd){ showNotif('Tous les champs obligatoires','err'); return; }
+  const caiss = gCaiss();
+  if(caiss[code]){ showNotif('Ce code existe déjà','err'); return; }
+  caiss[code] = {name, code, phone:phone||'', pwd, jeu, dirCode:CDir.code, zone:CDir.zone, createdAt:new Date().toLocaleString()};
+  sCaiss(caiss);
+  showNotif('✅ Caissier créé: '+name+' ('+code+')','ok');
+  ['new-caiss-name','new-caiss-code','new-caiss-phone','new-caiss-pwd'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  refreshDir();
+}
+
+// ============================================================
+// FIX: Reset mot de passe agents (Admin only)
+// ============================================================
+function resetMdpDir(code){
+  const newPwd = prompt('Nouveau mot de passe pour le directeur '+code+':');
+  if(!newPwd||newPwd.length<3){ showNotif('Mot de passe trop court','err'); return; }
+  const dirs=gDirs();
+  if(!dirs[code]){ showNotif('Directeur introuvable','err'); return; }
+  dirs[code].pwd=newPwd;
+  sDirs(dirs);
+  showNotif('✅ Mot de passe réinitialisé pour '+code,'ok');
+  refreshAdmin();
+}
+
+function resetMdpCaiss(code){
+  const newPwd = prompt('Nouveau mot de passe pour le caissier '+code+':');
+  if(!newPwd||newPwd.length<3){ showNotif('Mot de passe trop court','err'); return; }
+  const caiss=gCaiss();
+  if(!caiss[code]){ showNotif('Caissier introuvable','err'); return; }
+  caiss[code].pwd=newPwd;
+  sCaiss(caiss);
+  showNotif('✅ Mot de passe réinitialisé pour '+code,'ok');
+  refreshAdmin();
+}
+
+function resetMdpJoueur(phone){
+  const newPwd = prompt('Nouveau mot de passe pour le joueur '+phone+':');
+  if(!newPwd||newPwd.length<3){ showNotif('Mot de passe trop court','err'); return; }
+  const j=gJ();
+  if(!j[phone]){ showNotif('Joueur introuvable','err'); return; }
+  j[phone].pwd=newPwd;
+  sJ(j);
+  showNotif('✅ Mot de passe réinitialisé','ok');
+  refreshAdmin();
+}
+
+// ============================================================
+// FIX: Diff par directeur (0-80%)
+// ============================================================
+function getGameDiff(game){
+  // Check if current user (caissier) has a directeur with specific diff
+  const dirCode = CCaiss?.dirCode || CDir?.code || '';
+  if(dirCode){
+    const stored = localStorage.getItem('tk_diff_dir_'+dirCode+'_'+game);
+    if(stored !== null) return parseFloat(stored);
+  }
+  // Global fallback
+  const global = localStorage.getItem('tk_diff_'+game);
+  return global !== null ? parseFloat(global) : 45;
+}
+
+function saveGameDiff(game){
+  const el = document.getElementById(game+'-diff-range');
+  if(!el) return;
+  const val = parseInt(el.value);
+  localStorage.setItem('tk_diff_'+game, val);
+  showNotif('✅ Difficulté '+game+' sauvegardée: '+val+'%','ok');
+}
+
+function updateDiffLabel(game, val){
+  const el = document.getElementById(game+'-pct-lbl');
+  if(el) el.textContent = val+'%';
+}
+
+function saveDirGameDiff(dirCode, game, val){
+  localStorage.setItem('tk_diff_dir_'+dirCode+'_'+game, val);
+  showNotif('✅ Difficulté '+game+' sauvegardée pour '+dirCode+': '+val+'%','ok');
+}
+
+function renderDirDiffList(){
+  const el = document.getElementById('dir-diff-list');
+  if(!el) return;
+  const dirs = gDirs();
+  const dlist = Object.values(dirs);
+  if(!dlist.length){
+    el.innerHTML='<div style="color:var(--muted);font-size:13px;padding:10px">Aucun directeur configuré.</div>';
+    return;
+  }
+  const games = ['keno','lucky6','course','helico'];
+  const gameLabels = {keno:'🎱 Keno',lucky6:'🍀 Lucky 6',course:'🏎️ Course',helico:'🚁 Hélico'};
+  el.innerHTML = dlist.map(d => {
+    const gameSliders = games.map(g => {
+      const stored = localStorage.getItem('tk_diff_dir_'+d.code+'_'+g);
+      const val = stored !== null ? parseInt(stored) : 45;
+      return `<div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+          <span>${gameLabels[g]}</span>
+          <span style="color:var(--gold);font-weight:700" id="ddir-${d.code}-${g}-lbl">${val}%</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="range" min="0" max="80" step="5" value="${val}" style="flex:1;accent-color:var(--gold)"
+            oninput="document.getElementById('ddir-${d.code}-${g}-lbl').textContent=this.value+'%'"
+            id="ddir-${d.code}-${g}">
+          <button onclick="saveDirGameDiff('${d.code}','${g}',document.getElementById('ddir-${d.code}-${g}').value)"
+            style="padding:4px 10px;background:var(--blue);color:#fff;border:none;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer">OK</button>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;">
+      <div style="font-weight:800;color:var(--gold);margin-bottom:10px;font-size:14px">${d.name} <span style="color:var(--muted);font-size:11px">${d.zone}</span></div>
+      ${gameSliders}
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// FIX: Finance logic — tracking argent maison
+// ============================================================
+// La logique correcte:
+// - Quand joueur dépose → son solde augmente, ça ne touche pas les gains maison
+// - Quand joueur perd un jeu → la mise est perdue = GAIN de la maison
+// - Quand joueur gagne → on lui paie = PERTE de la maison
+// tk_maison = {entrees: X (mises perdues), sorties: Y (gains payés), solde: X-Y}
+
+function getMaisonStats(){
+  const at = gAT();
+  const rch = gRch();
+  // Dépôts par méthode (argent des joueurs)
+  const mcRch   = rch.filter(r=>r.method==='moncash'&&r.statut==='Validé');
+  const ncRch   = rch.filter(r=>r.method==='natcash'&&r.statut==='Validé');
+  const cashRch = at.filter(t=>t.type==='Dépôt'&&t.montant>0);
+  const totalMC   = mcRch.reduce((s,r)=>s+r.amount,0);
+  const totalNC   = ncRch.reduce((s,r)=>s+r.amount,0);
+  const totalCash = cashRch.reduce((s,t)=>s+t.montant,0);
+  const totalDepots = totalMC + totalNC + totalCash;
+  // Mises perdues = gains maison (type contient 'Mise' et c'est une sortie du joueur)
+  const misesPerdues = at.filter(t=>
+    (t.type.includes('Mise')||t.type.includes('Casino')||t.type.includes('Caisse'))
+    && t.montant < 0
+  ).reduce((s,t)=>s+Math.abs(t.montant),0);
+  // Gains payés aux joueurs = sortie de la maison
+  const gainsPaies = at.filter(t=>
+    (t.type.includes('Gain')||t.type.includes('gain'))
+    && t.montant > 0
+  ).reduce((s,t)=>s+t.montant,0);
+  const beneficeMaison = misesPerdues - gainsPaies;
+  return {totalMC,totalNC,totalCash,totalDepots,misesPerdues,gainsPaies,beneficeMaison};
+}
+
+function refreshAdminComptes(){
+  const stats = getMaisonStats();
+  const el = n => document.getElementById(n);
+  // Comptes recharge
+  if(el('adm-moncash-total')) el('adm-moncash-total').textContent=stats.totalMC.toLocaleString('fr-FR')+' Gd';
+  if(el('adm-natcash-total')) el('adm-natcash-total').textContent=stats.totalNC.toLocaleString('fr-FR')+' Gd';
+  if(el('adm-cash-total'))    el('adm-cash-total').textContent=stats.totalCash.toLocaleString('fr-FR')+' Gd';
+  if(el('adm-total-encaisse'))el('adm-total-encaisse').textContent=stats.totalDepots.toLocaleString('fr-FR')+' Gd';
+  // Gains maison
+  if(el('adm-mises-perdues')) el('adm-mises-perdues').textContent=stats.misesPerdues.toLocaleString('fr-FR')+' Gd';
+  if(el('adm-gains-paies'))   el('adm-gains-paies').textContent=stats.gainsPaies.toLocaleString('fr-FR')+' Gd';
+  if(el('adm-benefice')){
+    el('adm-benefice').textContent=stats.beneficeMaison.toLocaleString('fr-FR')+' Gd';
+    el('adm-benefice').style.color=stats.beneficeMaison>=0?'var(--green2)':'var(--red)';
+  }
+}
+
+// ============================================================
+// PATCH: refreshAdmin — add renderDirDiffList + comptes
+// ============================================================
+function refreshAdmin(){
+  loadAdminDiffs && loadAdminDiffs();
+  const j=gJ(),dirs=gDirs(),caiss=gCaiss(),bets=gB(),st=gSt(),at=gAT();
+  const tSol=Object.values(j).reduce((a,x)=>a+(x.solde||0),0);
+  const pending=bets.filter(b=>b.statut==='En attente');
+  const el=n=>document.getElementById(n);
+
+  if(el('admin-stats'))el('admin-stats').innerHTML=[
+    {v:Object.keys(dirs).length,l:'Directeurs',c:'sblue'},
+    {v:Object.keys(caiss).length,l:'Caissiers',c:'spurp'},
+    {v:Object.keys(j).length,l:'Joueurs',c:'sgreen'},
+    {v:tSol+' Gd',l:'Solde joueurs',c:'sgold'},
+    {v:pending.length,l:'Paris en attente',c:'sblue'},
+  ].map(s=>`<div class="statcard"><div class="sv ${s.c}">${s.v}</div><div class="sl">${s.l}</div></div>`).join('');
+
+  // Performance par directeur
+  const pb=el('adm-dirs-perf');
+  if(pb)pb.innerHTML=Object.values(dirs).map(d=>{
+    const mc=Object.values(caiss).filter(c=>c.dirCode===d.code).length;
+    const mj=Object.values(j).filter(jj=>jj.dirCode===d.code).length;
+    const myAt=at.filter(t=>t.dirCode===d.code);
+    const dep=myAt.filter(t=>t.montant>0).reduce((a,t)=>a+t.montant,0);
+    const pay=myAt.filter(t=>t.montant<0).reduce((a,t)=>a+Math.abs(t.montant),0);
+    return`<tr><td><b>${d.name}</b></td><td>${d.zone}</td><td>${mc}</td><td>${mj}</td><td style="color:var(--green2)">${dep} Gd</td><td style="color:${dep-pay>=0?'var(--green2)':'var(--red)'}">${dep-pay} Gd</td></tr>`;
+  }).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:12px">Aucun directeur</td></tr>';
+
+  // Directeurs table with reset MDP + diff
+  const db=el('adm-dirs-body');
+  if(db)db.innerHTML=Object.values(dirs).map(d=>{
+    const cnt=Object.values(caiss).filter(c=>c.dirCode===d.code).length;
+    return`<tr>
+      <td><b>${d.name}</b></td><td>${d.zone}</td>
+      <td><code style="color:var(--gold)">${d.code}</code></td>
+      <td style="color:var(--muted)">${d.phone||'—'}</td>
+      <td><span style="filter:blur(3px);cursor:pointer" onclick="this.style.filter='none'">${d.pwd}</span></td>
+      <td>${cnt}</td>
+      <td>
+        <button class="tbtn b" onclick="resetMdpDir('${d.code}')">🔑 MdP</button>
+        <button class="tbtn r" onclick="admSuppDir('${d.code}')">✕</button>
+      </td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:12px">Aucun directeur</td></tr>';
+
+  // Caissiers table with reset MDP
+  const cb=el('adm-caiss-body');
+  if(cb)cb.innerHTML=Object.values(caiss).map(c=>{
+    const dir=Object.values(dirs).find(d=>d.code===c.dirCode);
+    return`<tr>
+      <td><b>${c.name}</b></td>
+      <td><code style="color:var(--gold)">${c.code}</code></td>
+      <td style="color:var(--muted)">${c.phone||'—'}</td>
+      <td><span style="filter:blur(3px);cursor:pointer" onclick="this.style.filter='none'">${c.pwd}</span></td>
+      <td>${JEU_LABELS[c.jeu]||c.jeu}</td>
+      <td>${dir?dir.name:'—'}</td>
+      <td>${c.zone||'—'}</td>
+      <td>
+        <button class="tbtn b" onclick="resetMdpCaiss('${c.code}')">🔑 MdP</button>
+        <button class="tbtn r" onclick="admSuppCaiss('${c.code}')">✕</button>
+      </td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:12px">Aucun caissier</td></tr>';
+
+  // Joueurs table with reset MDP
+  const jb=el('tadm-joueurs-body');
+  if(jb)jb.innerHTML=Object.values(j).map(jj=>{
+    const dir=Object.values(dirs).find(d=>d.code===jj.dirCode);
+    return`<tr>
+      <td>${jj.name}</td><td>${jj.phone}</td>
+      <td style="color:var(--gold)">${jj.solde||0} Gd</td>
+      <td style="font-size:10px">${jj.createdAt||'—'}</td>
+      <td>${dir?dir.name:'—'}</td>
+      <td><button class="tbtn b" onclick="resetMdpJoueur('${jj.phone}')">🔑 MdP</button></td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--muted)">Aucun joueur</td></tr>';
+
+  // Bets
+  const tw=bets.reduce((a,b)=>a+b.mise,0);
+  const tp=bets.filter(b=>b.statut==='Gagné').reduce((a,b)=>a+b.gainPotentiel,0);
+  const bsEl=el('admin-bets-stats');
+  if(bsEl)bsEl.innerHTML=[{v:bets.length,l:'Total paris',c:'sblue'},{v:tw+' Gd',l:'Total misé',c:'sgold'},{v:tp+' Gd',l:'Gains payés',c:'sgreen'},{v:pending.length,l:'En attente',c:'spurp'}].map(s=>`<div class="statcard"><div class="sv ${s.c}">${s.v}</div><div class="sl">${s.l}</div></div>`).join('');
+  const bBody=el('tadm-bets-body');
+  if(bBody)bBody.innerHTML=bets.map(b=>`<tr>
+    <td style="font-size:10px">${b.date}</td><td><b>${b.joueurName}</b></td>
+    <td style="font-size:11px">${b.match}</td><td><b>${b.selection}</b></td>
+    <td style="color:var(--gold)">${b.odd?.toFixed(2)||'—'}</td><td>${b.mise} Gd</td>
+    <td style="color:var(--green2)">${b.gainPotentiel} Gd</td>
+    <td><span class="sbadge ${b.statut==='En attente'?'sbp':b.statut==='Gagné'?'sbw':'sbl'}">${b.statut}</span>
+    ${b.statut==='En attente'?`<br><button class="tbtn g" onclick="resoudrePari('${b.id}','Gagné')">✔</button><button class="tbtn r" onclick="resoudrePari('${b.id}','Perdu')">✘</button>`:''}
+    </td></tr>`).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:12px">Aucun pari</td></tr>';
+
+  // Transactions
+  const tBody=el('tadm-trans-body');
+  if(tBody)tBody.innerHTML=at.slice(0,100).map(t=>`<tr>
+    <td style="font-size:10px">${t.date}</td><td><b>${t.joueurName}</b></td>
+    <td><span class="sbadge ${t.montant>0?'sbd':'sbr'}">${t.type}</span></td>
+    <td style="${t.montant>0?'color:var(--green2)':'color:var(--red)'}">${t.montant>0?'+':''}${t.montant} Gd</td>
+    <td>${t.soldeApres} Gd</td><td>${t.caissName||'—'}</td>
+  </tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:12px">Aucune transaction</td></tr>';
+
+  refreshAdminComptes();
+  renderDirDiffList();
+}
+
+// ============================================================
+// PATCH: admSuppDir + admSuppCaiss
+// ============================================================
+function admSuppDir(code){
+  if(!confirm('Supprimer le directeur '+code+' ?')) return;
+  const dirs=gDirs(); delete dirs[code]; sDirs(dirs);
+  showNotif('Directeur supprimé','ok'); refreshAdmin();
+}
+function admSuppCaiss(code){
+  if(!confirm('Supprimer le caissier '+code+' ?')) return;
+  const caiss=gCaiss(); delete caiss[code]; sCaiss(caiss);
+  showNotif('Caissier supprimé','ok'); refreshAdmin();
+}
+
+// ============================================================
+// PATCH: Admin comptes HTML - add maison gains section
+// ============================================================
+function refreshAdminComptesExtra(){
+  const stats = getMaisonStats();
+  const mb = document.getElementById('adm-maison-block');
+  if(mb){
+    mb.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px">
+        <div style="background:rgba(40,176,78,.1);border:2px solid rgba(40,176,78,.4);border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:1.3em;margin-bottom:4px">💸</div>
+          <div style="font-size:12px;font-weight:800;color:var(--green2)">Mises perdues (gains maison)</div>
+          <div style="font-size:1.2em;font-weight:900;color:#fff" id="adm-mises-perdues">${stats.misesPerdues.toLocaleString('fr-FR')} Gd</div>
+        </div>
+        <div style="background:rgba(230,57,70,.1);border:2px solid rgba(230,57,70,.4);border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:1.3em;margin-bottom:4px">🏆</div>
+          <div style="font-size:12px;font-weight:800;color:var(--red)">Gains payés aux joueurs</div>
+          <div style="font-size:1.2em;font-weight:900;color:#fff" id="adm-gains-paies">${stats.gainsPaies.toLocaleString('fr-FR')} Gd</div>
+        </div>
+        <div style="background:rgba(245,200,0,.1);border:2px solid rgba(245,200,0,.4);border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:1.3em;margin-bottom:4px">📊</div>
+          <div style="font-size:12px;font-weight:800;color:var(--gold)">Bénéfice NET maison</div>
+          <div style="font-size:1.2em;font-weight:900" id="adm-benefice" style="color:${stats.beneficeMaison>=0?'var(--green2)':'var(--red)'}">${stats.beneficeMaison.toLocaleString('fr-FR')} Gd</div>
+        </div>
+      </div>`;
+  }
+}
 
 // ===== SESSION RESTORE =====
 (function(){
