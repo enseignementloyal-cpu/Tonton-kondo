@@ -101,6 +101,7 @@
   <div class="app-tabs">
     <div class="atab on" data-tab="casino">🎰 Casino</div>
     <div class="atab" data-tab="roulette">🎡 Roulette</div>
+    <div class="atab" data-tab="penalty">⚽ Penalty</div>
     <div class="atab" data-tab="borlette">🎯 Borlette</div>
     <div class="atab" data-tab="sports" id="tab-sports-btn">⚽ Sports</div>
     <div class="atab" data-tab="recharge" id="tab-recharge-btn">💳 Recharge</div>
@@ -408,6 +409,276 @@
       </div>
     </div>
   </div>
+
+  <!-- PENALTY -->
+  <div class="asec" id="tab-penalty">
+    <style>
+    /* Penalty scoped styles */
+    #tab-penalty {
+      background: radial-gradient(ellipse at 55% 20%, #1a5e2f, #0a2e13);
+      min-height: 100vh;
+      padding: 10px 12px 80px;
+    }
+    
+/* @/* import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&display=swap');
+:root{--gold:#ffd600;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:radial-gradient(ellipse at 55% 20%,#1a5e2f,#0a2e13);min-height:100vh;display:flex;flex-direction:column;align-items:center;font-family:'Barlow Condensed',sans-serif;color:#f0f4f0;overflow-x:hidden;padding-bottom:30px;}
+h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-spacing:.12em;color:var(--gold);text-shadow:0 2px 18px rgba(0,0,0,.5);margin:16px 0 2px;}
+.sub{font-size:.8rem;letter-spacing:.25em;color:rgba(255,255,255,.38);margin-bottom:12px;text-transform:uppercase;}
+
+/* ── PLAYER SELECT ── */
+.sel-section{width:min(98vw,720px);margin-bottom:10px;}
+.sel-row{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin-bottom:4px;}
+.sel-lbl{font-size:.68rem;letter-spacing:.2em;color:rgba(255,255,255,.38);text-transform:uppercase;text-align:center;margin-bottom:5px;}
+.pcard{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:5px 7px;border-radius:9px;border:2px solid rgba(255,255,255,.1);background:rgba(0,0,0,.25);transition:all .18s;width:80px;}
+.pcard:hover{border-color:rgba(255,214,0,.4);}
+.pcard.act{border-color:var(--gold);background:rgba(255,214,0,.1);}
+.pcard.gkact{border-color:#42a5f5;background:rgba(66,165,245,.1);}
+/* Avatar: image réelle si disponible, sinon SVG fallback */
+.pavatar{width:52px;height:52px;border-radius:50%;overflow:hidden;border:2px solid rgba(255,255,255,.15);background:#1a3a22;position:relative;flex-shrink:0;}
+.pcard.act .pavatar{border-color:var(--gold);}
+.pcard.gkact .pavatar{border-color:#42a5f5;}
+.pavatar img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block;}
+.pavatar svg{width:100%;height:100%;position:absolute;top:0;left:0;}
+.pname{font-size:.6rem;color:rgba(255,255,255,.8);text-align:center;line-height:1.2;}
+.pflag{font-size:.75rem;}
+.skill-bar{width:44px;height:3px;background:rgba(255,255,255,.12);border-radius:2px;overflow:hidden;}
+.skill-fill{height:100%;border-radius:2px;}
+.vsdiv{display:flex;align-items:center;gap:10px;margin:8px 0 5px;}
+.vsline{flex:1;height:1px;background:rgba(255,255,255,.1);}
+.vstxt{font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:rgba(255,255,255,.25);letter-spacing:.2em;}
+
+/* ── SCOREBOARD ── */
+.scoreboard{display:flex;gap:16px;align-items:center;margin-bottom:10px;background:rgba(0,0,0,.45);border-radius:10px;padding:7px 20px;border:1px solid rgba(255,255,255,.1);width:min(98vw,720px);justify-content:center;}
+.sc-player{display:flex;align-items:center;gap:8px;}
+.sc-mini{width:34px;height:34px;border-radius:50%;overflow:hidden;border:2px solid rgba(255,255,255,.15);flex-shrink:0;background:#1a3a22;position:relative;}
+.sc-mini img{width:100%;height:100%;object-fit:cover;object-position:top center;}
+.sc-mini svg{position:absolute;inset:0;width:100%;height:100%;}
+.sc-name{font-size:.65rem;opacity:.55;}
+.sc-val{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;color:var(--gold);line-height:1;}
+.sc-sep{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;opacity:.25;}
+.hdots{display:flex;gap:4px;align-items:center;}
+.hdot{width:9px;height:9px;border-radius:50%;border:2px solid rgba(255,255,255,.15);}
+.hdot.goal{background:var(--gold);border-color:var(--gold);}
+.hdot.saved{background:#1565c0;border-color:#42a5f5;}
+.hdot.post{background:#555;border-color:#888;}
+
+/* ── FIELD ── */
+.field-wrap{position:relative;width:min(98vw,720px);aspect-ratio:7/5;margin-bottom:10px;}
+.field{width:100%;height:100%;background:repeating-linear-gradient(90deg,transparent 0,transparent 49px,rgba(0,0,0,.06) 49px,rgba(0,0,0,.06) 51px),linear-gradient(180deg,#1e7d36,#1a6b2f 50%,#177a2c);border-radius:8px;border:3px solid rgba(255,255,255,.1);position:relative;overflow:hidden;}
+.parc{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:44%;height:14%;border:2px solid rgba(255,255,255,.18);border-bottom:none;border-radius:50% 50% 0 0;}
+.pspot{position:absolute;bottom:12%;left:50%;transform:translateX(-50%);width:7px;height:7px;background:rgba(255,255,255,.55);border-radius:50%;}
+
+/* ── GOAL ── */
+.goal-outer{position:absolute;top:6%;left:50%;transform:translateX(-50%);width:62%;height:40%;z-index:5;}
+.goal-frame{position:absolute;inset:0;border:5px solid #e0e0e0;border-bottom:none;border-radius:3px 3px 0 0;z-index:8;pointer-events:none;}
+.netsvg{position:absolute;inset:0;pointer-events:none;z-index:6;}
+.pshadow{position:absolute;bottom:-7px;width:5px;height:9px;background:rgba(0,0,0,.3);border-radius:50%;}
+.pshadow.l{left:-3px;}.pshadow.r{right:-3px;}
+
+/* ── ZONE GRID (9 casiers) ── */
+#zoneGrid{position:absolute;inset:0;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);z-index:10;cursor:pointer;}
+.zc{border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;transition:background .18s;position:relative;}
+.zc:hover{background:rgba(255,214,0,.18);}
+.zc.selected{background:rgba(255,214,0,.28);border-color:rgba(255,214,0,.7);}
+.zc.hit-goal{background:rgba(255,214,0,.4)!/* important;}
+.zc.hit-saved{background:rgba(229,57,53,.35)!/* important;}
+.zc-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(.9rem,2.5vw,1.5rem);color:rgba(255,255,255,.5);pointer-events:none;transition:color .18s;}
+.zc.selected .zc-num{color:var(--gold);}
+.zc.hit-goal .zc-num,.zc.hit-saved .zc-num{color:#fff;}
+
+/* ── IMPACT ── */
+#impact{position:absolute;width:28px;height:28px;border-radius:50%;background:radial-gradient(circle,rgba(255,220,0,.95) 0%,rgba(255,80,0,.7) 50%,transparent 70%);pointer-events:none;z-index:13;display:none;transform:translate(-50%,-50%);animation:pulse .6s ease-out;}
+@keyframes pulse{0%{transform:translate(-50%,-50%) scale(0)}60%{transform:translate(-50%,-50%) scale(2)}100%{transform:translate(-50%,-50%) scale(1)}}
+#impact::before,#impact::after{content:'';position:absolute;border-radius:50%;border:2px solid rgba(255,220,0,.5);animation:rpl .9s ease-out;}
+#impact::before{inset:-5px;}#impact::after{inset:-13px;animation-delay:.12s;border-color:rgba(255,100,0,.3);}
+@keyframes rpl{0%{transform:scale(0);opacity:1}100%{transform:scale(2.2);opacity:0}}
+
+/* ── BANNER ── */
+#banner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);z-index:20;font-family:'Bebas Neue',sans-serif;font-size:clamp(1.5rem,3.5vw,2.8rem);padding:9px 22px;border-radius:8px;white-space:nowrap;transition:transform .28s cubic-bezier(.3,1.5,.5,1);pointer-events:none;text-shadow:0 2px 12px rgba(0,0,0,.5);}
+#banner.show{transform:translate(-50%,-50%) scale(1);}
+#banner.goal{background:linear-gradient(135deg,#ffd600,#ff6d00);color:#fff;border:3px solid rgba(255,255,255,.35);}
+#banner.saved{background:linear-gradient(135deg,#1565c0,#0d47a1);color:#fff;border:3px solid rgba(255,255,255,.2);}
+#banner.post{background:linear-gradient(135deg,#424242,#212121);color:#bdbdbd;}
+
+/* ── GOALKEEPER ── */
+#goalkeeper{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:15%;height:90%;z-index:7;pointer-events:none;}
+#gklbl{position:absolute;top:-19px;left:50%;transform:translateX(-50%);font-size:.58rem;letter-spacing:.09em;color:#42a5f5;white-space:nowrap;background:rgba(0,0,0,.6);padding:1px 5px;border-radius:3px;}
+#gkImg{width:100%;height:100%;object-fit:cover;object-position:top center;border-radius:4px 4px 0 0;filter:drop-shadow(0 2px 10px rgba(0,0,0,.7));}
+#gkSvgFallback{position:absolute;inset:0;width:100%;height:100%;}
+
+/* ── SHOOTER ── */
+#shooter{position:absolute;bottom:9%;left:50%;transform:translateX(-50%);width:9%;z-index:9;pointer-events:none;transition:opacity .3s;}
+#slbl{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);font-size:.52rem;letter-spacing:.06em;color:var(--gold);white-space:nowrap;background:rgba(0,0,0,.6);padding:1px 4px;border-radius:2px;}
+#shooterImg{width:100%;aspect-ratio:.72;object-fit:cover;object-position:top center;border-radius:4px 4px 0 0;filter:drop-shadow(0 2px 10px rgba(0,0,0,.75));}
+#shooterSvgFallback{position:absolute;inset:0;width:100%;}
+
+/* ── BALL ── */
+#ball{position:absolute;bottom:13%;left:50%;transform:translateX(-50%);width:3.5%;aspect-ratio:1;z-index:10;pointer-events:none;transition:none;}
+#ball.fly{transition:left .38s cubic-bezier(.2,1,.3,1),bottom .38s cubic-bezier(.15,1.1,.4,1),width .38s ease,opacity .38s ease;}
+
+/* ── BETTING ── */
+.bet-section{width:min(98vw,720px);background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 16px;margin-bottom:10px;}
+.bet-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.15em;color:var(--gold);margin-bottom:6px;text-align:center;}
+.bet-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:5px;margin-bottom:9px;}
+.bet-zone{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:6px;padding:5px 2px;text-align:center;cursor:pointer;transition:all .18s;}
+.bet-zone:hover{background:rgba(255,214,0,.15);border-color:rgba(255,214,0,.4);}
+.bet-zone.bsel{background:rgba(255,214,0,.2);border-color:var(--gold);}
+.znum{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:rgba(255,255,255,.7);}
+.bet-zone.bsel .znum{color:var(--gold);}
+.zpos{font-size:.48rem;color:rgba(255,255,255,.38);letter-spacing:.03em;}
+.bet-row{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;}
+.bet-lbl{font-size:.75rem;letter-spacing:.1em;color:rgba(255,255,255,.5);}
+.bet-input{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:5px;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;width:80px;padding:4px 8px;text-align:center;outline:none;}
+.bet-input:focus{border-color:var(--gold);}
+.bet-quick{display:flex;gap:4px;}
+.bq{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:4px;color:rgba(255,255,255,.6);font-size:.68rem;padding:3px 8px;cursor:pointer;transition:background .15s;}
+.bq:hover{background:rgba(255,214,0,.2);color:var(--gold);}
+.odd-lbl{font-size:.75rem;color:rgba(255,255,255,.4);}
+.odd-val{font-size:.9rem;color:var(--gold);font-weight:700;}
+.wallet-bar{display:flex;gap:16px;justify-content:center;font-size:.8rem;color:rgba(255,255,255,.45);margin-bottom:7px;}
+.wallet-val{color:var(--gold);font-weight:700;}
+.win-msg{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.12em;text-align:center;padding:4px;display:none;}
+.win-msg.won{color:#ffd600;display:block;}
+.win-msg.lost{color:#ef5350;display:block;}
+
+/* ── CONTROLS ── */
+.ctrl{width:min(98vw,720px);display:flex;flex-direction:column;gap:8px;align-items:center;}
+.hint{font-size:.9rem;letter-spacing:.06em;color:rgba(255,255,255,.45);text-align:center;}
+.hint strong{color:var(--gold);}
+#shootBtn{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.2em;padding:11px 42px;background:linear-gradient(135deg,#ffd600,#ff6d00);color:#111;border:none;border-radius:6px;cursor:pointer;display:none;box-shadow:0 4px 22px rgba(255,180,0,.35);transition:transform .12s,box-shadow .12s;}
+#shootBtn:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(255,180,0,.5);}
+#resetBtn{font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:.14em;padding:7px 24px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.15);border-radius:6px;cursor:pointer;display:none;transition:background .18s;}
+#resetBtn:hover{background:rgba(255,255,255,.18);}
+
+
+
+    /* Wallet override */
+    .wallet-bar { background:rgba(0,0,0,.5); border:1px solid rgba(255,214,0,.3); border-radius:8px; padding:7px 14px; display:flex; gap:16px; align-items:center; margin-bottom:10px; }
+    .wallet-item label { font-size:10px; color:rgba(255,255,255,.5); text-transform:uppercase; letter-spacing:.1em; display:block; }
+    .wallet-item span { font-family:"Barlow Condensed",sans-serif; font-size:1.4em; font-weight:700; color:var(--gold); }
+    </style>
+    <!-- Wallet (TK) -->
+    <div class="wallet-bar">
+      <div class="wallet-item"><label>Solde TK</label><span id="penalty-walletVal">0</span> Gd</div>
+      <div class="wallet-item"><label>Gains session</label><span id="penalty-totalWon">+0</span></div>
+    </div>
+    <!-- Penalty content (from original file) -->
+    <h1>⚽ Tir au But</h1>
+<p class="sub">Penalty Kick Simulator</p>
+
+<!-- Images : placez ronaldo.png, messi.png, etc. dans le même dossier que ce fichier -->
+
+<!-- PLAYER SELECT -->
+<div class="sel-section">
+  <div class="sel-lbl">⚽ Choisir le tireur</div>
+  <div class="sel-row" id="shooterGrid"></div>
+  <div class="vsdiv"><div class="vsline"></div><div class="vstxt">VS GARDIEN</div><div class="vsline"></div></div>
+  <div class="sel-lbl">🧤 Choisir le gardien</div>
+  <div class="sel-row" id="gkGrid"></div>
+</div>
+
+<!-- SCOREBOARD -->
+<div class="scoreboard">
+  <div class="sc-player">
+    <div class="sc-mini" id="sbSMini"></div>
+    <div><div class="sc-name" id="sbSName">—</div><div class="sc-val" id="scGoal">0</div></div>
+  </div>
+  <div style="text-align:center">
+    <div class="hdots" id="hdots"></div>
+    <div class="sc-sep">:</div>
+  </div>
+  <div class="sc-player">
+    <div style="text-align:right"><div class="sc-name" id="sbGName">—</div><div class="sc-val" id="scSaved">0</div></div>
+    <div class="sc-mini" id="sbGMini"></div>
+  </div>
+</div>
+
+<!-- FIELD -->
+<div class="field-wrap">
+  <div class="field">
+    <div class="parc"></div><div class="pspot"></div>
+
+    <!-- GOAL -->
+    <div class="goal-outer" id="goalOuter">
+      <svg class="netsvg" id="netSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+
+      <!-- 9 zones numérotées -->
+      <div id="zoneGrid"></div>
+
+      <div id="impact"></div>
+      <div class="goal-frame"></div>
+      <div class="pshadow l"></div><div class="pshadow r"></div>
+
+      <!-- GOALKEEPER -->
+      <div id="goalkeeper">
+        <div id="gklbl">Gardien</div>
+        <!-- Image réelle (si disponible) -->
+        <img id="gkImg" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;object-position:top center;border-radius:4px 4px 0 0;filter:drop-shadow(0 2px 10px rgba(0,0,0,.7));">
+        <!-- Fallback SVG -->
+        <svg id="gkSvgFb" viewBox="0 0 60 120" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;"></svg>
+      </div>
+
+      <div id="banner"></div>
+    </div>
+
+    <!-- SHOOTER -->
+    <div id="shooter" style="position:absolute;bottom:9%;left:50%;transform:translateX(-50%);width:9%;z-index:9;pointer-events:none;transition:opacity .3s;">
+      <div style="position:relative;width:100%;">
+        <img id="shooterImg" src="" alt="" style="display:none;width:100%;aspect-ratio:.72;object-fit:cover;object-position:top center;border-radius:4px 4px 0 0;filter:drop-shadow(0 2px 10px rgba(0,0,0,.75));">
+        <svg id="shooterSvgFb" viewBox="0 0 60 120" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;"></svg>
+      </div>
+      <div id="slbl" style="font-size:.52rem;letter-spacing:.06em;color:var(--gold);white-space:nowrap;background:rgba(0,0,0,.6);padding:1px 4px;border-radius:2px;text-align:center;margin-top:1px;"></div>
+    </div>
+
+    <!-- BALL -->
+    <div id="ball">
+      <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">
+        <circle cx="20" cy="20" r="19" fill="white" stroke="#ccc" stroke-width="1"/>
+        <polygon points="20,6 24,13 32,13 26,18 28,26 20,21 12,26 14,18 8,13 16,13" fill="#222" opacity=".85"/>
+        <polygon points="20,34 23,28 30,27 27,34" fill="#222" opacity=".7"/>
+        <polygon points="20,34 17,28 10,27 13,34" fill="#222" opacity=".7"/>
+        <polygon points="6,18 10,14 10,22" fill="#222" opacity=".6"/>
+        <polygon points="34,18 30,14 30,22" fill="#222" opacity=".6"/>
+        <circle cx="20" cy="20" r="19" fill="none" stroke="rgba(0,0,0,.2)" stroke-width="1"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- BETTING -->
+<div class="bet-section">
+  <div class="bet-title">🎯 Pariez sur le casier</div>
+  <div class="wallet-bar">
+    💰 Solde : <span class="wallet-val" id="walletVal">1 000</span> pts &nbsp;|&nbsp;
+    🏆 Gains : <span class="wallet-val" id="totalWon">0</span> pts
+  </div>
+  <div class="bet-grid" id="betGrid"></div>
+  <div class="bet-row">
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span class="bet-lbl">MISE :</span>
+      <input type="number" id="betAmt" class="bet-input" value="50" min="10" max="99999">
+      <div class="bet-quick">
+        <div class="bq" onclick="setBet(50)">50</div>
+        <div class="bq" onclick="setBet(100)">100</div>
+        <div class="bq" onclick="setBet(250)">250</div>
+        <div class="bq" onclick="setMax()">MAX</div>
+      </div>
+    </div>
+    <div><span class="odd-lbl">Cote : </span><span class="odd-val" id="oddVal">—</span></div>
+  </div>
+  <div class="win-msg" id="winMsg"></div>
+</div>
+
+<!-- CONTROLS -->
+<div class="ctrl">
+  <p class="hint" id="hintText">👆 Cliquez un <strong>numéro dans le but</strong> pour choisir où tirer</p>
+  <button id="shootBtn" onclick="shoot()">⚡ TIRER !</button>
+  <button id="resetBtn" onclick="resetShot()">↺ Nouveau tir</button>
+</div>
+  </div>
+
   <!-- SPORTS -->
   <div class="asec" id="tab-sports">
     <div id="sports-lock" style="display:none;margin:14px 0;padding:16px;background:rgba(26,58,143,.1);border:1.5px solid var(--blue);border-radius:12px;text-align:center;">
@@ -3408,139 +3679,21 @@ renderLandingDirs();
 
 
 // ===== ROULETTE =====
-let rouletteBets = {};
-let rouletteSpinning = false;
-let selectedChip = 1;
-let rouletteCanvas = null, rouletteCtx = null;
-let wheelAngle = 0, wheelVelocity = 0, wheelAnimId = null;
-const ROULETTE_NUMBERS = [
-  0,'00',1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,
-  21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36
-];
-const WHEEL_ORDER = [0,28,9,26,30,11,7,20,32,17,5,22,34,15,3,24,36,13,1,'00',27,10,25,29,12,8,19,31,18,6,21,33,16,4,23,35,14,2];
 
-function initRoulette(){
-  rouletteCanvas = document.getElementById('roulette-canvas');
-  if(!rouletteCanvas) return;
-  rouletteCtx = rouletteCanvas.getContext('2d');
-  wheelAngle = 0; wheelVelocity = 0; rouletteBets = {};
-  drawRouletteWheel(0);
-}
-function drawRouletteWheel(angle) {
-  const W = canvas.width, H = canvas.height;
-  const cx = W/2, cy = H/2, R = W/2 - 2;
-  ctx.clearRect(0,0,W,H);
 
-  const slots = WHEEL_ORDER.length;
-  const slotAngle = (2*Math.PI)/slots;
 
-  for(let i=0;i<slots;i++) {
-    const n = WHEEL_ORDER[i];
-    const startA = angle + i*slotAngle - slotAngle/2;
-    const endA = startA + slotAngle;
 
-    // Sector fill
-    ctx.beginPath();
-    ctx.moveTo(cx,cy);
-    ctx.arc(cx,cy,R,startA,endA);
-    ctx.closePath();
 
-    const c = numColor(n);
-    ctx.fillStyle = c==='red' ? '#9b1020' : c==='green' ? '#0a5c2a' : '#111';
-    ctx.fill();
-    ctx.strokeStyle = '#c9a84c';
-    ctx.lineWidth = 0.5;
-    ctx.stroke();
 
-    // Number
-    const midA = startA + slotAngle/2;
-    const tx = cx + (R*0.78)*Math.cos(midA);
-    const ty = cy + (R*0.78)*Math.sin(midA);
 
-    ctx.save();
-    ctx.translate(tx,ty);
-    ctx.rotate(midA + Math.PI/2);
-    ctx.fillStyle = '#fff';
-    ctx.font = `bold ${slots>30?8:9}px Rajdhani`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(String(n), 0, 0);
-    ctx.restore();
-  }
 
-  // Inner rim
-  ctx.beginPath();
-  ctx.arc(cx,cy,R*0.35,0,2*Math.PI);
-  ctx.fillStyle = '#0a0a12';
-  ctx.fill();
-  ctx.strokeStyle = '#c9a84c';
-  ctx.lineWidth = 3;
-  ctx.stroke();
 
-  // Center jewel
-  const grd = ctx.createRadialGradient(cx-3,cy-3,1,cx,cy,12);
-  grd.addColorStop(0,'#f0d080');
-  grd.addColorStop(1,'#8a6820');
-  ctx.beginPath();
-  ctx.arc(cx,cy,12,0,2*Math.PI);
-  ctx.fillStyle = grd;
-  ctx.fill();
-}
 
-function spinRoulette() {
-  if(rouletteSpinning) return;
-  const totalBet = Object.values(rouletteBets).reduce((a,b)=>a+b,0);
-  if(totalBet === 0) return showNotif('Placez une mise sur la table !','lose');
-  if(totalBet > getSolde()) return showNotif('Solde insuffisant !','lose');
 
-  if(CJ){deduireJ(totalBet,'Roulette','Mise roulette');let st=gSt();st.dep+=totalBet;sSt(st);}
-  updateAppBar();
 
-  rouletteSpinning = true;
-  document.getElementById('spin-btn').disabled = true;
-  showSpinner();
 
-  wheelVelocity = 0.25 + Math.random()*0.15;
-  if(wheelAnimId) cancelAnimationFrame(wheelAnimId);
-  animateWheel();
-}
 
-function placeRouletteBet(key, el) {
-  if(rouletteSpinning) return;
-  if(!rouletteBets[key]) rouletteBets[key] = 0;
-  rouletteBets[key] += selectedChip;
-  renderRouletteBets();
-}
 
-function clearRouletteBets() {
-  rouletteBets = {};
-  renderRouletteBets();
-}
-
-function renderRouletteBets() {
-  document.querySelectorAll('.r-cell').forEach(c => {
-    const k = c.dataset.key;
-    const overlay = c.querySelector('.bet-chip-overlay');
-    if(overlay) overlay.remove();
-    c.classList.remove('has-bet');
-    if(rouletteBets[k] && rouletteBets[k]>0) {
-      c.classList.add('has-bet');
-      const ov = document.createElement('div');
-      ov.className='bet-chip-overlay';
-      ov.textContent = rouletteBets[k]>=1000 ? (rouletteBets[k]/1000).toFixed(1)+'k' : rouletteBets[k];
-      c.appendChild(ov);
-    }
-  });
-  const total = Object.values(rouletteBets).reduce((a,b)=>a+b,0);
-  document.getElementById('r-total-bet').textContent = `G ${total.toLocaleString()}`;
-}
-
-function selectChip(val) {
-  selectedChip = val;
-  document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
-  document.querySelector(`.chip[data-val="${val}"]`).classList.add('selected');
-  document.getElementById('chip-display').textContent = `G ${val}`;
-}
 
 
 // ===== ABOUT MODAL =====
@@ -4014,6 +4167,693 @@ function refreshAdminComptesExtra(){
   }
 }
 
+// ======================================================
+// ROULETTE AMÉRICAINE — Version complète corrigée
+// ======================================================
+let rouletteBets = {};
+let rouletteSpinning = false;
+let rouletteSelChip = 5;
+let rouletteCanvas = null;
+let rouletteCtx = null;
+let rouletteAngle = 0;
+let rouletteVelocity = 0;
+let rouletteAnimId = null;
+
+const ROULETTE_RED = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+const WHEEL_ORDER = [0,28,9,26,30,11,7,20,32,17,5,22,34,15,3,24,36,13,1,
+  '00',27,10,25,29,12,8,19,31,18,6,21,33,16,4,23,35,14,2,0];
+
+function rouletteNumColor(n){
+  if(n===0||n==='00') return 'green';
+  return ROULETTE_RED.includes(parseInt(n)) ? 'red' : 'black';
+}
+
+function initRoulette(){
+  rouletteCanvas = document.getElementById('roulette-canvas');
+  if(!rouletteCanvas) return;
+  rouletteCtx = rouletteCanvas.getContext('2d');
+  rouletteAngle = 0; rouletteVelocity = 0;
+  rouletteBets = {};
+  renderRouletteBets();
+  drawRouletteWheel(rouletteAngle);
+}
+
+function drawRouletteWheel(angle){
+  const canvas = rouletteCanvas;
+  const ctx = rouletteCtx;
+  if(!canvas||!ctx) return;
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2, R = W/2 - 4;
+  ctx.clearRect(0,0,W,H);
+
+  // Outer ring
+  ctx.beginPath();
+  ctx.arc(cx,cy,R+3,0,2*Math.PI);
+  ctx.fillStyle = '#8a6820';
+  ctx.fill();
+
+  const slots = WHEEL_ORDER.length;
+  const slotAngle = (2*Math.PI)/slots;
+
+  for(let i=0;i<slots;i++){
+    const n = WHEEL_ORDER[i];
+    const startA = angle + i*slotAngle - slotAngle/2;
+    const endA = startA + slotAngle;
+    const col = rouletteNumColor(n);
+
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,R,startA,endA);
+    ctx.closePath();
+    ctx.fillStyle = col==='red' ? '#b81c2c' : col==='green' ? '#1a6b2a' : '#111';
+    ctx.fill();
+    ctx.strokeStyle = '#c9a84c';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    // Number text
+    const midA = startA + slotAngle/2;
+    const tx = cx + (R*0.75)*Math.cos(midA);
+    const ty = cy + (R*0.75)*Math.sin(midA);
+    ctx.save();
+    ctx.translate(tx,ty);
+    ctx.rotate(midA + Math.PI/2);
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold 7px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(n), 0, 0);
+    ctx.restore();
+  }
+
+  // Inner circle (hub)
+  ctx.beginPath();
+  ctx.arc(cx,cy,R*0.28,0,2*Math.PI);
+  const grd = ctx.createRadialGradient(cx-3,cy-3,1,cx,cy,R*0.28);
+  grd.addColorStop(0,'#f0d080');
+  grd.addColorStop(1,'#5a3f10');
+  ctx.fillStyle = grd;
+  ctx.fill();
+  ctx.strokeStyle = '#c9a84c';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Ball indicator line
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - R*0.28);
+  ctx.lineTo(cx, cy - R*0.92);
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+}
+
+function animateRouletteWheel(){
+  rouletteAngle += rouletteVelocity;
+  rouletteVelocity *= 0.985;
+  drawRouletteWheel(rouletteAngle);
+  if(rouletteVelocity > 0.002){
+    rouletteAnimId = requestAnimationFrame(animateRouletteWheel);
+  } else {
+    rouletteSpinning = false;
+    // Determine landed number
+    const slots = WHEEL_ORDER.length;
+    const slotAngle = (2*Math.PI)/slots;
+    const norm = ((rouletteAngle % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI);
+    const idx = Math.round((2*Math.PI - norm) / slotAngle) % slots;
+    const landed = WHEEL_ORDER[((idx % slots)+slots)%slots];
+    showRouletteResult(landed);
+  }
+}
+
+function spinRoulette(){
+  if(rouletteSpinning) return;
+  if(!rouletteCanvas){ initRoulette(); }
+  const totalBet = Object.values(rouletteBets).reduce((a,b)=>a+b,0);
+  if(totalBet === 0){ showNotif('Plas yon mise sou tab la !','err'); return; }
+  if(CJ && totalBet > getSolde()){ showNotif('Solde insuffisant !','err'); return; }
+  if(CJ){ deduireJ(totalBet,'Roulette','Mise roulette: '+totalBet+' Gd'); }
+  rouletteSpinning = true;
+  const btn = document.getElementById('spin-btn');
+  if(btn) btn.disabled = true;
+  rouletteVelocity = 0.18 + Math.random()*0.12;
+  if(rouletteAnimId) cancelAnimationFrame(rouletteAnimId);
+  animateRouletteWheel();
+}
+
+function showRouletteResult(landed){
+  const resultEl = document.getElementById('roulette-result');
+  const col = rouletteNumColor(landed);
+  if(resultEl){
+    resultEl.textContent = landed;
+    resultEl.className = 'roulette-result ' + col;
+  }
+  const btn = document.getElementById('spin-btn');
+  if(btn) btn.disabled = false;
+
+  // Calculate winnings
+  let totalWin = 0;
+  const landedStr = String(landed);
+  const landedNum = parseInt(landed);
+  Object.entries(rouletteBets).forEach(([key, amt]) => {
+    if(!amt) return;
+    let win = 0;
+    if(key === landedStr){ win = amt * 35; }
+    else if(key==='red'   && col==='red')  { win = amt*2; }
+    else if(key==='black' && col==='black'){ win = amt*2; }
+    else if(key==='green' && col==='green'){ win = amt*17; }
+    else if(key==='even'  && landedNum>0 && !isNaN(landedNum) && landedNum%2===0){ win = amt*2; }
+    else if(key==='odd'   && !isNaN(landedNum) && landedNum%2===1){ win = amt*2; }
+    else if(key==='1to18' && landedNum>=1 && landedNum<=18){ win = amt*2; }
+    else if(key==='19to36'&& landedNum>=19 && landedNum<=36){ win = amt*2; }
+    else if(key==='1st12' && landedNum>=1 && landedNum<=12){ win = amt*3; }
+    else if(key==='2nd12' && landedNum>=13&& landedNum<=24){ win = amt*3; }
+    else if(key==='3rd12' && landedNum>=25&& landedNum<=36){ win = amt*3; }
+    totalWin += win;
+  });
+
+  if(totalWin > 0){
+    if(CJ){ crediterJ(totalWin,'Gain Roulette','Roulette: '+landed+' — gain '+totalWin+' Gd'); }
+    showNotif('🎉 '+landed+' — Gain: +'+totalWin+' Gd !','ok');
+  } else {
+    showNotif('😔 '+landed+' — Perdu.','err');
+  }
+  updateAppBar();
+}
+
+function placeRouletteBet(key, el){
+  if(rouletteSpinning) return;
+  if(CJ && Object.values(rouletteBets).reduce((a,b)=>a+b,0) + rouletteSelChip > getSolde()){
+    showNotif('Solde insuffisant','err'); return;
+  }
+  if(!rouletteBets[key]) rouletteBets[key] = 0;
+  rouletteBets[key] += rouletteSelChip;
+  renderRouletteBets();
+  if(el) el.classList.add('has-bet');
+}
+
+function clearRouletteBets(){
+  rouletteBets = {};
+  renderRouletteBets();
+  document.querySelectorAll('.r-cell').forEach(c=>{
+    c.classList.remove('has-bet');
+    const ov = c.querySelector('.bet-chip-overlay');
+    if(ov) ov.remove();
+  });
+}
+
+function renderRouletteBets(){
+  document.querySelectorAll('.r-cell').forEach(cell=>{
+    const k = cell.dataset.key;
+    const ov = cell.querySelector('.bet-chip-overlay');
+    if(ov) ov.remove();
+    cell.classList.remove('has-bet');
+    if(rouletteBets[k] && rouletteBets[k]>0){
+      cell.classList.add('has-bet');
+      const chip = document.createElement('div');
+      chip.className = 'bet-chip-overlay';
+      chip.textContent = rouletteBets[k];
+      cell.appendChild(chip);
+    }
+  });
+  const totalEl = document.getElementById('roulette-bets-display');
+  if(totalEl){
+    const total = Object.values(rouletteBets).reduce((a,b)=>a+b,0);
+    totalEl.innerHTML = total > 0
+      ? `<span style="color:var(--gold);font-weight:700">Mise totale: ${total} Gd</span>`
+      : '<span style="color:var(--muted)">Aucune mise</span>';
+  }
+}
+
+function selectChip(val){
+  rouletteSelChip = val;
+  document.querySelectorAll('.chip-val').forEach(c=>c.classList.remove('selected'));
+  const el = document.querySelector(`.chip-val[data-val="${val}"]`);
+  if(el) el.classList.add('selected');
+  const disp = document.getElementById('chip-display');
+  if(disp) disp.textContent = 'G '+val;
+}
+// ======================================================
+
+// ===== PENALTY =====
+
+/* ══════════════════════════
+   DONNÉES JOUEURS
+   photo : nom du fichier image à placer dans le même dossier
+══════════════════════════ */
+const PLAYERS = [
+  { id:'messi',   name:'Messi',   flag:'🇦🇷', num:'10', skill:.82, kit:'#6cb4e4', skin:'#f5cba7', hair:'#222', photo:'messi.png' },
+  { id:'ronaldo', name:'Ronaldo', flag:'🇵🇹', num:'7',  skill:.85, kit:'#e53935', skin:'#d4a574', hair:'#111', photo:'ronaldo.png' },
+  { id:'mbappe',  name:'Mbappé',  flag:'🇫🇷', num:'9',  skill:.80, kit:'#1565c0', skin:'#8B5A2B', hair:'#111', photo:'mbappe.png' },
+  { id:'neymar',  name:'Neymar',  flag:'🇧🇷', num:'10', skill:.78, kit:'#ffd600', skin:'#c8945a', hair:'#111', photo:'neymar.png' },
+  { id:'haaland', name:'Haaland', flag:'🇳🇴', num:'9',  skill:.83, kit:'#43a047', skin:'#f0d5b0', hair:'#e8c068',photo:'haaland.png' },
+  { id:'salah',   name:'Salah',   flag:'🇪🇬', num:'11', skill:.81, kit:'#c62828', skin:'#8B5A2B', hair:'#111', photo:'salah.png' },
+];
+const KEEPERS = [
+  { id:'alisson',  name:'Alisson',  flag:'🇧🇷', skill:.82, kit:'#ff7043', skin:'#c8945a', hair:'#111', photo:'alisson.png' },
+  { id:'courtois', name:'Courtois', flag:'🇧🇪', skill:.85, kit:'#4caf50', skin:'#f0d5b0', hair:'#8B6914',photo:'courtois.png' },
+  { id:'neuer',    name:'Neuer',    flag:'🇩🇪', skill:.83, kit:'#9c27b0', skin:'#f5cba7', hair:'#222', photo:'neuer.png' },
+  { id:'ederson',  name:'Ederson',  flag:'🇧🇷', skill:.79, kit:'#1565c0', skin:'#8B5A2B', hair:'#111', photo:'ederson.png' },
+  { id:'lloris',   name:'Lloris',   flag:'🇫🇷', skill:.80, kit:'#37474f', skin:'#d4a574', hair:'#111', photo:'lloris.png' },
+];
+
+/* ══════════════════════════
+   SVG AVATAR FALLBACK
+══════════════════════════ */
+function svgAvatar(p, isGK=false){
+  const k=p.kit, s=p.skin, h=p.hair;
+  const sh=darken(k,25);
+  const gv=isGK;
+  return `
+    <ellipse cx="30" cy="118" rx="13" ry="3.5" fill="rgba(0,0,0,.22)"/>
+    <rect x="21" y="86" width="8" height="22" rx="3" fill="${sh}"/>
+    <rect x="31" y="86" width="8" height="22" rx="3" fill="${sh}"/>
+    <rect x="21" y="100" width="8" height="10" rx="2" fill="rgba(255,255,255,.75)"/>
+    <rect x="31" y="100" width="8" height="10" rx="2" fill="rgba(255,255,255,.75)"/>
+    <ellipse cx="25" cy="112" rx="5.5" ry="3.8" fill="#111"/>
+    <ellipse cx="35" cy="112" rx="5.5" ry="3.8" fill="#111"/>
+    <rect x="18" y="52" width="24" height="35" rx="5" fill="${k}"/>
+    <rect x="27" y="52" width="6" height="35" rx="2" fill="rgba(255,255,255,.1)"/>
+    <rect x="7"  y="54" width="12" height="7" rx="4" fill="${k}"/>
+    <rect x="41" y="54" width="12" height="7" rx="4" fill="${k}"/>
+    ${gv?`<ellipse cx="10" cy="54" rx="6" ry="5" fill="#ffd600"/><ellipse cx="50" cy="54" rx="6" ry="5" fill="#ffd600"/>`:''}
+    <rect x="26" y="43" width="8" height="12" rx="3" fill="${s}"/>
+    <ellipse cx="30" cy="33" rx="13" ry="14" fill="${s}"/>
+    <ellipse cx="17" cy="34" rx="2.8" ry="3.5" fill="${s}"/>
+    <ellipse cx="43" cy="34" rx="2.8" ry="3.5" fill="${s}"/>
+    <ellipse cx="30" cy="21" rx="13" ry="9" fill="${h}"/>
+    <rect x="17" y="21" width="26" height="8" rx="4" fill="${h}"/>
+    <ellipse cx="25" cy="33" rx="2.5" ry="2.5" fill="white"/>
+    <ellipse cx="35" cy="33" rx="2.5" ry="2.5" fill="white"/>
+    <ellipse cx="25.5" cy="33.5" rx="1.3" ry="1.3" fill="#333"/>
+    <ellipse cx="35.5" cy="33.5" rx="1.3" ry="1.3" fill="#333"/>
+    <path d="M26 39 Q30 42 34 39" stroke="#a0522d" stroke-width="1" fill="none" stroke-linecap="round"/>
+    <text x="30" y="74" text-anchor="middle" font-size="8" fill="white" font-family="Arial Black" opacity=".9">${isGK?'1':p.num||'10'}</text>
+  `;
+}
+function darken(hex,a){
+  const c=parseInt(hex.replace('#',''),16);
+  const r=Math.max(0,((c>>16)&255)-a);
+  const g=Math.max(0,((c>>8)&255)-a);
+  const b=Math.max(0,(c&255)-a);
+  return '#'+((r<<16)|(g<<8)|b).toString(16).padStart(6,'0');
+}
+
+/* ══════════════════════════
+   IMAGE LOADER
+   Essaie plusieurs extensions : png, jpg, jpeg, webp
+   Si aucune ne charge → affiche le SVG fallback
+══════════════════════════ */
+function tryLoadImage(baseName, imgEl, svgFallbackEl, onLoad, onFail){
+  const exts = ['png','jpg','jpeg','webp'];
+  const base = baseName.replace(/\.[^.]+$/,'');
+  let idx=0;
+  function next(){
+    if(idx>=exts.length){
+      // Aucune image trouvée — garder le SVG fallback visible
+      if(typeof onFail==='function') onFail();
+      return;
+    }
+    const ext=exts[idx++];
+    const src=base+'.'+ext;
+    const tst=new Image();
+    tst.onload=()=>{
+      imgEl.src=src;
+      imgEl.style.display='block';
+      svgFallbackEl.style.display='none';
+      if(typeof onLoad==='function') onLoad();
+    };
+    tst.onerror=next;
+    tst.src=src;
+  }
+  next();
+}
+
+/* ══════════════════════════
+   ZONES (3×3)
+   1 2 3 = Haut
+   4 5 6 = Milieu
+   7 8 9 = Bas
+══════════════════════════ */
+const ZONE_NAMES=['','Haut G','Haut C','Haut D','Mil G','Centre','Mil D','Bas G','Bas C','Bas D'];
+const ZONE_ODDS =[0, 4.5, 3.0, 4.5, 3.5, 2.5, 3.5, 4.0, 2.8, 4.0];
+
+function zoneCenter(n){ // retourne {x,y} en 0..1 dans le but
+  const col=(n-1)%3, row=Math.floor((n-1)/3);
+  return {x:(col+.5)/3, y:(row+.5)/3};
+}
+
+/* ══════════════════════════
+   STATE
+══════════════════════════ */
+let shooter=PLAYERS[0], keeper=KEEPERS[0];
+let pickedZone=null, betZone=null;
+let shots=[], scGoal=0, scSaved=0, busy=false;
+let penaltyTotalWon=0;
+
+/* ══════════════════════════
+   BUILD PLAYER CARDS
+══════════════════════════ */
+function buildGrids(){
+  buildRow('shooterGrid', PLAYERS, false);
+  buildRow('gkGrid', KEEPERS, true);
+}
+function buildRow(containerId, arr, isGK){
+  const wrap=document.getElementById(containerId);
+  wrap.innerHTML='';
+  arr.forEach(p=>{
+    const active=isGK?(p.id===keeper.id?'gkact':''):(p.id===shooter.id?'act':'');
+    const card=document.createElement('div');
+    card.className='pcard '+active;
+
+    // Avatar container
+    const av=document.createElement('div');
+    av.className='pavatar';
+
+    // Real image
+    const img=document.createElement('img');
+    img.style.cssText='width:100%;height:100%;object-fit:cover;object-position:top center;display:none;border-radius:50%;';
+
+    // SVG fallback
+    const svgEl=document.createElement('svg');
+    svgEl.setAttribute('viewBox','0 0 60 120');
+    svgEl.setAttribute('xmlns','http://www.w3.org/2000/svg');
+    svgEl.style.cssText='width:100%;height:100%;position:absolute;top:0;left:0;';
+    svgEl.innerHTML=svgAvatar(p,isGK);
+
+    av.appendChild(img);
+    av.appendChild(svgEl);
+
+    // Try real image
+    tryLoadImage(p.photo, img, svgEl, null, null);
+
+    const nameDiv=document.createElement('div');
+    nameDiv.className='pname';
+    nameDiv.innerHTML=`<span class="pflag">${p.flag}</span> ${p.name}`;
+
+    const bar=document.createElement('div');
+    bar.className='skill-bar';
+    bar.innerHTML=`<div class="skill-fill" style="width:${p.skill*100}%;background:${isGK?'#42a5f5':'var(--gold)'}"></div>`;
+
+    card.appendChild(av);
+    card.appendChild(nameDiv);
+    card.appendChild(bar);
+    card.onclick=()=>{
+      if(isGK) keeper=p; else shooter=p;
+      buildGrids(); refreshField(); refreshScoreboard();
+    };
+    wrap.appendChild(card);
+  });
+}
+
+/* ══════════════════════════
+   REFRESH FIELD PLAYERS
+══════════════════════════ */
+function refreshField(){
+  // Shooter
+  const sImg=document.getElementById('shooterImg');
+  const sSvg=document.getElementById('shooterSvgFb');
+  sSvg.innerHTML=svgAvatar(shooter,false);
+  sImg.style.display='none'; sSvg.style.display='block';
+  tryLoadImage(shooter.photo, sImg, sSvg, null, null);
+  document.getElementById('slbl').textContent=shooter.name;
+
+  // GK
+  const gkImg=document.getElementById('gkImg');
+  const gkSvg=document.getElementById('gkSvgFb');
+  gkSvg.innerHTML=svgAvatar(keeper,true);
+  gkImg.style.display='none'; gkSvg.style.display='block';
+  tryLoadImage(keeper.photo, gkImg, gkSvg, null, null);
+  document.getElementById('gklbl').textContent=keeper.name;
+}
+
+function refreshScoreboard(){
+  document.getElementById('sbSName').textContent=shooter.name;
+  document.getElementById('sbGName').textContent=keeper.name;
+  // mini avatars
+  setMiniAvatar('sbSMini', shooter, false);
+  setMiniAvatar('sbGMini', keeper, true);
+}
+function setMiniAvatar(id, p, isGK){
+  const el=document.getElementById(id);
+  el.innerHTML='';
+  const img=document.createElement('img');
+  img.style.cssText='width:100%;height:100%;object-fit:cover;object-position:top center;display:none;border-radius:50%;';
+  const svgEl=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svgEl.setAttribute('viewBox','0 0 60 120');
+  svgEl.style.cssText='position:absolute;inset:0;width:100%;height:100%;';
+  svgEl.innerHTML=svgAvatar(p,isGK);
+  el.appendChild(img);
+  el.appendChild(svgEl);
+  tryLoadImage(p.photo, img, svgEl, null, null);
+}
+
+/* ══════════════════════════
+   NET SVG
+══════════════════════════ */
+function drawNet(){
+  const svg=document.getElementById('netSvg');
+  const {width:W,height:H}=svg.getBoundingClientRect();
+  if(!W){setTimeout(drawNet,100);return;}
+  let s='';
+  for(let c=0;c<=12;c++){const x=(c/12)*W;s+=`<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="rgba(255,255,255,.14)" stroke-width="1"/>`;}
+  for(let r=0;r<=8;r++){const y=(r/8)*H;s+=`<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="rgba(255,255,255,.14)" stroke-width="1"/>`;}
+  for(let c=0;c<=12;c++){const x=(c/12)*W;s+=`<line x1="${x}" y1="${H}" x2="${W/2}" y2="${H*.04}" stroke="rgba(255,255,255,.06)" stroke-width=".8"/>`;}
+  svg.innerHTML=s;
+}
+drawNet();
+window.addEventListener('resize',drawNet);
+
+/* ══════════════════════════
+   ZONE GRID (GOAL)
+══════════════════════════ */
+function buildZoneGrid(){
+  const g=document.getElementById('zoneGrid');
+  g.innerHTML='';
+  for(let n=1;n<=9;n++){
+    const d=document.createElement('div');
+    d.className='zc'+(n===pickedZone?' selected':'');
+    d.innerHTML=`<div class="zc-num">${n}</div>`;
+    d.onclick=()=>{ if(busy)return; pickedZone=n; buildZoneGrid(); updateHint(); };
+    g.appendChild(d);
+  }
+}
+
+/* ══════════════════════════
+   BET GRID
+══════════════════════════ */
+function buildBetGrid(){
+  const g=document.getElementById('betGrid');
+  g.innerHTML='';
+  for(let n=1;n<=9;n++){
+    const d=document.createElement('div');
+    d.className='bet-zone'+(n===betZone?' bsel':'');
+    d.innerHTML=`<div class="znum">${n}</div><div class="zpos">${ZONE_NAMES[n]}</div>`;
+    d.onclick=()=>{ betZone=n; buildBetGrid(); updateOdd(); };
+    g.appendChild(d);
+  }
+}
+function updateOdd(){
+  document.getElementById('oddVal').textContent=betZone?`×${ZONE_ODDS[betZone]}`:'—';
+}
+function setBet(v){document.getElementById('betAmt').value=v;}
+function setMax(){document.getElementById('betAmt').value=Math.min(wallet,99999);}
+
+
+/* ══════════════════════════
+   HINT
+══════════════════════════ */
+function updateHint(){
+  if(pickedZone){
+    document.getElementById('shootBtn').style.display='inline-block';
+    document.getElementById('hintText').innerHTML=
+      `✅ <strong>${shooter.name}</strong> tire au casier <strong>${pickedZone}</strong>${betZone?` · Pari casier <strong>${betZone}</strong> (×${ZONE_ODDS[betZone]})`:''}`;
+  } else {
+    document.getElementById('shootBtn').style.display='none';
+    document.getElementById('hintText').innerHTML=
+      `👆 Cliquez un <strong>numéro dans le but</strong> pour choisir où tirer`;
+  }
+}
+
+/* ══════════════════════════
+   SHOOT
+══════════════════════════ */
+function shoot(){
+  if(busy||!pickedZone)return;
+  busy=true;
+  document.getElementById('shootBtn').style.display='none';
+  document.getElementById('winMsg').className='win-msg';
+
+  // Mise
+  const rawAmt=parseInt(document.getElementById('betAmt').value)||50;
+  const betAmt=Math.min(Math.max(10,rawAmt),wallet);
+  if(betZone && CJ){ deduireJ(betAmt,"Penalty","Mise penalty: zone "+betZone); let st=gSt();st.dep+=betAmt;sSt(st); }
+  updatePenaltyWallet();
+
+  // Fade shooter
+  document.getElementById('shooter').style.opacity='.2';
+
+  // Target : centre du casier + petit offset aléatoire
+  const {x:tx,y:ty}=zoneCenter(pickedZone);
+  const fx=Math.min(.96,Math.max(.04, tx+(Math.random()-.5)*.2/3));
+  const fy=Math.min(.96,Math.max(.04, ty+(Math.random()-.5)*.2/3));
+
+  // Ball animation
+  const ball=document.getElementById('ball');
+  const field=document.querySelector('.field');
+  const go=document.getElementById('goalOuter');
+  const gk=document.getElementById('goalkeeper');
+  const fr=field.getBoundingClientRect();
+  const gr=go.getBoundingClientRect();
+  const gl=(gr.left-fr.left)/fr.width*100;
+  const gt=(gr.top-fr.top)/fr.height*100;
+  const gw=gr.width/fr.width*100;
+  const gh=gr.height/fr.height*100;
+
+  ball.classList.add('fly');
+  ball.style.left=(gl+fx*gw)+'%';
+  ball.style.bottom=(100-(gt+fy*gh)-1)+'%';
+  ball.style.width='1.5%';
+  ball.style.opacity='.35';
+
+  // GK dive (colonne du casier)
+  const col=(pickedZone-1)%3;
+  const gkL=col===0?'11%':col===2?'73%':'44%';
+  setTimeout(()=>{
+    gk.style.transition=`left ${.2+(1-keeper.skill)*.09}s cubic-bezier(.4,0,.2,1)`;
+    gk.style.left=gkL;
+  }, Math.max(0,(1-keeper.skill)*160));
+
+  setTimeout(()=>{
+    const res=calcResult(col,gkL);
+    showResult(res, fx, fy, betAmt);
+  }, 430);
+}
+
+function calcResult(col, gkL){
+  const gkCol=gkL==='11%'?0:gkL==='73%'?2:1;
+  const dist=Math.abs(col-gkCol);
+  // Plus le gardien est proche, plus il a de chance d'arrêter
+  const baseP=dist===0?.38:dist===1?.13:.03;
+  const saveP=baseP*(keeper.skill/shooter.skill);
+  return Math.random()<saveP?'saved':'goal';
+}
+
+function showResult(res, fx, fy, betAmt){
+  // Impact marker
+  const imp=document.getElementById('impact');
+  imp.style.left=(fx*100)+'%';
+  imp.style.top=(fy*100)+'%';
+  imp.style.display='block';
+  imp.style.animation='none'; void imp.offsetWidth; imp.style.animation='';
+
+  // Highlight zone
+  const cells=document.querySelectorAll('#zoneGrid .zc');
+  cells.forEach((c,i)=>{
+    if(i===pickedZone-1) c.className='zc '+(res==='goal'?'hit-goal':'hit-saved');
+  });
+
+  // Banner
+  const ban=document.getElementById('banner');
+  if(res==='goal'){
+    ban.className='show goal';
+    ban.textContent=`⚽ BUT ! Casier ${pickedZone}`;
+    scGoal++;
+    document.getElementById('scGoal').textContent=scGoal;
+    // Résultat pari
+    if(betZone){
+      const wm=document.getElementById('winMsg');
+      if(betZone===pickedZone){
+        const gain=Math.round(betAmt*ZONE_ODDS[betZone]);
+        if(CJ){ crediterJ(gain,"Gain Penalty","Penalty: zone "+pickedZone+" — gain "+gain+" Gd"); penaltyTotalWon+=(gain-betAmt); } else penaltyTotalWon+=(gain-betAmt);
+        updatePenaltyWallet();
+        wm.className='win-msg won';
+        wm.textContent=`🎉 GAGNÉ ! +${gain} pts (×${ZONE_ODDS[betZone]})`;
+      } else {
+        wm.className='win-msg lost';
+        wm.textContent=`❌ But casier ${pickedZone} — vous aviez parié le casier ${betZone}`;
+      }
+    }
+  } else {
+    ban.className='show saved';
+    ban.textContent=`🧤 Arrêté par ${keeper.name} !`;
+    scSaved++;
+    document.getElementById('scSaved').textContent=scSaved;
+    if(betZone){
+      const wm=document.getElementById('winMsg');
+      wm.className='win-msg lost';
+      wm.textContent=`❌ Tir arrêté — mise de ${betAmt} pts perdue`;
+    }
+  }
+
+  shots.push(res);
+  updateDots();
+  document.getElementById('resetBtn').style.display='inline-block';
+  document.getElementById('hintText').innerHTML=
+    res==='goal'?`🎉 <strong>${shooter.name}</strong> marque au casier <strong>${pickedZone}</strong> !`:
+    `👏 <strong>${keeper.name}</strong> arrête le tir !`;
+}
+
+function updateDots(){
+  const w=document.getElementById('hdots');
+  w.innerHTML='';
+  const rec=shots.slice(-7);
+  for(let i=0;i<7;i++){
+    const d=document.createElement('div');
+    d.className='hdot '+(rec[i]||'');
+    w.appendChild(d);
+  }
+}
+
+/* ══════════════════════════
+   RESET
+══════════════════════════ */
+function resetShot(){
+  busy=false; pickedZone=null;
+  const ball=document.getElementById('ball');
+  ball.classList.remove('fly');
+  ball.style.cssText='position:absolute;bottom:13%;left:50%;transform:translateX(-50%);width:3.5%;aspect-ratio:1;z-index:10;pointer-events:none;transition:none;';
+  document.getElementById('shooter').style.opacity='1';
+  document.getElementById('goalkeeper').style.left='50%';
+  document.getElementById('banner').className='';
+  document.getElementById('banner').textContent='';
+  document.getElementById('impact').style.display='none';
+  document.getElementById('winMsg').className='win-msg';
+  document.getElementById('resetBtn').style.display='none';
+  buildZoneGrid();
+  updateHint();
+  if(wallet<50){ wallet=1000; updatePenaltyWallet(); }
+}
+
+/* ══════════════════════════
+   INIT
+══════════════════════════ */
+// auto: buildGrids();
+// auto: refreshField();
+// auto: refreshScoreboard();
+// auto: buildZoneGrid();
+// auto: buildBetGrid();
+// auto: updateOdd();
+updatePenaltyWallet();
+// auto: updateHint();
+
+function updatePenaltyWallet(){
+  const walletEl = document.getElementById('penalty-walletVal');
+  const wonEl = document.getElementById('penalty-totalWon');
+  if(walletEl) walletEl.textContent = getSolde().toLocaleString();
+  if(wonEl) wonEl.textContent = penaltyTotalWon>=0 ? '+'+penaltyTotalWon.toLocaleString() : penaltyTotalWon.toLocaleString();
+}
+
+function initPenaltyGame(){
+  buildGrids();
+  refreshField();
+  refreshScoreboard();
+  buildZoneGrid();
+  buildBetGrid();
+  updateOdd();
+  updatePenaltyWallet();
+  updateHint();
+}
+
 // ===== SESSION RESTORE =====
 (function(){
   const role = localStorage.getItem('tk_session_role');
@@ -4038,10 +4878,11 @@ function refreshAdminComptesExtra(){
     else { window.location.href='tk_login.html'; }
   } else { window.location.href='tk_login.html'; }
 
-  // Roulette init on tab switch
+  // Game init on tab switch
   document.querySelectorAll('.atab[data-tab]').forEach(tab=>{
     tab.addEventListener('click',()=>{
       if(tab.dataset.tab==='roulette') setTimeout(initRoulette, 100);
+      if(tab.dataset.tab==='penalty') { setTimeout(initPenaltyGame, 100); setTimeout(updatePenaltyWallet, 200); }
     });
   });
 })();
