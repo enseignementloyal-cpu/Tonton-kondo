@@ -58,9 +58,9 @@ body{background:#061a2e;color:#fff;font-family:'Barlow',sans-serif;min-height:10
 .sec-hdr-title{animation:slideInLeft .5s ease both;}
 .match-card{animation:fadeInUp .4s ease both;}
 
-.slideshow-wrap{position:relative;overflow:hidden;background:#050e1a;touch-action:pan-y;}
-.slideshow{display:flex;transition:transform .55s cubic-bezier(.4,0,.2,1);}
-.slide{min-width:100%;position:relative;height:230px;flex-shrink:0;overflow:hidden;}
+.slideshow-wrap{position:relative;overflow:hidden;background:#050e1a;touch-action:pan-y;max-width:100vw;}
+.slideshow{display:flex;transition:transform .55s cubic-bezier(.4,0,.2,1);width:100%;will-change:transform;}
+.slide{min-width:100vw;max-width:100vw;width:100vw;position:relative;height:240px;flex-shrink:0;overflow:hidden;box-sizing:border-box;}
 .slide-bg{width:100%;height:100%;object-fit:cover;object-position:center;display:block;}
 .slide-fallback{width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:20px;}
 .slide-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,14,26,.15) 0%,rgba(5,14,26,.85) 100%);pointer-events:none;}
@@ -159,7 +159,7 @@ body{background:#061a2e;color:#fff;font-family:'Barlow',sans-serif;min-height:10
 <div class="top-bar">
   <img src="logo.png" onerror="this.src='logo.jpeg';this.onerror=null" class="tb-logo" alt="TK">
   <div class="tb-brand">
-    <div class="name">TONTON KONDO</div>
+    <div class="name" style="font-size:1.6em;font-weight:900;letter-spacing:3px;line-height:1;text-shadow:0 0 15px rgba(245,200,0,.5)">TONTON<br>KONDO</div>
     <div class="slogan">Lotto · Paryaj · Casino · Sports</div>
   </div>
   <div class="tb-actions">
@@ -169,9 +169,6 @@ body{background:#061a2e;color:#fff;font-family:'Barlow',sans-serif;min-height:10
   </div>
 </div>
 
-<!-- MAIN NAV -->
-<div class="main-nav">
-  <div class="nav-link active"><i class="fas fa-home"></i> Akèy</div>
   <div class="nav-link" onclick="reqAuth()"><i class="fas fa-broadcast-tower"></i> Live</div>
   <div class="nav-link" onclick="reqAuth()"><i class="fas fa-futbol"></i> Sports</div>
   <div class="nav-link" onclick="reqAuth()"><i class="fas fa-dice"></i> Casino</div>
@@ -565,34 +562,68 @@ const dotsEl=document.getElementById('ss-dots');
 function buildSlide(src, def, idx){
   const div=document.createElement('div');
   div.className='slide';
-  div.style.cssText='min-width:100%;position:relative;height:230px;flex-shrink:0;overflow:hidden;';
-  // Try image first
+  div.style.cssText='min-width:100%;width:100%;position:relative;height:240px;flex-shrink:0;overflow:hidden;display:block;';
+
+  // Real image
   const img=document.createElement('img');
   img.src=src;
-  img.className='slide-bg';
-  img.style.cssText='width:100%;height:100%;object-fit:cover;object-position:center;display:block;';
-  // Fallback div
+  img.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:none;';
+
+  // Fallback: logo centré sur fond TK
   const fallback=document.createElement('div');
-  fallback.className='slide-fallback';
-  fallback.style.cssText=`width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:20px;background:${def.color};`;
-  fallback.innerHTML=`<div style="font-size:3.5em;animation:floatUp 3s ease-in-out infinite">${def.emoji}</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:2em;font-weight:900;color:#f5c800;text-align:center">${def.title.toUpperCase()}</div><div style="font-size:12px;color:rgba(255,255,255,.7);text-align:center">${def.sub}</div>`;
-  img.onerror=()=>{img.style.display='none';fallback.style.display='flex';};
-  img.onload=()=>{fallback.style.display='none';};
-  fallback.style.display='none'; // hidden until img fails
-  // Overlay + caption
-  const overlay=document.createElement('div');
-  overlay.className='slide-overlay';
-  overlay.style.cssText='position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,14,26,.1) 0%,rgba(5,14,26,.8) 100%);pointer-events:none;';
-  const caption=document.createElement('div');
-  caption.className='slide-caption';
-  caption.style.cssText='position:absolute;bottom:0;left:0;right:0;padding:14px 16px;';
-  caption.innerHTML=`<span class="slide-tag" style="display:inline-block;background:#f5c800;color:#000;font-size:10px;font-weight:900;padding:2px 8px;border-radius:4px;margin-bottom:6px;text-transform:uppercase;">${def.tag}</span><div class="slide-title" style="font-family:'Barlow Condensed',sans-serif;font-size:1.6em;font-weight:900;color:#fff;line-height:1.1;">${def.title}</div><div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:3px;">${def.sub}</div>`;
-  div.appendChild(img);
+  fallback.style.cssText='position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:'+def.color+';';
+  fallback.innerHTML=`
+    <img src="logo.png" onerror="this.src='logo.jpeg';this.onerror=null" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid #f5c800;box-shadow:0 0 20px rgba(245,200,0,.4);animation:glowPulse 2.5s ease-in-out infinite;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.8em;font-weight:900;color:#f5c800;letter-spacing:3px;text-shadow:0 0 15px rgba(245,200,0,.5);">TONTON KONDO</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.6);letter-spacing:2px;">${def.title}</div>
+  `;
+
+  // When real image loads → show it, hide fallback
+  img.onload = function(){
+    img.style.display = 'block';
+    fallback.style.display = 'none';
+    // Trigger dots rebuild with real images only
+    if(!div.dataset.loaded){
+      div.dataset.loaded='1';
+      ssCountReal();
+    }
+  };
+  img.onerror = function(){
+    img.style.display = 'none';
+    fallback.style.display = 'flex';
+    div.dataset.failed = '1';
+  };
+
+  // Overlay gradient
+  const ov=document.createElement('div');
+  ov.style.cssText='position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,26,46,.1) 0%,rgba(6,26,46,.75) 100%);pointer-events:none;z-index:1;';
+
+  // Caption
+  const cap=document.createElement('div');
+  cap.style.cssText='position:absolute;bottom:0;left:0;right:0;padding:14px 16px;z-index:2;';
+  cap.innerHTML=`<span style="display:inline-block;background:#f5c800;color:#000;font-size:10px;font-weight:900;padding:2px 8px;border-radius:4px;margin-bottom:5px;text-transform:uppercase;letter-spacing:1px;">${def.tag}</span><div style="font-family:'Barlow Condensed',sans-serif;font-size:1.6em;font-weight:900;color:#fff;line-height:1.1;">${def.title}</div><div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:3px;">${def.sub}</div>`;
+
   div.appendChild(fallback);
-  div.appendChild(overlay);
-  div.appendChild(caption);
-  div.onclick=()=>goPlay(idx);
+  div.appendChild(img);
+  div.appendChild(ov);
+  div.appendChild(cap);
+  div.onclick = ()=>goPlayPreview(idx);
   return div;
+}
+
+let ssRealCount = 0;
+function ssCountReal(){
+  ssRealCount++;
+  // Rebuild dots based on real images
+  const realSlides = Array.from(ss.querySelectorAll('.slide[data-loaded]'));
+  dotsEl.innerHTML='';
+  const shown = Math.min(10, realSlides.length || 1);
+  for(let i=0;i<shown;i++){
+    const d=document.createElement('div');
+    d.className='ss-dot'+(i===0?' active':'');
+    d.onclick=()=>ssGo(i);
+    dotsEl.appendChild(d);
+  }
 }
 
 function initSlideshow(){
@@ -681,9 +712,15 @@ function filterGame(el,cat){
 
 // AUTH GATE - joueur VOIT les jeux mais doit se connecter pour JOUER
 function goPlay(game){
-  // Navigate to game view (preview) - gate only appears on actual play action
+  // For now redirect after login
   pendingGame=game;
-  // Just redirect immediately after login
+  showGate();
+}
+function goPlayPreview(idx){
+  // Click on slideshow = go to game preview (no gate)
+  const gameMap=['borlette','keno','course','penalty','roulette','helico','lucky6','borlette'];
+  const game=gameMap[idx%gameMap.length]||'borlette';
+  pendingGame=game;
   showGate();
 }
 function reqAuth(){pendingGame=null;showGate();}

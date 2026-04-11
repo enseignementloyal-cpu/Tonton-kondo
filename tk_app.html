@@ -311,107 +311,69 @@
 
 
   <!-- ROULETTE -->
-  <div class="asec" id="tab-roulette">
-    <div class="roulette-wrap" style="margin-top:10px">
-      <h3 style="color:var(--gold);font-size:16px;margin-bottom:14px">🎡 Roulette Américaine</h3>
-      <div class="roulette-layout">
-        <!-- Roue -->
-        <div class="wheel-container">
-          <div class="wheel-wrap">
-            <div class="wheel-pointer"></div>
-            <canvas id="roulette-canvas" width="220" height="220"></canvas>
-          </div>
-          <div class="roulette-result" id="roulette-result">—</div>
-          <!-- Chip selector -->
-          <div class="chip-selector" style="justify-content:center;margin-top:10px">
-            <div class="chip-val c1 selected" data-val="1" onclick="selectChip(1)">1</div>
-            <div class="chip-val c5" data-val="5" onclick="selectChip(5)">5</div>
-            <div class="chip-val c10" data-val="10" onclick="selectChip(10)">10</div>
-            <div class="chip-val c25" data-val="25" onclick="selectChip(25)">25</div>
-            <div class="chip-val c50" data-val="50" onclick="selectChip(50)">50</div>
-            <div class="chip-val c100" data-val="100" onclick="selectChip(100)">100</div>
-          </div>
-          <div style="text-align:center;margin-top:8px;font-size:13px;color:var(--muted)">Jeton: <span id="chip-display" style="color:var(--gold);font-weight:800">G 1</span></div>
+  <div class="asec" id="tab-roulette" style="padding:10px 12px 80px;max-width:900px;margin:0 auto;">
+    <div style="text-align:center;margin-bottom:16px;">
+      <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:1.8em;font-weight:900;color:var(--gold);letter-spacing:2px;">🎡 Roulette Américaine</h2>
+    </div>
+    <!-- ROUE CENTRÉE -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:18px;">
+      <div style="position:relative;display:inline-flex;align-items:center;justify-content:center;">
+        <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:20px solid #f5c800;z-index:10;filter:drop-shadow(0 2px 4px rgba(0,0,0,.6));"></div>
+        <canvas id="roulette-canvas" width="260" height="260"
+          style="border-radius:50%;border:4px solid #c9a84c;box-shadow:0 0 30px rgba(201,168,76,.4);display:block;max-width:min(260px,85vw);max-height:min(260px,85vw);">
+        </canvas>
+      </div>
+      <div id="roulette-result" style="font-family:'Barlow Condensed',sans-serif;font-size:2.6em;font-weight:900;min-width:80px;text-align:center;padding:6px 20px;background:var(--bg2);border:2px solid var(--border);border-radius:14px;color:var(--text);">—</div>
+    </div>
+    <!-- JETONS -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:10px;">
+      <div class="chip-val c1 selected" data-val="1" onclick="selectChip(1)">1</div>
+      <div class="chip-val c5" data-val="5" onclick="selectChip(5)">5</div>
+      <div class="chip-val c10" data-val="10" onclick="selectChip(10)">10</div>
+      <div class="chip-val c25" data-val="25" onclick="selectChip(25)">25</div>
+      <div class="chip-val c50" data-val="50" onclick="selectChip(50)">50</div>
+      <div class="chip-val c100" data-val="100" onclick="selectChip(100)">100</div>
+    </div>
+    <p style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:16px;">Jeton: <span id="chip-display" style="color:var(--gold);font-weight:800;">G 1</span></p>
+    <!-- TABLE DE MISE -->
+    <div class="card" style="overflow-x:auto;">
+      <h3 style="font-size:13px;margin-bottom:10px;">🎯 Table de mise — cliquez pour miser</h3>
+      <div id="roulette-table" style="min-width:280px;">
+        <div style="display:flex;gap:2px;margin-bottom:2px;">
+          <div class="r-cell green-n" data-key="0" onclick="placeRouletteBet('0',this)">0</div>
+          <div class="r-cell green-n" data-key="00" onclick="placeRouletteBet('00',this)">00</div>
         </div>
-        <!-- Table de mise -->
-        <div>
-          <div class="r-table" id="roulette-table">
-            <!-- Zéros -->
-            <div class="r-zero-row">
-              <div class="r-cell green-n zero" data-key="0" onclick="placeRouletteBet('0',this)">0</div>
-              <div class="r-cell green-n zero" data-key="00" onclick="placeRouletteBet('00',this)">00</div>
-            </div>
-            <!-- Numéros 1-36 (3 colonnes) -->
-            <div class="r-row">
-              <div class="r-cell red-n" data-key="3" onclick="placeRouletteBet('3',this)">3</div>
-              <div class="r-cell black-n" data-key="6" onclick="placeRouletteBet('6',this)">6</div>
-              <div class="r-cell red-n" data-key="9" onclick="placeRouletteBet('9',this)">9</div>
-              <div class="r-cell red-n" data-key="12" onclick="placeRouletteBet('12',this)">12</div>
-              <div class="r-cell black-n" data-key="15" onclick="placeRouletteBet('15',this)">15</div>
-              <div class="r-cell red-n" data-key="18" onclick="placeRouletteBet('18',this)">18</div>
-              <div class="r-cell red-n" data-key="21" onclick="placeRouletteBet('21',this)">21</div>
-              <div class="r-cell black-n" data-key="24" onclick="placeRouletteBet('24',this)">24</div>
-              <div class="r-cell red-n" data-key="27" onclick="placeRouletteBet('27',this)">27</div>
-              <div class="r-cell red-n" data-key="30" onclick="placeRouletteBet('30',this)">30</div>
-              <div class="r-cell black-n" data-key="33" onclick="placeRouletteBet('33',this)">33</div>
-              <div class="r-cell red-n" data-key="36" onclick="placeRouletteBet('36',this)">36</div>
-            </div>
-            <div class="r-row">
-              <div class="r-cell black-n" data-key="2" onclick="placeRouletteBet('2',this)">2</div>
-              <div class="r-cell red-n" data-key="5" onclick="placeRouletteBet('5',this)">5</div>
-              <div class="r-cell black-n" data-key="8" onclick="placeRouletteBet('8',this)">8</div>
-              <div class="r-cell black-n" data-key="11" onclick="placeRouletteBet('11',this)">11</div>
-              <div class="r-cell red-n" data-key="14" onclick="placeRouletteBet('14',this)">14</div>
-              <div class="r-cell black-n" data-key="17" onclick="placeRouletteBet('17',this)">17</div>
-              <div class="r-cell black-n" data-key="20" onclick="placeRouletteBet('20',this)">20</div>
-              <div class="r-cell red-n" data-key="23" onclick="placeRouletteBet('23',this)">23</div>
-              <div class="r-cell black-n" data-key="26" onclick="placeRouletteBet('26',this)">26</div>
-              <div class="r-cell black-n" data-key="29" onclick="placeRouletteBet('29',this)">29</div>
-              <div class="r-cell red-n" data-key="32" onclick="placeRouletteBet('32',this)">32</div>
-              <div class="r-cell black-n" data-key="35" onclick="placeRouletteBet('35',this)">35</div>
-            </div>
-            <div class="r-row">
-              <div class="r-cell red-n" data-key="1" onclick="placeRouletteBet('1',this)">1</div>
-              <div class="r-cell black-n" data-key="4" onclick="placeRouletteBet('4',this)">4</div>
-              <div class="r-cell red-n" data-key="7" onclick="placeRouletteBet('7',this)">7</div>
-              <div class="r-cell black-n" data-key="10" onclick="placeRouletteBet('10',this)">10</div>
-              <div class="r-cell black-n" data-key="13" onclick="placeRouletteBet('13',this)">13</div>
-              <div class="r-cell red-n" data-key="16" onclick="placeRouletteBet('16',this)">16</div>
-              <div class="r-cell red-n" data-key="19" onclick="placeRouletteBet('19',this)">19</div>
-              <div class="r-cell black-n" data-key="22" onclick="placeRouletteBet('22',this)">22</div>
-              <div class="r-cell red-n" data-key="25" onclick="placeRouletteBet('25',this)">25</div>
-              <div class="r-cell black-n" data-key="28" onclick="placeRouletteBet('28',this)">28</div>
-              <div class="r-cell black-n" data-key="31" onclick="placeRouletteBet('31',this)">31</div>
-              <div class="r-cell red-n" data-key="34" onclick="placeRouletteBet('34',this)">34</div>
-            </div>
-            <!-- Extras -->
-            <div class="r-extra">
-              <div class="r-cell" data-key="1st12" onclick="placeRouletteBet('1st12',this)" style="flex:3">1e Douzaine</div>
-              <div class="r-cell" data-key="2nd12" onclick="placeRouletteBet('2nd12',this)" style="flex:3">2e Douzaine</div>
-              <div class="r-cell" data-key="3rd12" onclick="placeRouletteBet('3rd12',this)" style="flex:3">3e Douzaine</div>
-            </div>
-            <div class="r-extra">
-              <div class="r-cell" data-key="1to18" onclick="placeRouletteBet('1to18',this)">1-18</div>
-              <div class="r-cell" data-key="even" onclick="placeRouletteBet('even',this)">Pair</div>
-              <div class="r-cell red-n" data-key="red" onclick="placeRouletteBet('red',this)">Rouge</div>
-              <div class="r-cell black-n" data-key="black" onclick="placeRouletteBet('black',this)">Noir</div>
-              <div class="r-cell" data-key="odd" onclick="placeRouletteBet('odd',this)">Impair</div>
-              <div class="r-cell" data-key="19to36" onclick="placeRouletteBet('19to36',this)">19-36</div>
-            </div>
-          </div>
-          <!-- Actions -->
-          <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-            <button class="btn-spin" id="spin-btn" onclick="spinRoulette()">🎡 Tourner</button>
-            <button class="btn-clear-r" onclick="clearRouletteBets()">🗑 Effacer</button>
-          </div>
-          <div id="roulette-bets-display" style="margin-top:10px;font-size:12px;color:var(--muted)"></div>
+        <div style="display:flex;gap:2px;margin-bottom:1px;">
+          <div class="r-cell red-n" data-key="3" onclick="placeRouletteBet('3',this)">3</div><div class="r-cell black-n" data-key="6" onclick="placeRouletteBet('6',this)">6</div><div class="r-cell red-n" data-key="9" onclick="placeRouletteBet('9',this)">9</div><div class="r-cell red-n" data-key="12" onclick="placeRouletteBet('12',this)">12</div><div class="r-cell black-n" data-key="15" onclick="placeRouletteBet('15',this)">15</div><div class="r-cell red-n" data-key="18" onclick="placeRouletteBet('18',this)">18</div><div class="r-cell red-n" data-key="21" onclick="placeRouletteBet('21',this)">21</div><div class="r-cell black-n" data-key="24" onclick="placeRouletteBet('24',this)">24</div><div class="r-cell red-n" data-key="27" onclick="placeRouletteBet('27',this)">27</div><div class="r-cell red-n" data-key="30" onclick="placeRouletteBet('30',this)">30</div><div class="r-cell black-n" data-key="33" onclick="placeRouletteBet('33',this)">33</div><div class="r-cell red-n" data-key="36" onclick="placeRouletteBet('36',this)">36</div>
+        </div>
+        <div style="display:flex;gap:2px;margin-bottom:1px;">
+          <div class="r-cell black-n" data-key="2" onclick="placeRouletteBet('2',this)">2</div><div class="r-cell red-n" data-key="5" onclick="placeRouletteBet('5',this)">5</div><div class="r-cell black-n" data-key="8" onclick="placeRouletteBet('8',this)">8</div><div class="r-cell black-n" data-key="11" onclick="placeRouletteBet('11',this)">11</div><div class="r-cell red-n" data-key="14" onclick="placeRouletteBet('14',this)">14</div><div class="r-cell black-n" data-key="17" onclick="placeRouletteBet('17',this)">17</div><div class="r-cell black-n" data-key="20" onclick="placeRouletteBet('20',this)">20</div><div class="r-cell red-n" data-key="23" onclick="placeRouletteBet('23',this)">23</div><div class="r-cell black-n" data-key="26" onclick="placeRouletteBet('26',this)">26</div><div class="r-cell black-n" data-key="29" onclick="placeRouletteBet('29',this)">29</div><div class="r-cell red-n" data-key="32" onclick="placeRouletteBet('32',this)">32</div><div class="r-cell black-n" data-key="35" onclick="placeRouletteBet('35',this)">35</div>
+        </div>
+        <div style="display:flex;gap:2px;margin-bottom:4px;">
+          <div class="r-cell red-n" data-key="1" onclick="placeRouletteBet('1',this)">1</div><div class="r-cell black-n" data-key="4" onclick="placeRouletteBet('4',this)">4</div><div class="r-cell red-n" data-key="7" onclick="placeRouletteBet('7',this)">7</div><div class="r-cell black-n" data-key="10" onclick="placeRouletteBet('10',this)">10</div><div class="r-cell black-n" data-key="13" onclick="placeRouletteBet('13',this)">13</div><div class="r-cell red-n" data-key="16" onclick="placeRouletteBet('16',this)">16</div><div class="r-cell red-n" data-key="19" onclick="placeRouletteBet('19',this)">19</div><div class="r-cell black-n" data-key="22" onclick="placeRouletteBet('22',this)">22</div><div class="r-cell red-n" data-key="25" onclick="placeRouletteBet('25',this)">25</div><div class="r-cell black-n" data-key="28" onclick="placeRouletteBet('28',this)">28</div><div class="r-cell black-n" data-key="31" onclick="placeRouletteBet('31',this)">31</div><div class="r-cell red-n" data-key="34" onclick="placeRouletteBet('34',this)">34</div>
+        </div>
+        <div style="display:flex;gap:2px;margin-bottom:2px;">
+          <div class="r-cell" data-key="1st12" onclick="placeRouletteBet('1st12',this)" style="flex:3;background:rgba(255,255,255,.07);">1e Douz.</div>
+          <div class="r-cell" data-key="2nd12" onclick="placeRouletteBet('2nd12',this)" style="flex:3;background:rgba(255,255,255,.07);">2e Douz.</div>
+          <div class="r-cell" data-key="3rd12" onclick="placeRouletteBet('3rd12',this)" style="flex:3;background:rgba(255,255,255,.07);">3e Douz.</div>
+        </div>
+        <div style="display:flex;gap:2px;">
+          <div class="r-cell" data-key="1to18" onclick="placeRouletteBet('1to18',this)" style="background:rgba(255,255,255,.07);">1-18</div>
+          <div class="r-cell" data-key="even" onclick="placeRouletteBet('even',this)" style="background:rgba(255,255,255,.07);">Pair</div>
+          <div class="r-cell red-n" data-key="red" onclick="placeRouletteBet('red',this)" style="background:#9b1020;">🔴 Rouge</div>
+          <div class="r-cell black-n" data-key="black" onclick="placeRouletteBet('black',this)" style="background:#222;">⚫ Noir</div>
+          <div class="r-cell" data-key="odd" onclick="placeRouletteBet('odd',this)" style="background:rgba(255,255,255,.07);">Impair</div>
+          <div class="r-cell" data-key="19to36" onclick="placeRouletteBet('19to36',this)" style="background:rgba(255,255,255,.07);">19-36</div>
         </div>
       </div>
+      <div id="roulette-bets-display" style="margin-top:10px;font-size:12px;color:var(--muted);text-align:center;">Aucune mise</div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap;">
+      <button id="spin-btn" onclick="spinRoulette()" style="padding:12px 30px;background:linear-gradient(135deg,var(--gold),#d4a800);color:#000;border:none;border-radius:22px;font-weight:900;font-size:15px;cursor:pointer;letter-spacing:1px;box-shadow:0 4px 15px rgba(245,200,0,.3);transition:.2s;">🎡 TOURNER</button>
+      <button onclick="clearRouletteBets()" style="padding:12px 20px;background:var(--red);color:#fff;border:none;border-radius:22px;font-weight:700;font-size:14px;cursor:pointer;">🗑 Effacer</button>
     </div>
   </div>
 
-
-  <!-- PENALTY -->
   <div class="asec" id="tab-penalty" style="padding:0;overflow:hidden;">
     <!-- Penalty styles scoped via prefix -->
     <style id="penalty-styles">
@@ -4722,13 +4684,18 @@ function updateHint(){
 ══════════════════════════ */
 function shoot(){
   if(busy||!pickedZone)return;
+  // Auth gate only if player has a bet placed
+  if(betZone&&!CJ){
+    showNotif("Konekte pou plase yon paryaj","err");
+    return;
+  }
   busy=true;
   document.getElementById('shootBtn').style.display='none';
   document.getElementById('winMsg').className='win-msg';
 
   // Mise
   const rawAmt=parseInt(document.getElementById('betAmt').value)||50;
-  const betAmt=Math.min(Math.max(10,rawAmt),wallet);
+  const betAmt=Math.min(Math.max(10,rawAmt),getSolde()&&CJ?getSolde():rawAmt);
   if(betZone&&CJ){deduireJ(betAmt,"Penalty","Mise penalty zone "+betZone);let st=gSt();st.dep+=betAmt;sSt(st);}
   updatePenaltyWallet();
 
