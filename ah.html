@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Ship'Log - Espace Client</title>
+    <style>
+        * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', sans-serif; }
+        body { background: #f0f2f5; margin: 0; padding: 20px; position: relative; }
+        .app-container { max-width: 1200px; margin: 0 auto; }
+        .header {
+            background: white; border-radius: 60px; padding: 12px 24px;
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .logo-name { display: flex; align-items: center; gap: 15px; }
+        .company-logo { max-height: 50px; max-width: 100px; object-fit: contain; }
+        .company-name { font-size: 1.5rem; font-weight: bold; color: #1e3c72; }
+        .btn { background: #1e3c72; color: white; border: none; padding: 8px 18px; border-radius: 40px; cursor: pointer; font-weight: bold; }
+        .btn-secondary { background: #2c5a8c; }
+        .btn-outline { background: transparent; border: 1px solid #1e3c72; color: #1e3c72; }
+        .card { background: white; border-radius: 28px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .form-group { margin-bottom: 15px; }
+        label { font-weight: 600; display: block; margin-bottom: 5px; color: #1e4663; }
+        input, select { width: 100%; padding: 10px 14px; border: 1px solid #ccc; border-radius: 30px; font-size: 1rem; }
+        button { background: #1e3c72; color: white; border: none; padding: 10px 20px; border-radius: 40px; cursor: pointer; font-weight: bold; }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .colis-card { border: 1px solid #e2e8f0; border-radius: 24px; padding: 16px; margin-bottom: 12px; background: #fefefe; }
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: bold; }
+        .status-transit { background: #bfdbfe; color: #1e3a8a; }
+        .status-arrive { background: #d1fae5; color: #065f46; }
+        .status-livre { background: #e0e7ff; color: #3730a3; }
+        .toast-area {
+            position: fixed; top: 20px; right: 20px; z-index: 9999;
+            width: 320px; display: flex; flex-direction: column; gap: 10px; pointer-events: none;
+        }
+        .toast {
+            pointer-events: auto; background: #1e293b; color: white; padding: 12px 16px;
+            border-radius: 40px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease; display: flex; justify-content: space-between;
+        }
+        .toast.success { background: #166534; }
+        .toast.error { background: #991b1b; }
+        .toast.info { background: #1e3c72; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .notification-list { max-height: 300px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 20px; padding: 10px; background: #fafafa; }
+        .notif-item { border-bottom: 1px solid #e2e8f0; padding: 12px; font-size: 0.85rem; }
+        .notif-item img { max-width: 100%; border-radius: 16px; margin-top: 8px; max-height: 150px; object-fit: cover; }
+        @media (max-width: 680px) { .toast-area { width: 90%; right: 5%; left: 5%; } }
+    </style>
+</head>
+<body>
+<div id="toastArea" class="toast-area"></div>
+<div id="appRoot"></div>
+
+<script>
+    // ======================== DONNÉES PARTAGÉES ========================
+    let appData = {
+        company: { name: "Ship'Log Express", logo: "", tauxUSDToHTG: 130, prixParLivre: 2.5, fraisFixe: 5 },
+        users: [],
+        colis: [],
+        clients: [],
+        notificationsGlobales: [] // publicités avec message + image
+    };
+    let currentClient = null;
+
+    function loadData() {
+        const raw = localStorage.getItem('ship_app_data');
+        if(raw) {
+            const data = JSON.parse(raw);
+            appData.company = data.company || { name: "Ship'Log Express", logo: "", tauxUSDToHTG: 130, prixParLivre: 2.5, fraisFixe: 5 };
+            appData.users = data.users || [];
+            appData.colis = data.colis || [];
+            appData.clients = data.clients || [];
+            appData.notificationsGlobales = data.notificationsGlobales || [];
+        } else {
+            appData.company = { name: "Ship'Log Express", logo: "", tauxUSDToHTG: 130, prixParLivre: 2.5, fraisFixe: 5 };
+            appData.users = [];
+            appData.colis = [];
+            appData.clients = [];
+            appData.notificationsGlobales = [];
+        }
+        saveData();
+    }
+    function saveData() {
+        localStorage.setItem('ship_app_data', JSON.stringify({
+            company: appData.company,
+            users: appData.users,
+            colis: appData.colis,
+            clients: appData.clients,
+            notificationsGlobales: appData.notificationsGlobales
+        }));
+    }
+
+    function showClientNotification(message, type = 'info') {
+        const area = document.getElementById('toastArea');
+        if(!area) return;
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `<span>${message}</span><button style="background:none; border:none; color:white; font-weight:bold; margin-left:10px; cursor:pointer;">✖</button>`;
+        area.appendChild(toast);
+        toast.querySelector('button').onclick = () => toast.remove();
+        setTimeout(() => toast.remove(), 5000);
+    }
+
+    // Ajouter une notification à un client spécifique
+    function notifyClient(clientId, message, type = 'info', image = null) {
+        const client = appData.clients.find(c => c.id === clientId);
+        if(client) {
+            if(!client.notifications) client.notifications = [];
+            client.notifications.unshift({ date: new Date().toISOString(), message, type, image, lu: false });
+            if(client.notifications.length > 50) client.notifications.pop();
+            saveData();
+            if(currentClient && currentClient.id === clientId) {
+                showClientNotification(message, type);
+            }
+        }
+    }
+
+    // Notifier tous les clients (publicité)
+    function notifyAllClients(message, type = 'info', image = null) {
+        const ad = { date: new Date().toISOString(), message, type, image };
+        appData.notificationsGlobales.unshift(ad);
+        if(appData.notificationsGlobales.length > 50) appData.notificationsGlobales.pop();
+        appData.clients.forEach(client => {
+            if(!client.notifications) client.notifications = [];
+            client.notifications.unshift({ ...ad, lu: false });
+            if(client.notifications.length > 50) client.notifications.pop();
+        });
+        saveData();
+        if(currentClient) renderClientDashboard();
+    }
+
+    // Vérifier les changements de statut des colis du client
+    function notifyClientForColisChanges(client) {
+        if(!client) return;
+        const mesColis = appData.colis.filter(c => c.destinataire && c.destinataire.telephone === client.telephone);
+        if(!client.colisStatusCache) client.colisStatusCache = {};
+        mesColis.forEach(colis => {
+            const oldStatus = client.colisStatusCache[colis.id];
+            if(oldStatus !== colis.statut && oldStatus !== undefined) {
+                let message = "";
+                if(colis.statut === "En transit") message = `📦 Votre colis ${colis.numeroSuivi} a été expédié.`;
+                else if(colis.statut === "Arrivé") message = `📍 Votre colis ${colis.numeroSuivi} est arrivé au bureau de livraison.`;
+                else if(colis.statut === "Livré") message = `✅ Votre colis ${colis.numeroSuivi} a été livré.`;
+                if(message) {
+                    if(!client.notifications) client.notifications = [];
+                    client.notifications.unshift({ date: new Date().toISOString(), message, type: "success", image: null, lu: false });
+                    if(currentClient && currentClient.id === client.id) showClientNotification(message, "success");
+                }
+            }
+            client.colisStatusCache[colis.id] = colis.statut;
+        });
+        Object.keys(client.colisStatusCache).forEach(id => {
+            if(!mesColis.find(c => c.id === id)) delete client.colisStatusCache[id];
+        });
+        saveData();
+    }
+
+    // Rendu principal
+    function render() {
+        const root = document.getElementById('appRoot');
+        if(!currentClient) {
+            // Connexion / inscription
+            root.innerHTML = `
+                <div class="app-container">
+                    <div class="header">
+                        <div class="logo-name">
+                            ${appData.company.logo ? `<img src="${appData.company.logo}" class="company-logo">` : ''}
+                            <div class="company-name">${appData.company.name}</div>
+                        </div>
+                    </div>
+                    <div class="card" style="max-width:500px; margin:0 auto;">
+                        <h2>👤 Espace client</h2>
+                        <div style="display:flex; gap:10px; margin-bottom:20px;">
+                            <button id="showLoginBtn" class="btn">Connexion</button>
+                            <button id="showRegisterBtn" class="btn btn-secondary">Inscription</button>
+                        </div>
+                        <div id="loginForm" style="display:block;">
+                            <div class="form-group"><label>📞 Téléphone</label><input type="tel" id="loginTel" placeholder="+509 1234 5678"></div>
+                            <div class="form-group"><label>🔒 Mot de passe</label><input type="password" id="loginPwd"></div>
+                            <button id="doLoginBtn">Se connecter</button>
+                            <div id="loginError" class="error-msg" style="color:red; margin-top:10px;"></div>
+                        </div>
+                        <div id="registerForm" style="display:none;">
+                            <div class="form-group"><label>👤 Nom complet</label><input type="text" id="regNom"></div>
+                            <div class="form-group"><label>📧 Email</label><input type="email" id="regEmail"></div>
+                            <div class="form-group"><label>📞 Téléphone (unique)</label><input type="tel" id="regTel"></div>
+                            <div class="form-group"><label>🔒 Mot de passe</label><input type="password" id="regPwd"></div>
+                            <button id="doRegisterBtn">Créer mon compte</button>
+                            <div id="registerError" style="color:red; margin-top:10px;"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('showLoginBtn').onclick = () => {
+                document.getElementById('loginForm').style.display = 'block';
+                document.getElementById('registerForm').style.display = 'none';
+            };
+            document.getElementById('showRegisterBtn').onclick = () => {
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('registerForm').style.display = 'block';
+            };
+            document.getElementById('doLoginBtn').onclick = () => {
+                const tel = document.getElementById('loginTel').value.trim();
+                const pwd = document.getElementById('loginPwd').value;
+                const client = appData.clients.find(c => c.telephone === tel && c.password === pwd);
+                if(client) {
+                    currentClient = client;
+                    render();
+                } else {
+                    document.getElementById('loginError').innerText = "Téléphone ou mot de passe incorrect";
+                }
+            };
+            document.getElementById('doRegisterBtn').onclick = () => {
+                const nom = document.getElementById('regNom').value.trim();
+                const email = document.getElementById('regEmail').value.trim();
+                const tel = document.getElementById('regTel').value.trim();
+                const pwd = document.getElementById('regPwd').value;
+                if(!nom || !email || !tel || !pwd) {
+                    document.getElementById('registerError').innerText = "Tous les champs sont requis";
+                    return;
+                }
+                if(appData.clients.find(c => c.telephone === tel)) {
+                    document.getElementById('registerError').innerText = "Ce numéro de téléphone est déjà utilisé";
+                    return;
+                }
+                const newClient = {
+                    id: 'client_' + Date.now(),
+                    nom: nom,
+                    email: email,
+                    telephone: tel,
+                    password: pwd,
+                    notifications: [],
+                    colisStatusCache: {}
+                };
+                appData.clients.push(newClient);
+                saveData();
+                currentClient = newClient;
+                render();
+                showClientNotification("Bienvenue ! Votre compte a été créé.", "success");
+            };
+            return;
+        }
+
+        // Dashboard client
+        notifyClientForColisChanges(currentClient);
+        let mesColis = appData.colis.filter(c => c.destinataire && c.destinataire.telephone === currentClient.telephone);
+        const clientNotifications = currentClient.notifications || [];
+        const allNotifs = [...clientNotifications].sort((a,b) => new Date(b.date) - new Date(a.date));
+        
+        root.innerHTML = `
+            <div class="app-container">
+                <div class="header">
+                    <div class="logo-name">
+                        ${appData.company.logo ? `<img src="${appData.company.logo}" class="company-logo">` : ''}
+                        <div class="company-name">${appData.company.name}</div>
+                    </div>
+                    <div>👋 Bonjour, ${currentClient.nom}</div>
+                    <button id="logoutBtn" class="btn-outline btn">Déconnexion</button>
+                </div>
+                <div class="grid-2">
+                    <div class="card">
+                        <h3>📦 Mes colis</h3>
+                        ${mesColis.length === 0 ? '<p>Aucun colis trouvé pour votre numéro.</p>' : ''}
+                        <div id="colisList">
+                            ${mesColis.map(colis => `
+                                <div class="colis-card">
+                                    <div><strong>${colis.numeroSuivi}</strong> 
+                                        <span class="badge ${colis.statut === 'En transit' ? 'status-transit' : (colis.statut === 'Arrivé' ? 'status-arrive' : 'status-livre')}">${colis.statut}</span>
+                                    </div>
+                                    <div>📤 Expéditeur: ${colis.expediteurNom}</div>
+                                    <div>📍 Livraison: ${colis.destinataire.adresse}</div>
+                                    <div>⚖️ ${colis.poidsLivre} lb | 💰 ${colis.prixUsd} USD / ${colis.prixGourdes} HTG</div>
+                                    ${colis.paiement?.effectue ? `<div>💵 Payé: ${colis.paiement.montantRecu} ${colis.paiement.devise}</div>` : '<div>⏳ En attente de paiement à la livraison</div>'}
+                                    ${colis.photoColis ? `<img src="${colis.photoColis}" class="photo-thumb" style="max-width:80px; border-radius:12px;">` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button id="refreshColisBtn" class="btn-secondary" style="margin-top:10px;">🔄 Actualiser</button>
+                    </div>
+                    <div class="card">
+                        <h3>🔔 Notifications & Publicités</h3>
+                        <div class="notification-list" id="notifList">
+                            ${allNotifs.length === 0 ? '<div>Aucune notification</div>' : allNotifs.map(n => `
+                                <div class="notif-item">
+                                    <strong>${new Date(n.date).toLocaleString()}</strong><br>
+                                    <span style="color:${n.type === 'success' ? '#166534' : (n.type === 'error' ? '#b91c1c' : '#1e3c72')}">${n.message}</span>
+                                    ${n.image ? `<div><img src="${n.image}" alt="publicité"></div>` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button id="clearNotifsBtn" class="btn-outline" style="margin-top:10px;">Effacer mes notifications</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>ℹ️ Informations</h3>
+                    <p>Taux de change: 1 USD = ${appData.company.tauxUSDToHTG} HTG</p>
+                    <p>Tarifs: ${appData.company.prixParLivre} USD/livre + ${appData.company.fraisFixe} USD fixe</p>
+                </div>
+            </div>
+        `;
+        document.getElementById('logoutBtn').onclick = () => { currentClient = null; render(); };
+        document.getElementById('refreshColisBtn').onclick = () => { notifyClientForColisChanges(currentClient); render(); };
+        document.getElementById('clearNotifsBtn').onclick = () => { currentClient.notifications = []; saveData(); render(); };
+    }
+
+    loadData();
+    render();
+    window.notifyAllClients = notifyAllClients;
+</script>
+</body>
+</html>
