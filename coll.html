@@ -240,9 +240,11 @@
     // ---------- MODÈLES ----------
     let appData = {
         company: { name: "Ship'Log Express", logo: "", tauxUSDToHTG: 130, prixParLivre: 2.5, fraisFixe: 5 },
-        users: [],
+        users: [],        // receveurs, livreurs, admin général (role: admin)
+        investors: [],    // { id, nom, email, adresse, tel1, tel2, pourcentage, code, dateCreation }
         colis: [],
-        notifications: []
+        notifications: [],
+        totalMontantRecuUSD: 0   // cumul de tous les paiements en USD (tous colis livrés)
     };
     let currentUser = null;
 
@@ -255,27 +257,54 @@
             if(!appData.company.prixParLivre) appData.company.prixParLivre = 2.5;
             if(!appData.company.fraisFixe) appData.company.fraisFixe = 5;
             if(!appData.users) appData.users = [];
+            if(!appData.investors) appData.investors = [];
             if(!appData.colis) appData.colis = [];
             if(!appData.notifications) appData.notifications = [];
+            if(appData.totalMontantRecuUSD === undefined) appData.totalMontantRecuUSD = 0;
         } else {
             appData.company = { name: "Ship'Log Express", logo: "", tauxUSDToHTG: 130, prixParLivre: 2.5, fraisFixe: 5 };
             appData.users = [
                 { id: "u1", nom: "Alice Receveur", bureauNom: "Bureau Port-au-Prince", role: "receveur", code: "1234" },
                 { id: "u2", nom: "Bob Livreur", bureauNom: "Bureau Miami", role: "livreur", code: "5678" },
-                { id: "admin", nom: "Admin Système", bureauNom: "Siège", role: "admin", code: "admin123" }
+                { id: "admin", nom: "Admin Général", bureauNom: "Siège", role: "admin", code: "admin123" }
             ];
+            appData.investors = [];
             appData.colis = [];
             appData.notifications = [];
+            appData.totalMontantRecuUSD = 0;
             saveData();
         }
     }
 
+    // Recalculer totalMontantRecuUSD à partir des colis livrés (sécurité)
+    function recalculerTotalRecu() {
+        let total = 0;
+        appData.colis.forEach(c => {
+            if (c.statut === 'Livré' && c.paiement?.effectue) {
+                let montantUSD = 0;
+                if (c.paiement.devise === 'USD') montantUSD = c.paiement.montantRecu;
+                else if (c.paiement.devise === 'HTG') montantUSD = c.paiement.montantRecu / appData.company.tauxUSDToHTG;
+                total += montantUSD;
+            }
+        });
+        appData.totalMontantRecuUSD = total;
+        saveData();
+    }
+
+    // Mettre à jour le total après une livraison
+    function ajouterMontantRecu(montantUSD) {
+        appData.totalMontantRecuUSD += montantUSD;
+        saveData();
+    }
+
+    // Calculer la part due à un investisseur
+    function getInvestorDue(investor) {
+        return (appData.totalMontantRecuUSD * investor.pourcentage) / 100;
+    }
+
     function showNotification(message, type = 'info') {
         const notifDiv = document.getElementById('global-notification-area');
-        if (!notifDiv) {
-            console.warn("Zone de notification non trouvée");
-            return;
-        }
+        if (!notifDiv) return;
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
         toast.innerHTML = `<span>${message}</span><button style="background:none; border:none; color:white; font-weight:bold; margin-left:10px; cursor:pointer;">✖</button>`;
@@ -285,7 +314,7 @@
         appData.notifications.unshift({ date: new Date().toISOString(), message, type });
         if (appData.notifications.length > 100) appData.notifications.pop();
         saveData();
-        if (currentUser && currentUser.role === 'admin') refreshAdminDashboard();
+        if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'investor')) refreshDashboardForRole();
     }
 
     function calculerPrixTotalUSD(poidsLivre) {
@@ -302,7 +331,8 @@
         });
     }
 
-    function getAdminStats() {
+    // Statistiques générales (pour admin et investisseur)
+    function getGeneralStats() {
         const now = new Date();
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
         const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
@@ -320,14 +350,30 @@
             colisArrivesNonLivres: colisArrivesNonLivres.length,
             montantRecuAujourdhuiUSD,
             montantEnAttenteUSD,
-            montantArrivesNonLivresUSD
+            montantArrivesNonLivresUSD,
+            totalMontantRecuUSD: appData.totalMontantRecuUSD
         };
+    }
+
+    function refreshDashboardForRole() {
+        if (currentUser?.role === 'admin') refreshAdminDashboard();
+        else if (currentUser?.role === 'investor') refreshInvestorDashboard();
     }
 
     function refreshAdminDashboard() {
         const container = document.getElementById('adminDashboardStats');
         if (!container) return;
-        const stats = getAdminStats();
+        const stats = getGeneralStats();
+        // Liste des investisseurs
+        const investorsList = appData.investors.map(inv => `
+            <div class="colis-card" style="margin-bottom:10px;">
+                <div><strong>${inv.nom}</strong> (${inv.email}) - ${inv.pourcentage}%</div>
+                <div>📞 ${inv.tel1} ${inv.tel2 ? '/ ' + inv.tel2 : ''}</div>
+                <div>💰 Part due: $${getInvestorDue(inv).toFixed(2)} USD</div>
+                <button class="btn-danger delete-investor" data-id="${inv.id}">Supprimer</button>
+            </div>
+        `).join('');
+        const reste = stats.totalMontantRecuUSD - appData.investors.reduce((sum, inv) => sum + getInvestorDue(inv), 0);
         container.innerHTML = `
             <div class="stats-grid">
                 <div class="stat-card"><div class="stat-number">${stats.totalColis}</div><div>Total colis</div></div>
@@ -335,9 +381,24 @@
                 <div class="stat-card"><div class="stat-number">${stats.colisEnAttente}</div><div>En transit</div></div>
                 <div class="stat-card"><div class="stat-number">${stats.colisArrivesNonLivres}</div><div>Arrivés non livrés</div></div>
                 <div class="stat-card"><div class="stat-number">$${stats.montantRecuAujourdhuiUSD.toFixed(2)}</div><div>Reçu aujourd'hui</div></div>
-                <div class="stat-card"><div class="stat-number">$${stats.montantEnAttenteUSD.toFixed(2)}</div><div>En attente paiement</div></div>
-                <div class="stat-card"><div class="stat-number">$${stats.montantArrivesNonLivresUSD.toFixed(2)}</div><div>Arrivés non livrés</div></div>
+                <div class="stat-card"><div class="stat-number">$${stats.totalMontantRecuUSD.toFixed(2)}</div><div>Total encaissé (USD)</div></div>
+                <div class="stat-card"><div class="stat-number">$${reste.toFixed(2)}</div><div>Reste (après investisseurs)</div></div>
             </div>
+            <h3>👥 Investisseurs</h3>
+            <div id="investorsList">${investorsList || 'Aucun investisseur'}</div>
+            <hr>
+            <h3>➕ Ajouter un investisseur</h3>
+            <div class="form-grid">
+                <div class="form-group"><label>Nom complet</label><input type="text" id="invNom" placeholder="Nom"></div>
+                <div class="form-group"><label>Email</label><input type="email" id="invEmail"></div>
+                <div class="form-group"><label>Adresse</label><input type="text" id="invAdresse"></div>
+                <div class="form-group"><label>Téléphone 1</label><input type="tel" id="invTel1"></div>
+                <div class="form-group"><label>Téléphone 2 (optionnel)</label><input type="tel" id="invTel2"></div>
+                <div class="form-group"><label>Pourcentage (%)</label><input type="number" id="invPourcent" step="0.1" min="0" max="100"></div>
+                <div class="form-group"><label>Code de connexion</label><input type="text" id="invCode"></div>
+            </div>
+            <button id="addInvestorBtn">➕ Créer investisseur</button>
+            <hr>
             <h3>📜 Historique des notifications</h3>
             <div id="notificationsHistory" style="max-height:280px; overflow-y:auto; background:#f9f9ff; border-radius:20px; padding:12px;"></div>
         `;
@@ -351,9 +412,88 @@
             `).join('');
             if (appData.notifications.length === 0) historyDiv.innerHTML = '<div>Aucune notification</div>';
         }
+        // Événements supprimer investisseur
+        document.querySelectorAll('.delete-investor').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.getAttribute('data-id');
+                appData.investors = appData.investors.filter(i => i.id !== id);
+                saveData();
+                showNotification("Investisseur supprimé", "info");
+                refreshAdminDashboard();
+            });
+        });
+        document.getElementById('addInvestorBtn')?.addEventListener('click', () => {
+            const nom = document.getElementById('invNom').value.trim();
+            const email = document.getElementById('invEmail').value.trim();
+            const adresse = document.getElementById('invAdresse').value.trim();
+            const tel1 = document.getElementById('invTel1').value.trim();
+            const tel2 = document.getElementById('invTel2').value.trim();
+            const pourcent = parseFloat(document.getElementById('invPourcent').value);
+            const code = document.getElementById('invCode').value.trim();
+            if (!nom || !email || !adresse || !tel1 || isNaN(pourcent) || !code) {
+                showNotification("Tous les champs obligatoires (sauf tel2) sont requis", "error");
+                return;
+            }
+            const newInvestor = {
+                id: 'inv_' + Date.now(),
+                nom, email, adresse, tel1, tel2: tel2 || '',
+                pourcentage: pourcent,
+                code: code,
+                dateCreation: new Date().toISOString()
+            };
+            appData.investors.push(newInvestor);
+            saveData();
+            showNotification(`Investisseur ${nom} créé avec ${pourcent}%`, "success");
+            refreshAdminDashboard();
+        });
     }
 
-    // Impression étiquette réception (à coller sur la boîte)
+    function refreshInvestorDashboard() {
+        const investor = currentUser;
+        const stats = getGeneralStats();
+        const due = getInvestorDue(investor);
+        const container = document.getElementById('investorDashboardStats');
+        if (!container) return;
+        container.innerHTML = `
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-number">${stats.totalColis}</div><div>Total colis traités</div></div>
+                <div class="stat-card"><div class="stat-number">${stats.colisLivres}</div><div>Colis livrés</div></div>
+                <div class="stat-card"><div class="stat-number">$${stats.totalMontantRecuUSD.toFixed(2)}</div><div>Total encaissé (USD)</div></div>
+                <div class="stat-card"><div class="stat-number">${investor.pourcentage}%</div><div>Votre pourcentage</div></div>
+                <div class="stat-card"><div class="stat-number">$${due.toFixed(2)}</div><div>Votre part (USD)</div></div>
+            </div>
+            <h3>📜 Détail des transactions récentes</h3>
+            <div id="transactionsList" style="max-height:300px; overflow-y:auto;"></div>
+            <hr>
+            <h3>🔔 Historique des notifications</h3>
+            <div id="investorNotifHistory" style="max-height:200px; overflow-y:auto;"></div>
+        `;
+        // Liste des colis livrés avec montant
+        const transactions = appData.colis.filter(c => c.statut === 'Livré' && c.paiement?.effectue).slice(0, 20);
+        const transDiv = document.getElementById('transactionsList');
+        if (transDiv) {
+            transDiv.innerHTML = transactions.map(c => `
+                <div style="border-bottom:1px solid #e2e8f0; padding:8px;">
+                    <strong>${c.numeroSuivi}</strong> - ${c.destinataire.nom} - 
+                    Montant: ${c.paiement.montantRecu} ${c.paiement.devise} 
+                    (${c.paiement.devise === 'USD' ? c.paiement.montantRecu : (c.paiement.montantRecu / appData.company.tauxUSDToHTG).toFixed(2)} USD)
+                    - Livré le ${new Date(c.dateLivraison).toLocaleDateString()}
+                </div>
+            `).join('');
+            if (transactions.length === 0) transDiv.innerHTML = '<div>Aucune transaction</div>';
+        }
+        const notifDiv = document.getElementById('investorNotifHistory');
+        if (notifDiv) {
+            notifDiv.innerHTML = appData.notifications.slice(0, 20).map(n => `
+                <div style="border-bottom:1px solid #e2e8f0; padding:8px; font-size:0.85rem;">
+                    <strong>${new Date(n.date).toLocaleString()}</strong> - ${n.message}
+                </div>
+            `).join('');
+            if (appData.notifications.length === 0) notifDiv.innerHTML = '<div>Aucune notification</div>';
+        }
+    }
+
+    // Impressions (inchangées)
     function printReceptionLabel(colis) {
         const labelHtml = `
             <div class="print-label">
@@ -369,16 +509,11 @@
             </div>
         `;
         const win = window.open('', '_blank');
-        win.document.write(`
-            <html><head><title>Étiquette ${colis.numeroSuivi}</title>
-            <style>body { font-family: monospace; padding: 20px; }</style>
-            </head><body>${labelHtml}</body></html>
-        `);
+        win.document.write(`<html><head><title>Étiquette ${colis.numeroSuivi}</title><style>body { font-family: monospace; padding: 20px; }</style></head><body>${labelHtml}</body></html>`);
         win.document.close();
         win.print();
     }
 
-    // Impression fiche livraison (pour le client)
     function printDeliveryReceipt(colis) {
         const receiptHtml = `
             <div class="print-receipt">
@@ -399,15 +534,12 @@
             </div>
         `;
         const win = window.open('', '_blank');
-        win.document.write(`
-            <html><head><title>Fiche ${colis.numeroSuivi}</title>
-            <style>body { font-family: monospace; padding:20px; }</style>
-            </head><body>${receiptHtml}</body></html>
-        `);
+        win.document.write(`<html><head><title>Fiche ${colis.numeroSuivi}</title><style>body { font-family: monospace; padding:20px; }</style></head><body>${receiptHtml}</body></html>`);
         win.document.close();
         win.print();
     }
 
+    // Rendu principal
     function render() {
         const root = document.getElementById('appRoot');
         if (!currentUser) {
@@ -423,7 +555,16 @@
             `;
             document.getElementById('loginBtn')?.addEventListener('click', () => {
                 const code = document.getElementById('loginCode').value.trim();
-                const user = appData.users.find(u => u.code === code);
+                let user = appData.users.find(u => u.code === code);
+                if (!user) {
+                    const investor = appData.investors.find(i => i.code === code);
+                    if (investor) {
+                        currentUser = { ...investor, role: 'investor', nom: investor.nom, code: investor.code };
+                        render();
+                        showNotification(`Bienvenue investisseur ${investor.nom}`, "success");
+                        return;
+                    }
+                }
                 if (user) {
                     currentUser = user;
                     render();
@@ -440,12 +581,14 @@
         const isAdmin = (currentUser.role === 'admin');
         const isReceveur = (currentUser.role === 'receveur');
         const isLivreur = (currentUser.role === 'livreur');
+        const isInvestor = (currentUser.role === 'investor');
 
         let tabsHtml = '';
         if (isReceveur) tabsHtml = `<button class="tab-btn active" data-page="page-receveur">📦 Gestion des colis</button>`;
         if (isLivreur) tabsHtml = `<button class="tab-btn active" data-page="page-livraison">🚚 Livraison / Réception</button>`;
-        if (isAdmin) tabsHtml = `<button class="tab-btn active" data-page="page-admin">📊 Tableau de bord</button>`;
-        tabsHtml += `<button class="tab-btn" data-page="page-suivi">📋 Suivi global</button>`;
+        if (isAdmin) tabsHtml = `<button class="tab-btn active" data-page="page-admin">📊 Tableau de bord (Admin)</button>`;
+        if (isInvestor) tabsHtml = `<button class="tab-btn active" data-page="page-investor">📈 Tableau de bord (Investisseur)</button>`;
+        if (!isInvestor) tabsHtml += `<button class="tab-btn" data-page="page-suivi">📋 Suivi global</button>`;
 
         root.innerHTML = `
             <div class="app-container">
@@ -456,60 +599,46 @@
                         💱 1 USD = ${appData.company.tauxUSDToHTG} HTG &nbsp;|&nbsp;
                         💰 ${appData.company.prixParLivre} USD/livre + ${appData.company.fraisFixe} USD
                     </div>
-                    <div>👤 ${currentUser.nom} (${currentUser.role === 'receveur' ? 'Bureau envoi' : (currentUser.role === 'livreur' ? 'Bureau livraison' : 'Admin')})</div>
+                    <div>👤 ${currentUser.nom} (${isInvestor ? 'Investisseur' : (isReceveur ? 'Bureau envoi' : (isLivreur ? 'Bureau livraison' : 'Admin'))})</div>
                     <button id="logoutBtn" class="btn-outline">Déconnexion</button>
                 </div>
                 <div class="tabs">${tabsHtml}</div>
 
                 <!-- PAGE RECEVEUR -->
                 <div id="page-receveur" class="page ${isReceveur ? 'active' : ''}">
-                    <div class="flex-row" style="margin-bottom:20px;">
-                        <h2>📦 Mes colis</h2>
-                        <button id="showFormBtn" class="btn-success">➕ Nouveau colis</button>
-                    </div>
+                    <div class="flex-row" style="margin-bottom:20px;"><h2>📦 Mes colis</h2><button id="showFormBtn" class="btn-success">➕ Nouveau colis</button></div>
                     <div id="colisListReceveur" class="card-list"></div>
                     <div id="formContainer" style="display:none; margin-top:20px; border-top:2px solid #e2e8f0; padding-top:20px;">
                         <h3>📝 Créer un nouveau colis</h3>
-                        <form id="formEnvoi">
-                            <div class="form-grid">
-                                <div class="form-group"><label>🏢 Bureau de destination</label><select id="destLivreurSelect" required></select></div>
-                                <div class="form-group"><label>👤 Expéditeur</label><input type="text" id="expediteurNom" required></div>
-                                <div class="form-group"><label>👤 Destinataire</label><input type="text" id="destinataireNom" required></div>
-                                <div class="form-group"><label>📍 Adresse destinataire</label><input type="text" id="destinataireAdresse" required></div>
-                                <div class="form-group"><label>📞 Téléphone destinataire</label><input type="tel" id="destinataireTel"></div>
-                                <div class="form-group"><label>🆔 CNI (optionnel)</label><input type="text" id="destinataireCni"></div>
-                                <div class="form-group"><label>⚖️ Poids (livres)</label><input type="number" id="poidsLivre" step="0.1" required></div>
-                                <div class="form-group"><label>📸 Photo du colis</label><input type="file" id="photoColisCam" accept="image/*" capture="environment"><div id="previewPhotoColis"></div></div>
-                                <div class="form-group"><label>💰 Prix total USD</label><input type="text" id="prixUsd" readonly></div>
-                                <div class="form-group"><label>💰 Prix total Gourdes</label><input type="text" id="prixGourdes" readonly></div>
-                            </div>
-                            <div style="display:flex; gap:12px; margin-top:20px;">
-                                <button type="submit">✅ Enregistrer colis</button>
-                                <button type="button" id="cancelFormBtn" class="btn-secondary">Annuler</button>
-                            </div>
-                            <div id="msgEnvoi"></div>
-                        </form>
+                        <form id="formEnvoi"><div class="form-grid"><div class="form-group"><label>🏢 Bureau de destination</label><select id="destLivreurSelect" required></select></div>
+                        <div class="form-group"><label>👤 Expéditeur</label><input type="text" id="expediteurNom" required></div>
+                        <div class="form-group"><label>👤 Destinataire</label><input type="text" id="destinataireNom" required></div>
+                        <div class="form-group"><label>📍 Adresse destinataire</label><input type="text" id="destinataireAdresse" required></div>
+                        <div class="form-group"><label>📞 Téléphone destinataire</label><input type="tel" id="destinataireTel"></div>
+                        <div class="form-group"><label>🆔 CNI (optionnel)</label><input type="text" id="destinataireCni"></div>
+                        <div class="form-group"><label>⚖️ Poids (livres)</label><input type="number" id="poidsLivre" step="0.1" required></div>
+                        <div class="form-group"><label>📸 Photo du colis</label><input type="file" id="photoColisCam" accept="image/*" capture="environment"><div id="previewPhotoColis"></div></div>
+                        <div class="form-group"><label>💰 Prix total USD</label><input type="text" id="prixUsd" readonly></div>
+                        <div class="form-group"><label>💰 Prix total Gourdes</label><input type="text" id="prixGourdes" readonly></div></div>
+                        <div style="display:flex; gap:12px; margin-top:20px;"><button type="submit">✅ Enregistrer colis</button><button type="button" id="cancelFormBtn" class="btn-secondary">Annuler</button></div>
+                        <div id="msgEnvoi"></div></form>
                     </div>
                 </div>
 
                 <!-- PAGE LIVRAISON -->
                 <div id="page-livraison" class="page ${isLivreur ? 'active' : ''}">
                     <h2>🔍 Rechercher colis par nom destinataire</h2>
-                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                        <input type="text" id="searchLivraisonNom" placeholder="Nom destinataire">
-                        <button id="searchLivBtn">Chercher</button>
-                        <button id="resetLivBtn" class="btn-secondary">Voir tous mes colis</button>
-                    </div>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;"><input type="text" id="searchLivraisonNom" placeholder="Nom destinataire"><button id="searchLivBtn">Chercher</button><button id="resetLivBtn" class="btn-secondary">Voir tous mes colis</button></div>
                     <div id="livraisonResults" class="card-list"></div>
                 </div>
 
                 <!-- PAGE ADMIN -->
                 <div id="page-admin" class="page ${isAdmin ? 'active' : ''}">
-                    <h2>📊 Tableau de bord</h2>
+                    <h2>📊 Tableau de bord (Admin général)</h2>
                     <button id="refreshDashboardBtn" class="btn-secondary">🔄 Actualiser</button>
                     <div id="adminDashboardStats"></div>
                     <hr>
-                    <h2>🏢 Configuration</h2>
+                    <h2>🏢 Configuration entreprise</h2>
                     <div class="form-grid">
                         <div class="form-group"><label>Nom entreprise</label><input type="text" id="companyName" value="${appData.company.name}"></div>
                         <div class="form-group"><label>Logo (upload)</label><input type="file" id="companyLogoUpload" accept="image/*"><button id="applyLogoBtn" class="btn-secondary">Appliquer</button><div id="currentLogoPreview" style="margin-top:8px;">${appData.company.logo ? `<img src="${appData.company.logo}" style="max-height:60px;">` : 'Aucun logo'}</div></div>
@@ -519,29 +648,33 @@
                         <button id="saveTarifsBtn" class="btn-secondary">Enregistrer tarifs</button>
                     </div>
                     <hr>
-                    <h2>👥 Utilisateurs</h2>
-                    <div class="form-grid">
-                        <div class="form-group"><label>Nom / Bureau</label><input type="text" id="newUserName"></div>
-                        <div class="form-group"><label>Rôle</label><select id="newUserRole"><option value="receveur">Receveur</option><option value="livreur">Livreur</option></select></div>
-                        <div class="form-group"><label>Code</label><input type="text" id="newUserCode"></div>
-                    </div>
-                    <button id="addUserBtn">➕ Créer</button>
-                    <button id="refreshUsersBtn" class="btn-secondary">🔄 Afficher</button>
+                    <h2>👥 Gestion des utilisateurs (receveurs/livreurs)</h2>
+                    <div class="form-grid"><div class="form-group"><label>Nom / Bureau</label><input type="text" id="newUserName"></div><div class="form-group"><label>Rôle</label><select id="newUserRole"><option value="receveur">Receveur</option><option value="livreur">Livreur</option></select></div><div class="form-group"><label>Code</label><input type="text" id="newUserCode"></div></div>
+                    <button id="addUserBtn">➕ Créer</button><button id="refreshUsersBtn" class="btn-secondary">🔄 Afficher</button>
                     <div id="usersList" class="card-list"></div>
+                </div>
+
+                <!-- PAGE INVESTISSEUR -->
+                <div id="page-investor" class="page ${isInvestor ? 'active' : ''}">
+                    <h2>📈 Tableau de bord investisseur</h2>
+                    <button id="refreshInvestorBtn" class="btn-secondary">🔄 Actualiser</button>
+                    <div id="investorDashboardStats"></div>
                 </div>
 
                 <!-- PAGE SUIVI GLOBAL -->
                 <div id="page-suivi" class="page">
                     <h2>📋 Tous les colis</h2>
-                    <input type="text" id="globalSearchInput" placeholder="Rechercher (n° suivi, nom)" style="width:70%;">
-                    <button id="globalSearchBtn">Filtrer</button>
-                    <button id="globalResetBtn" class="btn-secondary">Afficher tous</button>
+                    <input type="text" id="globalSearchInput" placeholder="Rechercher (n° suivi, nom)" style="width:70%;"><button id="globalSearchBtn">Filtrer</button><button id="globalResetBtn" class="btn-secondary">Afficher tous</button>
                     <div id="globalColisContainer" class="card-list"></div>
                 </div>
             </div>
         `;
 
-        // ---------- Fonctions d'affichage ----------
+        // Fonctions communes d'affichage (similaires à avant)
+        function afficherColisReceveur() { /* ... */ }
+        function afficherGlobalColis(filtre = '') { /* ... */ }
+        // Je les recopie rapidement (pour gagner de la place, mais elles sont identiques à la version précédente)
+        // Je vais les réimplémenter brièvement car le code est long. En pratique, on les a déjà définies plus haut, mais pour la cohérence, je les inclus ici.
         function afficherColisReceveur() {
             const container = document.getElementById('colisListReceveur');
             if (!container) return;
@@ -551,15 +684,7 @@
             mesColis.forEach(c => {
                 const div = document.createElement('div');
                 div.className = 'colis-card';
-                div.innerHTML = `
-                    <div class="flex-row">
-                        <div><strong>${c.numeroSuivi}</strong> - <span class="badge ${c.statut === 'En transit' ? 'status-transit' : (c.statut === 'Arrivé' ? 'status-arrive' : 'status-livre')}">${c.statut}</span></div>
-                        <button class="btn-outline print-label-btn" data-id="${c.id}" style="padding:4px 12px;">🏷️ Imprimer étiquette</button>
-                    </div>
-                    <div>👤 ${c.destinataire.nom} → ${c.bureauLivreurNom}</div>
-                    <div>💰 ${c.prixUsd} USD / ${c.prixGourdes} HTG</div>
-                    ${c.photoColis ? `<img src="${c.photoColis}" class="photo-thumb">` : ''}
-                `;
+                div.innerHTML = `<div class="flex-row"><div><strong>${c.numeroSuivi}</strong> - <span class="badge ${c.statut === 'En transit' ? 'status-transit' : (c.statut === 'Arrivé' ? 'status-arrive' : 'status-livre')}">${c.statut}</span></div><button class="btn-outline print-label-btn" data-id="${c.id}" style="padding:4px 12px;">🏷️ Imprimer étiquette</button></div><div>👤 ${c.destinataire.nom} → ${c.bureauLivreurNom}</div><div>💰 ${c.prixUsd} USD / ${c.prixGourdes} HTG</div>${c.photoColis ? `<img src="${c.photoColis}" class="photo-thumb">` : ''}`;
                 container.appendChild(div);
             });
             document.querySelectorAll('.print-label-btn').forEach(btn => {
@@ -570,7 +695,6 @@
                 });
             });
         }
-
         function afficherGlobalColis(filtre = '') {
             const container = document.getElementById('globalColisContainer');
             if (!container) return;
@@ -584,17 +708,7 @@
             data.forEach(c => {
                 const div = document.createElement('div');
                 div.className = 'colis-card';
-                div.innerHTML = `
-                    <div class="flex-row">
-                        <div><strong>${c.numeroSuivi}</strong> - <span class="badge ${c.statut === 'En transit' ? 'status-transit' : (c.statut === 'Arrivé' ? 'status-arrive' : 'status-livre')}">${c.statut}</span></div>
-                        <div>
-                            <button class="btn-outline print-label-btn" data-id="${c.id}" style="padding:4px 8px;">🏷️ Étiquette</button>
-                            <button class="btn-outline print-receipt-btn" data-id="${c.id}" style="padding:4px 8px;">🖨️ Fiche livraison</button>
-                        </div>
-                    </div>
-                    <div>📤 ${c.expediteurNom} → ${c.destinataire.nom}</div>
-                    <div>⚖️ ${c.poidsLivre} lb | 💰 ${c.prixUsd} USD / ${c.prixGourdes} HTG</div>
-                `;
+                div.innerHTML = `<div class="flex-row"><div><strong>${c.numeroSuivi}</strong> - <span class="badge ${c.statut === 'En transit' ? 'status-transit' : (c.statut === 'Arrivé' ? 'status-arrive' : 'status-livre')}">${c.statut}</span></div><div><button class="btn-outline print-label-btn" data-id="${c.id}" style="padding:4px 8px;">🏷️ Étiquette</button><button class="btn-outline print-receipt-btn" data-id="${c.id}" style="padding:4px 8px;">🖨️ Fiche livraison</button></div></div><div>📤 ${c.expediteurNom} → ${c.destinataire.nom}</div><div>⚖️ ${c.poidsLivre} lb | 💰 ${c.prixUsd} USD / ${c.prixGourdes} HTG</div>`;
                 container.appendChild(div);
             });
             document.querySelectorAll('.print-label-btn').forEach(btn => {
@@ -613,56 +727,28 @@
             });
         }
 
-        // ---- Receveur ----
+        // ---- Receveur (identique à avant) ----
         if (isReceveur) {
             const showFormBtn = document.getElementById('showFormBtn');
             const formContainer = document.getElementById('formContainer');
             const cancelBtn = document.getElementById('cancelFormBtn');
-            showFormBtn.onclick = () => {
-                formContainer.style.display = 'block';
-                showFormBtn.style.display = 'none';
-            };
-            cancelBtn.onclick = () => {
-                formContainer.style.display = 'none';
-                showFormBtn.style.display = 'inline-flex';
-                document.getElementById('formEnvoi').reset();
-                document.getElementById('previewPhotoColis').innerHTML = '';
-            };
-
+            showFormBtn.onclick = () => { formContainer.style.display = 'block'; showFormBtn.style.display = 'none'; };
+            cancelBtn.onclick = () => { formContainer.style.display = 'none'; showFormBtn.style.display = 'inline-flex'; document.getElementById('formEnvoi').reset(); document.getElementById('previewPhotoColis').innerHTML = ''; };
             const livreurs = appData.users.filter(u => u.role === 'livreur');
             const destSelect = document.getElementById('destLivreurSelect');
             destSelect.innerHTML = '<option value="">-- Sélectionner --</option>';
-            livreurs.forEach(l => {
-                const opt = document.createElement('option');
-                opt.value = l.id;
-                opt.textContent = `${l.bureauNom} (${l.nom})`;
-                destSelect.appendChild(opt);
-            });
-
+            livreurs.forEach(l => { const opt = document.createElement('option'); opt.value = l.id; opt.textContent = `${l.bureauNom} (${l.nom})`; destSelect.appendChild(opt); });
             const photoInput = document.getElementById('photoColisCam');
             photoInput.addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 const preview = document.getElementById('previewPhotoColis');
-                if(file) {
-                    const reader = new FileReader();
-                    reader.onload = (ev) => { preview.innerHTML = `<img src="${ev.target.result}" class="photo-thumb" style="max-width:100px;">`; };
-                    reader.readAsDataURL(file);
-                } else preview.innerHTML = '';
+                if(file) { const reader = new FileReader(); reader.onload = (ev) => { preview.innerHTML = `<img src="${ev.target.result}" class="photo-thumb" style="max-width:100px;">`; }; reader.readAsDataURL(file); } else preview.innerHTML = '';
             });
-
             const poidsField = document.getElementById('poidsLivre');
             const usdField = document.getElementById('prixUsd');
             const gourdesField = document.getElementById('prixGourdes');
-            const updatePrix = () => {
-                let p = parseFloat(poidsField.value) || 0;
-                if (p <= 0) p = 0.1;
-                const usd = calculerPrixTotalUSD(p);
-                usdField.value = usd.toFixed(2) + ' USD';
-                gourdesField.value = (usd * appData.company.tauxUSDToHTG).toFixed(2) + ' HTG';
-            };
-            poidsField.addEventListener('input', updatePrix);
-            updatePrix();
-
+            const updatePrix = () => { let p = parseFloat(poidsField.value) || 0; if (p <= 0) p = 0.1; const usd = calculerPrixTotalUSD(p); usdField.value = usd.toFixed(2) + ' USD'; gourdesField.value = (usd * appData.company.tauxUSDToHTG).toFixed(2) + ' HTG'; };
+            poidsField.addEventListener('input', updatePrix); updatePrix();
             const formEnvoi = document.getElementById('formEnvoi');
             formEnvoi.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -674,48 +760,23 @@
                 const tel = document.getElementById('destinataireTel').value.trim();
                 const cni = document.getElementById('destinataireCni').value.trim();
                 const poidsLivre = parseFloat(poidsField.value);
-                if (!expediteur || !destNom || !adresse || isNaN(poidsLivre) || poidsLivre <= 0) {
-                    showNotification("Champs obligatoires", "error");
-                    return;
-                }
+                if (!expediteur || !destNom || !adresse || isNaN(poidsLivre) || poidsLivre <= 0) { showNotification("Champs obligatoires", "error"); return; }
                 let photoBase64 = null;
                 if (photoInput.files.length) photoBase64 = await readFileAsBase64(photoInput.files[0]);
                 const prixUsd = calculerPrixTotalUSD(poidsLivre);
                 const prixGourdes = prixUsd * appData.company.tauxUSDToHTG;
                 const tracking = genTracking();
                 const livreurUser = appData.users.find(u => u.id === destLivreurId);
-                const newColis = {
-                    id: tracking,
-                    numeroSuivi: tracking,
-                    bureauEnvoiId: currentUser.id,
-                    bureauEnvoiNom: currentUser.bureauNom,
-                    bureauLivreurId: destLivreurId,
-                    bureauLivreurNom: livreurUser ? livreurUser.bureauNom : "inconnu",
-                    expediteurNom: expediteur,
-                    destinataire: { nom: destNom, adresse, telephone: tel, cni: cni || '' },
-                    poidsLivre: poidsLivre,
-                    prixUsd: prixUsd,
-                    prixGourdes: prixGourdes,
-                    photoColis: photoBase64,
-                    statut: "En transit",
-                    paiement: { effectue: false, montantRecu: null, moyen: null, devise: null, photoCNI: null, photoColisLivraison: null },
-                    dateEnvoi: new Date().toISOString(),
-                    dateLivraison: null
-                };
+                const newColis = { id: tracking, numeroSuivi: tracking, bureauEnvoiId: currentUser.id, bureauEnvoiNom: currentUser.bureauNom, bureauLivreurId: destLivreurId, bureauLivreurNom: livreurUser ? livreurUser.bureauNom : "inconnu", expediteurNom: expediteur, destinataire: { nom: destNom, adresse, telephone: tel, cni: cni || '' }, poidsLivre: poidsLivre, prixUsd: prixUsd, prixGourdes: prixGourdes, photoColis: photoBase64, statut: "En transit", paiement: { effectue: false, montantRecu: null, moyen: null, devise: null, photoCNI: null, photoColisLivraison: null }, dateEnvoi: new Date().toISOString(), dateLivraison: null };
                 appData.colis.unshift(newColis);
                 saveData();
                 showNotification(`Colis ${tracking} enregistré`, "success");
-                formEnvoi.reset();
-                photoInput.value = '';
-                document.getElementById('previewPhotoColis').innerHTML = '';
-                formContainer.style.display = 'none';
-                showFormBtn.style.display = 'inline-flex';
-                afficherColisReceveur();
+                formEnvoi.reset(); photoInput.value = ''; document.getElementById('previewPhotoColis').innerHTML = ''; formContainer.style.display = 'none'; showFormBtn.style.display = 'inline-flex'; afficherColisReceveur();
             });
             afficherColisReceveur();
         }
 
-        // ---- Livreur ----
+        // ---- Livreur (avec mise à jour du total et des investisseurs) ----
         if (isLivreur) {
             function renderLivraisonResults(colisFiltres) {
                 const container = document.getElementById('livraisonResults');
@@ -726,52 +787,18 @@
                     const card = document.createElement('div');
                     card.className = 'colis-card';
                     let statutClass = colis.statut === 'En transit' ? 'status-transit' : (colis.statut === 'Arrivé' ? 'status-arrive' : 'status-livre');
-                    card.innerHTML = `
-                        <div class="flex-row">
-                            <h3>${colis.numeroSuivi} - <span class="badge ${statutClass}">${colis.statut}</span></h3>
-                            <button class="btn-outline print-receipt-btn" data-id="${colis.id}" style="padding:4px 12px;">🖨️ Fiche livraison</button>
-                        </div>
-                        <div><strong>Destinataire:</strong> ${colis.destinataire.nom} - ${colis.destinataire.adresse}</div>
-                        <div><strong>Expéditeur:</strong> ${colis.expediteurNom}</div>
-                        <div>⚖️ ${colis.poidsLivre} lb | 💰 ${colis.prixUsd} USD / ${colis.prixGourdes} HTG</div>
-                        ${colis.photoColis ? `<img src="${colis.photoColis}" class="photo-thumb">` : ''}
-                        ${colis.statut === 'En transit' ? `<button class="btn-secondary btn-arrivee" data-id="${colis.id}">✈️ Marquer arrivé</button>` : ''}
-                        ${colis.statut === 'Arrivé' && !colis.paiement.effectue ? `
-                            <div style="margin-top:15px; border-top:1px solid #ccc; padding-top:12px;">
-                                <h4>📸 Livraison & paiement</h4>
-                                <div><label>Photo CNI</label><input type="file" accept="image/*" capture="environment" id="cniLiv_${colis.id}"></div>
-                                <div><label>Photo colis livré</label><input type="file" accept="image/*" capture="environment" id="photoLiv_${colis.id}"></div>
-                                <div><label>Montant reçu</label><input type="number" id="montantRecu_${colis.id}" step="0.01" placeholder="Montant"><select id="deviseMontant_${colis.id}"><option value="USD">USD</option><option value="HTG">Gourdes</option></select></div>
-                                <div><label>Moyen</label><select id="moyenPaiement_${colis.id}"><option>Espèces</option><option>Carte</option><option>Mobile Money</option></select></div>
-                                <button class="btn-success btn-finaliser-livraison" data-id="${colis.id}">✅ Confirmer livraison</button>
-                            </div>
-                        ` : ''}
-                        ${colis.statut === 'Livré' ? `<div class="success-msg">✅ Livré le ${new Date(colis.dateLivraison).toLocaleString()} - ${colis.paiement.montantRecu} ${colis.paiement.devise}</div>` : ''}
-                    `;
+                    card.innerHTML = `<div class="flex-row"><h3>${colis.numeroSuivi} - <span class="badge ${statutClass}">${colis.statut}</span></h3><button class="btn-outline print-receipt-btn" data-id="${colis.id}" style="padding:4px 12px;">🖨️ Fiche livraison</button></div><div><strong>Destinataire:</strong> ${colis.destinataire.nom} - ${colis.destinataire.adresse}</div><div><strong>Expéditeur:</strong> ${colis.expediteurNom}</div><div>⚖️ ${colis.poidsLivre} lb | 💰 ${colis.prixUsd} USD / ${colis.prixGourdes} HTG</div>${colis.photoColis ? `<img src="${colis.photoColis}" class="photo-thumb">` : ''}
+                    ${colis.statut === 'En transit' ? `<button class="btn-secondary btn-arrivee" data-id="${colis.id}">✈️ Marquer arrivé</button>` : ''}
+                    ${colis.statut === 'Arrivé' && !colis.paiement.effectue ? `<div style="margin-top:15px; border-top:1px solid #ccc; padding-top:12px;"><h4>📸 Livraison & paiement</h4><div><label>Photo CNI</label><input type="file" accept="image/*" capture="environment" id="cniLiv_${colis.id}"></div><div><label>Photo colis livré</label><input type="file" accept="image/*" capture="environment" id="photoLiv_${colis.id}"></div><div><label>Montant reçu</label><input type="number" id="montantRecu_${colis.id}" step="0.01" placeholder="Montant"><select id="deviseMontant_${colis.id}"><option value="USD">USD</option><option value="HTG">Gourdes</option></select></div><div><label>Moyen</label><select id="moyenPaiement_${colis.id}"><option>Espèces</option><option>Carte</option><option>Mobile Money</option></select></div><button class="btn-success btn-finaliser-livraison" data-id="${colis.id}">✅ Confirmer livraison</button></div>` : ''}
+                    ${colis.statut === 'Livré' ? `<div class="success-msg">✅ Livré le ${new Date(colis.dateLivraison).toLocaleString()} - ${colis.paiement.montantRecu} ${colis.paiement.devise}</div>` : ''}`;
                     container.appendChild(card);
                 });
-                // Impression fiche livraison
                 document.querySelectorAll('.print-receipt-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const id = btn.getAttribute('data-id');
-                        const colis = appData.colis.find(c => c.id === id);
-                        if(colis) printDeliveryReceipt(colis);
-                    });
+                    btn.addEventListener('click', (e) => { const id = btn.getAttribute('data-id'); const colis = appData.colis.find(c => c.id === id); if(colis) printDeliveryReceipt(colis); });
                 });
-                // Arrivée
                 document.querySelectorAll('.btn-arrivee').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        const id = btn.getAttribute('data-id');
-                        const colis = appData.colis.find(c => c.id === id);
-                        if(colis && colis.statut === 'En transit') {
-                            colis.statut = 'Arrivé';
-                            saveData();
-                            showNotification(`Colis ${colis.numeroSuivi} marqué arrivé au bureau`, "info");
-                            refreshLivraison();
-                        }
-                    });
+                    btn.addEventListener('click', (e) => { const id = btn.getAttribute('data-id'); const colis = appData.colis.find(c => c.id === id); if(colis && colis.statut === 'En transit') { colis.statut = 'Arrivé'; saveData(); showNotification(`Colis ${colis.numeroSuivi} marqué arrivé`, "info"); refreshLivraison(); } });
                 });
-                // Finalisation livraison - NOTIFICATION CORRIGÉE
                 document.querySelectorAll('.btn-finaliser-livraison').forEach(btn => {
                     btn.addEventListener('click', async (e) => {
                         const id = btn.getAttribute('data-id');
@@ -782,29 +809,18 @@
                         let cniBase64 = null, photoLivBase64 = null;
                         if (cniInput.files.length) cniBase64 = await readFileAsBase64(cniInput.files[0]);
                         if (photoLivInput.files.length) photoLivBase64 = await readFileAsBase64(photoLivInput.files[0]);
-                        if (!cniBase64 || !photoLivBase64) {
-                            showNotification("Photos CNI et colis livré obligatoires", "error");
-                            return;
-                        }
+                        if (!cniBase64 || !photoLivBase64) { showNotification("Photos CNI et colis livré obligatoires", "error"); return; }
                         const montant = parseFloat(document.getElementById(`montantRecu_${id}`).value);
                         const devise = document.getElementById(`deviseMontant_${id}`).value;
                         const moyen = document.getElementById(`moyenPaiement_${id}`).value;
-                        if (isNaN(montant) || montant <= 0) {
-                            showNotification("Montant invalide", "error");
-                            return;
-                        }
-                        colis.paiement = {
-                            effectue: true,
-                            montantRecu: montant,
-                            devise: devise,
-                            moyen: moyen,
-                            photoCNI: cniBase64,
-                            photoColisLivraison: photoLivBase64
-                        };
+                        if (isNaN(montant) || montant <= 0) { showNotification("Montant invalide", "error"); return; }
+                        let montantUSD = devise === 'USD' ? montant : montant / appData.company.tauxUSDToHTG;
+                        colis.paiement = { effectue: true, montantRecu: montant, devise: devise, moyen: moyen, photoCNI: cniBase64, photoColisLivraison: photoLivBase64 };
                         colis.statut = 'Livré';
                         colis.dateLivraison = new Date().toISOString();
                         saveData();
-                        // Notification de livraison réussie
+                        // Mise à jour du total général pour investisseurs
+                        recalculerTotalRecu(); // ou ajouterMontantRecu(montantUSD)
                         showNotification(`✅ Colis ${colis.numeroSuivi} livré et payé (${montant} ${devise})`, "success");
                         refreshLivraison();
                         if (isAdmin) refreshAdminDashboard();
@@ -818,10 +834,7 @@
                 renderLivraisonResults(filtres);
             }
             document.getElementById('searchLivBtn')?.addEventListener('click', refreshLivraison);
-            document.getElementById('resetLivBtn')?.addEventListener('click', () => {
-                document.getElementById('searchLivraisonNom').value = '';
-                refreshLivraison();
-            });
+            document.getElementById('resetLivBtn')?.addEventListener('click', () => { document.getElementById('searchLivraisonNom').value = ''; refreshLivraison(); });
         }
 
         // ---- Admin ----
@@ -901,18 +914,18 @@
             refreshAdminDashboard();
         }
 
+        // ---- Investisseur ----
+        if (isInvestor) {
+            document.getElementById('refreshInvestorBtn')?.addEventListener('click', () => refreshInvestorDashboard());
+            refreshInvestorDashboard();
+        }
+
         // Suivi global
         afficherGlobalColis('');
-        document.getElementById('globalSearchBtn')?.addEventListener('click', () => {
-            const txt = document.getElementById('globalSearchInput').value;
-            afficherGlobalColis(txt);
-        });
-        document.getElementById('globalResetBtn')?.addEventListener('click', () => {
-            document.getElementById('globalSearchInput').value = '';
-            afficherGlobalColis('');
-        });
+        document.getElementById('globalSearchBtn')?.addEventListener('click', () => { const txt = document.getElementById('globalSearchInput').value; afficherGlobalColis(txt); });
+        document.getElementById('globalResetBtn')?.addEventListener('click', () => { document.getElementById('globalSearchInput').value = ''; afficherGlobalColis(''); });
 
-        // Gestion onglets
+        // Onglets
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const pageId = btn.getAttribute('data-page');
@@ -924,13 +937,11 @@
                 if (pageId === 'page-suivi') afficherGlobalColis('');
                 if (pageId === 'page-receveur' && isReceveur) afficherColisReceveur();
                 if (pageId === 'page-admin' && isAdmin) refreshAdminDashboard();
+                if (pageId === 'page-investor' && isInvestor) refreshInvestorDashboard();
             });
         });
 
-        document.getElementById('logoutBtn')?.addEventListener('click', () => {
-            currentUser = null;
-            render();
-        });
+        document.getElementById('logoutBtn')?.addEventListener('click', () => { currentUser = null; render(); });
     }
 
     loadData();
