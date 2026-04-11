@@ -12,7 +12,7 @@ body{background:#061a2e;color:#fff;font-family:'Barlow',sans-serif;min-height:10
 .top-bar{background:linear-gradient(135deg,#0d2151,#061a2e);border-bottom:2px solid rgba(245,200,0,.3);padding:10px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:200;}
 .tb-logo{width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #f5c800;flex-shrink:0;box-shadow:0 0 12px rgba(245,200,0,.4);}
 .tb-brand{flex:1;}
-.tb-brand .name{font-family:"Barlow Condensed",sans-serif;font-size:1.25em;font-weight:900;color:#f5c800;letter-spacing:2px;}
+.tb-brand .name{font-family:"Barlow Condensed",sans-serif;font-size:1.5em;font-weight:900;color:#f5c800;letter-spacing:3px;text-shadow:0 0 12px rgba(245,200,0,.4);}
 .tb-brand .slogan{font-size:10px;color:rgba(255,255,255,.5);}
 .tb-actions{display:flex;gap:7px;align-items:center;}
 .btn-login{background:#22c55e;color:#fff;border:none;padding:8px 15px;border-radius:20px;font-weight:800;font-size:13px;cursor:pointer;}
@@ -32,6 +32,32 @@ body{background:#061a2e;color:#fff;font-family:'Barlow',sans-serif;min-height:10
 .gtab .gi{font-size:1.7em;} .gtab .gn{font-size:10px;font-weight:700;color:rgba(255,255,255,.7);}
 .gtab.active .gn{color:#f5c800;}
 /* Slideshow */
+
+@keyframes floatUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes glowPulse{0%,100%{box-shadow:0 0 8px rgba(245,200,0,.3)}50%{box-shadow:0 0 20px rgba(245,200,0,.7)}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+@keyframes slideInLeft{from{transform:translateX(-30px);opacity:0}to{transform:translateX(0);opacity:1}}
+.game-card{animation:fadeInUp .4s ease both;}
+.game-card:nth-child(1){animation-delay:.05s}
+.game-card:nth-child(2){animation-delay:.1s}
+.game-card:nth-child(3){animation-delay:.15s}
+.game-card:nth-child(4){animation-delay:.2s}
+.game-card:nth-child(5){animation-delay:.25s}
+.game-card:nth-child(6){animation-delay:.3s}
+.game-card:nth-child(7){animation-delay:.35s}
+.game-card:nth-child(8){animation-delay:.4s}
+.game-card:nth-child(9){animation-delay:.45s}
+.game-card:nth-child(10){animation-delay:.5s}
+.gc-icon{animation:floatUp 3s ease-in-out infinite;}
+.game-card:nth-child(2) .gc-icon{animation-delay:.2s}
+.game-card:nth-child(3) .gc-icon{animation-delay:.4s}
+.game-card:nth-child(4) .gc-icon{animation-delay:.6s}
+.game-card:nth-child(5) .gc-icon{animation-delay:.8s}
+.tb-logo{animation:glowPulse 2.5s ease-in-out infinite;}
+.sec-hdr-title{animation:slideInLeft .5s ease both;}
+.match-card{animation:fadeInUp .4s ease both;}
+
 .slideshow-wrap{position:relative;overflow:hidden;background:#050e1a;touch-action:pan-y;}
 .slideshow{display:flex;transition:transform .55s cubic-bezier(.4,0,.2,1);}
 .slide{min-width:100%;position:relative;height:230px;flex-shrink:0;overflow:hidden;}
@@ -161,7 +187,35 @@ body{background:#061a2e;color:#fff;font-family:'Barlow',sans-serif;min-height:10
   <div class="gtab" onclick="filterGame(this,'virtuel')"><span class="gi">🖥️</span><span class="gn">Virtuel</span></div>
 </div>
 
+<!-- BANDE PASSANTE / TICKER -->
+<div id="ticker-bar" style="background:rgba(245,200,0,.1);border-bottom:1px solid rgba(245,200,0,.2);padding:7px 0;overflow:hidden;display:flex;align-items:center;gap:0;">
+  <div style="background:#f5c800;color:#000;padding:5px 12px;font-weight:900;font-size:12px;white-space:nowrap;flex-shrink:0;z-index:2;">📢 INFO</div>
+  <div style="overflow:hidden;flex:1;position:relative;">
+    <div id="ticker-text" style="display:inline-block;white-space:nowrap;font-size:13px;color:#f5c800;font-weight:600;padding-left:100%;animation:ticker 30s linear infinite;">
+      Byenveni sou Tonton Kondo Paryaj ! &nbsp;•&nbsp; Jwe responsab — 18 an ak plis sèlman &nbsp;•&nbsp; Kont MonCash ak NatCash disponib &nbsp;•&nbsp; Kontakte nou: tontonkondo@gmail.com &nbsp;•&nbsp; Pèmanan 32 Flon 7, Léogane, Ayiti
+    </div>
+  </div>
+</div>
+<style>
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
+#ticker-text:hover{animation-play-state:paused;}
+</style>
+
+<!-- NOTIFICATION ADMIN -->
+<div id="admin-notif-bar" style="display:none;padding:10px 14px;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.08);">
+  <span style="font-size:1.3em" id="admin-notif-icon">🔔</span>
+  <span id="admin-notif-text" style="flex:1;font-size:13px;color:var(--text)"></span>
+  <button onclick="document.getElementById('admin-notif-bar').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:18px;">✕</button>
+</div>
+
 <!-- SLIDESHOW PUB -->
+<div class="slideshow-wrap" id="slideshow-wrap">
+  <div class="slideshow" id="slideshow"></div>
+  <div class="ss-dots" id="ss-dots"></div>
+  <!-- Arrow nav -->
+  <button onclick="ssPrev()" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.2);color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;z-index:10;">‹</button>
+  <button onclick="ssNext()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.2);color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;z-index:10;">›</button>
+</div>
 <div class="slideshow-wrap">
   <div class="slideshow" id="slideshow">
     <div class="slide">
@@ -249,8 +303,7 @@ body{background:#061a2e;color:#fff;font-family:'Barlow',sans-serif;min-height:10
       </div>
     </div>
   </div>
-  <div class="ss-dots" id="ss-dots"></div>
-</div>
+  
 
 <!-- GAMES GRID -->
 <div class="games-section">
@@ -493,35 +546,129 @@ const gCaiss=()=>JSON.parse(localStorage.getItem('tk_caiss'))||{};
 const SECRET_CODE='TONTONKONDO12';
 let pendingGame=null;
 
-// SLIDESHOW
-(function(){
-  const ss=document.getElementById('slideshow');
-  const dotsEl=document.getElementById('ss-dots');
-  const slides=ss.querySelectorAll('.slide');
-  const N=slides.length;
-  let cur=0,timer=null;
-  for(let i=0;i<N;i++){
+// SLIDESHOW DYNAMIQUE — jusqu'a 50.png
+const SLIDE_DEFAULTS = [
+  {emoji:'🎯',color:'linear-gradient(135deg,#0d2151,#1d8c3e)',title:'Borlette & Lotto',sub:'Tunisia · Florida · New York · Georgia · Texas',tag:'Lotto'},
+  {emoji:'🎱',color:'linear-gradient(135deg,#1a0d40,#2979ff)',title:'Keno Lucky',sub:'80 nimewo · Gain ×80',tag:'Keno'},
+  {emoji:'🏎️',color:'linear-gradient(135deg,#0d2151,#e63946)',title:'Course Automobile',sub:'6 vwati · Gain ×5.50',tag:'Course'},
+  {emoji:'⚽',color:'linear-gradient(135deg,#0a2000,#28b04e)',title:'Penalty — Tir au But',sub:'9 kazye · Gain ×4.50',tag:'Nouvo 🔥'},
+  {emoji:'🎡',color:'linear-gradient(135deg,#1a0d40,#8a6820)',title:'Roulette Américaine',sub:'Nimewo 0–36 · Plein ×35',tag:'Casino'},
+  {emoji:'🚁',color:'linear-gradient(135deg,#061520,#1a3a8f)',title:'Jeu Hélicoptère',sub:'Monte · Encaisse · Evite Crash',tag:'Casino'},
+  {emoji:'🍀',color:'linear-gradient(135deg,#0a2000,#1a6b2a)',title:'Lucky 6',sub:'48 boul · Gain ×30',tag:'Casino'},
+  {emoji:'💍',color:'linear-gradient(135deg,#2a0d40,#9c27b0)',title:'Mariage',sub:'Jwèt pè nimewo',tag:'Lotto'},
+];
+
+let ssCur=0, ssTimer=null, ssTotal=0;
+const ss=document.getElementById('slideshow');
+const dotsEl=document.getElementById('ss-dots');
+
+function buildSlide(src, def, idx){
+  const div=document.createElement('div');
+  div.className='slide';
+  div.style.cssText='min-width:100%;position:relative;height:230px;flex-shrink:0;overflow:hidden;';
+  // Try image first
+  const img=document.createElement('img');
+  img.src=src;
+  img.className='slide-bg';
+  img.style.cssText='width:100%;height:100%;object-fit:cover;object-position:center;display:block;';
+  // Fallback div
+  const fallback=document.createElement('div');
+  fallback.className='slide-fallback';
+  fallback.style.cssText=`width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:20px;background:${def.color};`;
+  fallback.innerHTML=`<div style="font-size:3.5em;animation:floatUp 3s ease-in-out infinite">${def.emoji}</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:2em;font-weight:900;color:#f5c800;text-align:center">${def.title.toUpperCase()}</div><div style="font-size:12px;color:rgba(255,255,255,.7);text-align:center">${def.sub}</div>`;
+  img.onerror=()=>{img.style.display='none';fallback.style.display='flex';};
+  img.onload=()=>{fallback.style.display='none';};
+  fallback.style.display='none'; // hidden until img fails
+  // Overlay + caption
+  const overlay=document.createElement('div');
+  overlay.className='slide-overlay';
+  overlay.style.cssText='position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,14,26,.1) 0%,rgba(5,14,26,.8) 100%);pointer-events:none;';
+  const caption=document.createElement('div');
+  caption.className='slide-caption';
+  caption.style.cssText='position:absolute;bottom:0;left:0;right:0;padding:14px 16px;';
+  caption.innerHTML=`<span class="slide-tag" style="display:inline-block;background:#f5c800;color:#000;font-size:10px;font-weight:900;padding:2px 8px;border-radius:4px;margin-bottom:6px;text-transform:uppercase;">${def.tag}</span><div class="slide-title" style="font-family:'Barlow Condensed',sans-serif;font-size:1.6em;font-weight:900;color:#fff;line-height:1.1;">${def.title}</div><div style="font-size:12px;color:rgba(255,255,255,.7);margin-top:3px;">${def.sub}</div>`;
+  div.appendChild(img);
+  div.appendChild(fallback);
+  div.appendChild(overlay);
+  div.appendChild(caption);
+  div.onclick=()=>goPlay(idx);
+  return div;
+}
+
+function initSlideshow(){
+  ss.innerHTML=''; dotsEl.innerHTML='';
+  const targets=[];
+  for(let i=1;i<=50;i++){
+    const ext=['png','jpg','jpeg','webp'];
+    const def=SLIDE_DEFAULTS[(i-1)%SLIDE_DEFAULTS.length];
+    // We add all potential slides; images that fail to load show fallback
+    targets.push({src:i+'.png', def, idx:(i-1)%8});
+  }
+  // Build slides
+  targets.forEach((t,i)=>{
+    const slide=buildSlide(t.src, t.def, t.idx);
+    ss.appendChild(slide);
+  });
+  ssTotal=targets.length;
+  // Dots (show max 10 visible dots)
+  const dotsCount=Math.min(10,ssTotal);
+  for(let i=0;i<dotsCount;i++){
     const d=document.createElement('div');
     d.className='ss-dot'+(i===0?' active':'');
-    d.onclick=()=>go(i);
+    d.onclick=()=>ssGo(i);
     dotsEl.appendChild(d);
   }
-  function go(n){
-    cur=((n%N)+N)%N;
-    ss.style.transform=`translateX(-${cur*100}%)`;
-    dotsEl.querySelectorAll('.ss-dot').forEach((d,i)=>d.classList.toggle('active',i===cur));
+  ssGo(0);
+  startSS();
+}
+
+function ssGo(n){
+  ssCur=((n%ssTotal)+ssTotal)%ssTotal;
+  ss.style.transform=`translateX(-${ssCur*100}%)`;
+  const dots=dotsEl.querySelectorAll('.ss-dot');
+  const dotIdx=ssCur%dots.length;
+  dots.forEach((d,i)=>d.classList.toggle('active',i===dotIdx));
+}
+function ssNext(){stopSS();ssGo(ssCur+1);startSS();}
+function ssPrev(){stopSS();ssGo(ssCur-1);startSS();}
+function startSS(){ssTimer=setInterval(()=>ssGo(ssCur+1),4500);}
+function stopSS(){clearInterval(ssTimer);}
+
+// Touch support
+let ssTouchX=0;
+document.getElementById('slideshow-wrap').addEventListener('touchstart',e=>{stopSS();ssTouchX=e.touches[0].clientX;},{passive:true});
+document.getElementById('slideshow-wrap').addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-ssTouchX;
+  if(Math.abs(dx)>40){dx<0?ssNext():ssPrev();}
+  startSS();
+});
+
+// ===== TICKER / NOTIFICATIONS =====
+function loadAdminMessages(){
+  const msg=localStorage.getItem('tk_ticker_msg');
+  const notif=localStorage.getItem('tk_admin_notif');
+  if(msg){
+    const el=document.getElementById('ticker-text');
+    if(el) el.textContent=msg+'  •  '+el.textContent;
   }
-  function startAuto(){timer=setInterval(()=>go(cur+1),4500);}
-  function stopAuto(){clearInterval(timer);}
-  let sx=0;
-  ss.addEventListener('touchstart',e=>{stopAuto();sx=e.touches[0].clientX;},{passive:true});
-  ss.addEventListener('touchend',e=>{
-    const dx=e.changedTouches[0].clientX-sx;
-    if(Math.abs(dx)>40)go(dx<0?cur+1:cur-1);
-    startAuto();
-  });
-  startAuto();
-})();
+  if(notif){
+    try{
+      const n=JSON.parse(notif);
+      const bar=document.getElementById('admin-notif-bar');
+      const txt=document.getElementById('admin-notif-text');
+      const ico=document.getElementById('admin-notif-icon');
+      if(bar&&txt&&n.text){
+        txt.textContent=n.text;
+        if(ico&&n.icon) ico.textContent=n.icon;
+        bar.style.display='flex';
+        bar.style.background=n.bg||'rgba(26,58,143,.2)';
+      }
+    }catch(e){}
+  }
+}
+loadAdminMessages();
+initSlideshow();
+
 
 // FILTER
 function filterGame(el,cat){
@@ -533,7 +680,12 @@ function filterGame(el,cat){
 }
 
 // AUTH GATE - joueur VOIT les jeux mais doit se connecter pour JOUER
-function goPlay(game){pendingGame=game;showGate();}
+function goPlay(game){
+  // Navigate to game view (preview) - gate only appears on actual play action
+  pendingGame=game;
+  // Just redirect immediately after login
+  showGate();
+}
 function reqAuth(){pendingGame=null;showGate();}
 function showGate(){document.getElementById('auth-gate').classList.add('on');}
 function closeGate(){document.getElementById('auth-gate').classList.remove('on');}

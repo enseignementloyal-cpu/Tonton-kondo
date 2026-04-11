@@ -410,17 +410,13 @@
     </div>
   </div>
 
+
   <!-- PENALTY -->
-  <div class="asec" id="tab-penalty">
-    <style>
-    /* Penalty scoped styles */
-    #tab-penalty {
-      background: radial-gradient(ellipse at 55% 20%, #1a5e2f, #0a2e13);
-      min-height: 100vh;
-      padding: 10px 12px 80px;
-    }
-    
-/* @/* import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&display=swap');
+  <div class="asec" id="tab-penalty" style="padding:0;overflow:hidden;">
+    <!-- Penalty styles scoped via prefix -->
+    <style id="penalty-styles">
+
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&display=swap');
 :root{--gold:#ffd600;}
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:radial-gradient(ellipse at 55% 20%,#1a5e2f,#0a2e13);min-height:100vh;display:flex;flex-direction:column;align-items:center;font-family:'Barlow Condensed',sans-serif;color:#f0f4f0;overflow-x:hidden;padding-bottom:30px;}
@@ -482,8 +478,8 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
 .zc{border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;transition:background .18s;position:relative;}
 .zc:hover{background:rgba(255,214,0,.18);}
 .zc.selected{background:rgba(255,214,0,.28);border-color:rgba(255,214,0,.7);}
-.zc.hit-goal{background:rgba(255,214,0,.4)!/* important;}
-.zc.hit-saved{background:rgba(229,57,53,.35)!/* important;}
+.zc.hit-goal{background:rgba(255,214,0,.4)!important;}
+.zc.hit-saved{background:rgba(229,57,53,.35)!important;}
 .zc-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(.9rem,2.5vw,1.5rem);color:rgba(255,255,255,.5);pointer-events:none;transition:color .18s;}
 .zc.selected .zc-num{color:var(--gold);}
 .zc.hit-goal .zc-num,.zc.hit-saved .zc-num{color:#fff;}
@@ -554,17 +550,28 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
 
 
 
-    /* Wallet override */
-    .wallet-bar { background:rgba(0,0,0,.5); border:1px solid rgba(255,214,0,.3); border-radius:8px; padding:7px 14px; display:flex; gap:16px; align-items:center; margin-bottom:10px; }
-    .wallet-item label { font-size:10px; color:rgba(255,255,255,.5); text-transform:uppercase; letter-spacing:.1em; display:block; }
-    .wallet-item span { font-family:"Barlow Condensed",sans-serif; font-size:1.4em; font-weight:700; color:var(--gold); }
+/* Penalty wallet bar */
+#tab-penalty .p-wallet-bar{
+  display:flex;gap:16px;align-items:center;
+  background:rgba(0,0,0,.5);border-bottom:1px solid rgba(255,214,0,.2);
+  padding:8px 14px;
+}
+#tab-penalty .p-wallet-item label{
+  font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.1em;display:block;
+}
+#tab-penalty .p-wallet-item span{
+  font-family:"Barlow Condensed",sans-serif;font-size:1.3em;font-weight:700;color:#ffd600;
+}
+#tab-penalty body{background:transparent!important;} 
+/* Override body styles inside penalty */
+#tab-penalty h1{margin:8px 0 2px;}
     </style>
-    <!-- Wallet (TK) -->
-    <div class="wallet-bar">
-      <div class="wallet-item"><label>Solde TK</label><span id="penalty-walletVal">0</span> Gd</div>
-      <div class="wallet-item"><label>Gains session</label><span id="penalty-totalWon">+0</span></div>
+    <!-- Wallet TK -->
+    <div class="p-wallet-bar">
+      <div class="p-wallet-item"><label>Solde TK</label><span id="penalty-walletVal">0</span> Gd</div>
+      <div class="p-wallet-item"><label>Gains session</label><span id="penalty-totalWon">+0</span></div>
     </div>
-    <!-- Penalty content (from original file) -->
+    <!-- Penalty game HTML from source -->
     <h1>⚽ Tir au But</h1>
 <p class="sub">Penalty Kick Simulator</p>
 
@@ -678,6 +685,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
   <button id="resetBtn" onclick="resetShot()">↺ Nouveau tir</button>
 </div>
   </div>
+
 
   <!-- SPORTS -->
   <div class="asec" id="tab-sports">
@@ -1247,6 +1255,31 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
           <input type="range" id="helico-diff-range" min="0" max="80" step="5" value="45" style="width:100%;accent-color:var(--green2)" oninput="updateDiffLabel('helico',this.value)">
           <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span></div>
           <button onclick="saveGameDiff('helico')" style="margin-top:8px;padding:5px 14px;background:var(--green2);color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
+        </div>
+      </div>
+      <!-- Ticker & Notifications -->
+      <div class="card">
+        <h3>📢 Bande Passante & Notifications</h3>
+        <div class="fg" style="margin-bottom:12px">
+          <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Message bande passante (ticker)</label>
+          <textarea id="admin-ticker-msg" rows="2" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;resize:none;" placeholder="Ex: Nouvo jwe Penalty disponib ! Jackpot Keno — 10,000 Gd !"></textarea>
+        </div>
+        <div class="fg" style="margin-bottom:12px">
+          <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Notification admin (s'affiche pour tous)</label>
+          <input type="text" id="admin-notif-text-input" placeholder="Ex: Maintenance prévue ce soir à 22h" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;margin-bottom:6px">
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="text" id="admin-notif-icon-input" placeholder="🔔" style="width:60px;padding:8px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:16px;outline:none;text-align:center">
+            <select id="admin-notif-bg" style="flex:1;padding:8px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;outline:none">
+              <option value="rgba(26,58,143,.3)">🔵 Bleu (info)</option>
+              <option value="rgba(245,200,0,.15)">🟡 Or (important)</option>
+              <option value="rgba(40,176,78,.2)">🟢 Vert (succès)</option>
+              <option value="rgba(230,57,70,.2)">🔴 Rouge (alerte)</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="saveAdminMessages()" style="padding:9px 16px;background:linear-gradient(135deg,var(--gold),#d4a800);color:#000;border:none;border-radius:7px;font-weight:700;cursor:pointer">💾 Enregistrer</button>
+          <button onclick="clearAdminMessages()" style="padding:9px 16px;background:var(--red);color:#fff;border:none;border-radius:7px;font-weight:700;cursor:pointer">🗑 Effacer</button>
         </div>
       </div>
       <div class="card">
@@ -2998,6 +3031,7 @@ function selAdmTab(el){
   document.getElementById('atab-'+el.dataset.ptab).classList.add('on');
   refreshAdmin();
   if(el.dataset.ptab==='recharges')admRefreshRecharges();
+  if(el.dataset.ptab==='params')loadAdminMessageFields();
 }
 
 // ==================== JOUEUR: tab borlette support ====================
@@ -4507,8 +4541,8 @@ function zoneCenter(n){ // retourne {x,y} en 0..1 dans le but
 ══════════════════════════ */
 let shooter=PLAYERS[0], keeper=KEEPERS[0];
 let pickedZone=null, betZone=null;
-let shots=[], scGoal=0, scSaved=0, busy=false;
-let penaltyTotalWon=0;
+let shots=[], scGoal=0, scSaved=0, busy=false, penaltyTotalWon=0;
+
 
 /* ══════════════════════════
    BUILD PLAYER CARDS
@@ -4657,7 +4691,16 @@ function updateOdd(){
 }
 function setBet(v){document.getElementById('betAmt').value=v;}
 function setMax(){document.getElementById('betAmt').value=Math.min(wallet,99999);}
-
+function updatePenaltyWallet(){
+  const we=document.getElementById("penalty-walletVal");
+  const we2=document.getElementById("penalty-totalWon");
+  if(we)we.textContent=getSolde().toLocaleString();
+  if(we2)we2.textContent=(penaltyTotalWon>=0?"+":"")+penaltyTotalWon.toLocaleString();
+}
+function _oldUpdateWallet(){
+  document.getElementById('penalty-walletVal').textContent=wallet.toLocaleString();
+  document.getElementById('penalty-totalWon').textContent=totalWon>=0?'+'+totalWon.toLocaleString():totalWon.toLocaleString();
+}
 
 /* ══════════════════════════
    HINT
@@ -4686,7 +4729,7 @@ function shoot(){
   // Mise
   const rawAmt=parseInt(document.getElementById('betAmt').value)||50;
   const betAmt=Math.min(Math.max(10,rawAmt),wallet);
-  if(betZone && CJ){ deduireJ(betAmt,"Penalty","Mise penalty: zone "+betZone); let st=gSt();st.dep+=betAmt;sSt(st); }
+  if(betZone&&CJ){deduireJ(betAmt,"Penalty","Mise penalty zone "+betZone);let st=gSt();st.dep+=betAmt;sSt(st);}
   updatePenaltyWallet();
 
   // Fade shooter
@@ -4764,7 +4807,7 @@ function showResult(res, fx, fy, betAmt){
       const wm=document.getElementById('winMsg');
       if(betZone===pickedZone){
         const gain=Math.round(betAmt*ZONE_ODDS[betZone]);
-        if(CJ){ crediterJ(gain,"Gain Penalty","Penalty: zone "+pickedZone+" — gain "+gain+" Gd"); penaltyTotalWon+=(gain-betAmt); } else penaltyTotalWon+=(gain-betAmt);
+        if(CJ){crediterJ(gain,"Gain Penalty","Penalty zone "+pickedZone+" x"+ZONE_ODDS[betZone]);} penaltyTotalWon+=(gain-betAmt);
         updatePenaltyWallet();
         wm.className='win-msg won';
         wm.textContent=`🎉 GAGNÉ ! +${gain} pts (×${ZONE_ODDS[betZone]})`;
@@ -4827,31 +4870,67 @@ function resetShot(){
 /* ══════════════════════════
    INIT
 ══════════════════════════ */
-// auto: buildGrids();
-// auto: refreshField();
-// auto: refreshScoreboard();
-// auto: buildZoneGrid();
-// auto: buildBetGrid();
-// auto: updateOdd();
-updatePenaltyWallet();
-// auto: updateHint();
-
-function updatePenaltyWallet(){
-  const walletEl = document.getElementById('penalty-walletVal');
-  const wonEl = document.getElementById('penalty-totalWon');
-  if(walletEl) walletEl.textContent = getSolde().toLocaleString();
-  if(wonEl) wonEl.textContent = penaltyTotalWon>=0 ? '+'+penaltyTotalWon.toLocaleString() : penaltyTotalWon.toLocaleString();
-}
+// auto_removed: buildGrids();
+// auto_removed: refreshField();
+// auto_removed: refreshScoreboard();
+// auto_removed: buildZoneGrid();
+// auto_removed: buildBetGrid();
+// auto_removed: updateOdd();
+// auto_removed: updatePenaltyWallet();
+// auto_removed: updateHint();
 
 function initPenaltyGame(){
+  scGoal=0; scSaved=0; shots=[]; busy=false; pickedZone=null; betZone=null;
   buildGrids();
-  refreshField();
-  refreshScoreboard();
-  buildZoneGrid();
-  buildBetGrid();
-  updateOdd();
-  updatePenaltyWallet();
-  updateHint();
+  setTimeout(()=>{
+    refreshField();
+    refreshScoreboard();
+    buildZoneGrid();
+    buildBetGrid();
+    updateOdd();
+    updatePenaltyWallet();
+    updateHint();
+    drawNet();
+  }, 80);
+}
+
+
+// ===== ADMIN: Ticker & Notifications =====
+function saveAdminMessages(){
+  const ticker=document.getElementById('admin-ticker-msg')?.value.trim();
+  const notifText=document.getElementById('admin-notif-text-input')?.value.trim();
+  const notifIcon=document.getElementById('admin-notif-icon-input')?.value.trim()||'🔔';
+  const notifBg=document.getElementById('admin-notif-bg')?.value||'rgba(26,58,143,.3)';
+  if(ticker) localStorage.setItem('tk_ticker_msg', ticker);
+  else localStorage.removeItem('tk_ticker_msg');
+  if(notifText){
+    localStorage.setItem('tk_admin_notif', JSON.stringify({text:notifText,icon:notifIcon,bg:notifBg}));
+  } else {
+    localStorage.removeItem('tk_admin_notif');
+  }
+  showNotif('✅ Messages sauvegardés','ok');
+}
+function clearAdminMessages(){
+  localStorage.removeItem('tk_ticker_msg');
+  localStorage.removeItem('tk_admin_notif');
+  const fields=['admin-ticker-msg','admin-notif-text-input','admin-notif-icon-input'];
+  fields.forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  showNotif('Messages effacés','info');
+}
+function loadAdminMessageFields(){
+  const ticker=localStorage.getItem('tk_ticker_msg');
+  const notif=localStorage.getItem('tk_admin_notif');
+  const ta=document.getElementById('admin-ticker-msg');
+  if(ta&&ticker) ta.value=ticker;
+  if(notif){
+    try{
+      const n=JSON.parse(notif);
+      const ti=document.getElementById('admin-notif-text-input');
+      const ii=document.getElementById('admin-notif-icon-input');
+      if(ti) ti.value=n.text||'';
+      if(ii) ii.value=n.icon||'🔔';
+    }catch(e){}
+  }
 }
 
 // ===== SESSION RESTORE =====
