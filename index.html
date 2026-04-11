@@ -6,279 +6,389 @@
 <title>Tonton Kondo — Paryaj</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="tk_style.css">
 <style>
-/* ===== LAYOUT GLOBAL ===== */
-body{background:#0d1b35;margin:0;padding:0;font-family:'Barlow',sans-serif;color:#fff;overflow-x:hidden;}
-
-/* ===== TOP BAR ===== */
-.top-bar{background:#0d1b35;padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.08);}
-.top-bar-logo{width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid #f5c800;flex-shrink:0;}
-.top-bar-text{flex:1;min-width:0;}
-.top-bar-text .tagline{font-size:12px;font-weight:800;color:#f5c800;text-transform:uppercase;letter-spacing:.5px;}
-.top-bar-text .sub{font-size:10px;color:rgba(255,255,255,.6);}
-.btn-login{background:#22c55e;color:#fff;border:none;padding:8px 16px;border-radius:20px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap;}
-.btn-signup{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.5);padding:7px 15px;border-radius:20px;font-weight:800;font-size:13px;cursor:pointer;white-space:nowrap;}
-.btn-signup:hover{border-color:#f5c800;color:#f5c800;}
-
-/* ===== MAIN NAV ===== */
-.main-nav{background:#0d1b35;display:flex;align-items:center;padding:0 14px;border-bottom:1px solid rgba(255,255,255,.08);}
-.nav-link{padding:12px 14px;font-size:13px;font-weight:700;color:rgba(255,255,255,.7);cursor:pointer;display:flex;align-items:center;gap:6px;border-bottom:2px solid transparent;text-transform:uppercase;letter-spacing:.5px;transition:.2s;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#061a2e;color:#fff;font-family:'Barlow',sans-serif;min-height:100vh;overflow-x:hidden;}
+.top-bar{background:linear-gradient(135deg,#0d2151,#061a2e);border-bottom:2px solid rgba(245,200,0,.3);padding:10px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:200;}
+.tb-logo{width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid #f5c800;flex-shrink:0;box-shadow:0 0 12px rgba(245,200,0,.4);}
+.tb-brand{flex:1;}
+.tb-brand .name{font-family:"Barlow Condensed",sans-serif;font-size:1.25em;font-weight:900;color:#f5c800;letter-spacing:2px;}
+.tb-brand .slogan{font-size:10px;color:rgba(255,255,255,.5);}
+.tb-actions{display:flex;gap:7px;align-items:center;}
+.btn-login{background:#22c55e;color:#fff;border:none;padding:8px 15px;border-radius:20px;font-weight:800;font-size:13px;cursor:pointer;}
+.btn-signup{background:transparent;color:#f5c800;border:1.5px solid #f5c800;padding:7px 13px;border-radius:20px;font-weight:800;font-size:13px;cursor:pointer;}
+.btn-info{background:none;border:none;color:rgba(255,255,255,.5);font-size:20px;cursor:pointer;padding:4px;}
+/* Nav */
+.main-nav{background:#0d1b35;display:flex;border-bottom:1px solid rgba(255,255,255,.08);overflow-x:auto;scrollbar-width:none;}
+.main-nav::-webkit-scrollbar{display:none;}
+.nav-link{padding:12px 16px;font-size:13px;font-weight:700;color:rgba(255,255,255,.65);cursor:pointer;display:flex;align-items:center;gap:6px;border-bottom:2px solid transparent;white-space:nowrap;transition:.2s;flex-shrink:0;}
 .nav-link.active{color:#f5c800;border-bottom-color:#f5c800;}
-.nav-link:hover{color:#fff;}
-.nav-link i{font-size:14px;}
-.nav-spacer{flex:1;}
-.nav-actions{display:flex;gap:8px;align-items:center;}
-.nav-icon-btn{background:rgba(255,255,255,.08);border:none;color:#fff;width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;}
-
-/* ===== SPORTS CATEGORIES ===== */
-.sports-cats{background:#0d1b35;padding:10px 14px;display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid rgba(255,255,255,.06);}
-.sports-cats::-webkit-scrollbar{display:none;}
-.sport-cat{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:54px;cursor:pointer;opacity:.6;transition:.2s;flex-shrink:0;}
-.sport-cat.active{opacity:1;}
-.sport-cat .icon{font-size:1.6em;position:relative;}
-.sport-cat .count{position:absolute;top:-4px;right:-8px;background:#f5c800;color:#000;font-size:9px;font-weight:900;padding:1px 4px;border-radius:8px;}
-.sport-cat .name{font-size:10px;font-weight:600;color:rgba(255,255,255,.8);}
-.sport-cat.active .name{color:#f5c800;}
-
-/* ===== HERO BANNER ===== */
-.hero-banner{position:relative;overflow:hidden;background:#0a1520;margin:0;}
-.hero-img{width:100%;height:210px;object-fit:cover;object-position:center top;display:block;}
-.hero-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(13,27,53,.2) 0%,rgba(13,27,53,.85) 100%);}
-.hero-league{position:absolute;top:12px;left:50%;transform:translateX(-50%);text-align:center;}
-.hero-league img{height:32px;}
-.hero-league-name{font-size:12px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:2px;margin-top:3px;}
-.hero-match{position:absolute;bottom:0;left:0;right:0;padding:10px 14px;background:rgba(0,0,0,.6);}
-.hero-teams{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
-.hero-team{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:800;}
-.hero-team-icon{font-size:1.3em;}
-.hero-vs{font-family:"Barlow Condensed",sans-serif;font-size:1.4em;font-weight:900;color:rgba(255,255,255,.7);}
-.hero-time{font-size:11px;color:rgba(255,255,255,.6);text-align:center;}
-.hero-odds{display:flex;gap:2px;}
-.hero-odd-btn{flex:1;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:7px 4px;text-align:center;cursor:pointer;transition:.2s;}
-.hero-odd-btn:hover,.hero-odd-btn.sel{background:rgba(245,200,0,.15);border-color:#f5c800;}
-.hero-odd-label{font-size:10px;color:rgba(255,255,255,.6);margin-bottom:2px;}
-.hero-odd-val{font-size:15px;font-weight:900;color:#f5c800;}
-
-/* ===== PROMOTIONS ===== */
-.promos-section{padding:12px 14px;}
-.section-title-bar{font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#fff;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
-.section-title-bar::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.1);}
-.promo-tabs{display:flex;gap:6px;margin-bottom:10px;}
-.promo-tab{padding:6px 14px;background:rgba(255,255,255,.08);border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;color:rgba(255,255,255,.7);border:1px solid transparent;}
-.promo-tab.active{background:#f5c800;color:#000;border-color:#f5c800;}
-.sport-filter-tabs{display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;scrollbar-width:none;}
-.sport-filter-tabs::-webkit-scrollbar{display:none;}
-.sf-tab{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;border:none;}
-.sf-tab.active-fb{background:#22c55e;color:#fff;}
-.sf-tab.inactive{background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);}
-.match-promos{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:6px;}
-.match-promos::-webkit-scrollbar{display:none;}
-.match-promo-card{background:#152040;border:1px solid rgba(255,255,255,.1);border-radius:10px;min-width:170px;padding:11px;flex-shrink:0;}
-.mp-teams{font-size:12px;font-weight:700;margin-bottom:4px;}
-.mp-result{font-size:11px;color:rgba(255,255,255,.6);}
-.mp-result span{color:#f5c800;font-weight:700;}
-
-/* ===== BOTTOM NAV ===== */
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#0d1b35;border-top:1px solid rgba(255,255,255,.1);display:flex;z-index:100;}
-.bn-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 4px;cursor:pointer;color:rgba(255,255,255,.5);font-size:10px;font-weight:600;gap:3px;transition:.2s;}
+/* Game tabs */
+.game-tabs{background:#091525;padding:10px 14px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid rgba(255,255,255,.06);}
+.game-tabs::-webkit-scrollbar{display:none;}
+.gtab{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:58px;cursor:pointer;flex-shrink:0;padding:7px 8px;border-radius:10px;border:1px solid transparent;transition:.2s;}
+.gtab:hover{background:rgba(245,200,0,.06);border-color:rgba(245,200,0,.2);}
+.gtab.active{background:rgba(245,200,0,.12);border-color:rgba(245,200,0,.4);}
+.gtab .gi{font-size:1.7em;} .gtab .gn{font-size:10px;font-weight:700;color:rgba(255,255,255,.7);}
+.gtab.active .gn{color:#f5c800;}
+/* Slideshow */
+.slideshow-wrap{position:relative;overflow:hidden;background:#050e1a;touch-action:pan-y;}
+.slideshow{display:flex;transition:transform .55s cubic-bezier(.4,0,.2,1);}
+.slide{min-width:100%;position:relative;height:230px;flex-shrink:0;overflow:hidden;}
+.slide-bg{width:100%;height:100%;object-fit:cover;object-position:center;display:block;}
+.slide-fallback{width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:20px;}
+.slide-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,14,26,.15) 0%,rgba(5,14,26,.85) 100%);pointer-events:none;}
+.slide-caption{position:absolute;bottom:0;left:0;right:0;padding:14px 16px;}
+.slide-tag{display:inline-block;background:#f5c800;color:#000;font-size:10px;font-weight:900;padding:2px 8px;border-radius:4px;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;}
+.slide-tag.hot{background:#e63946;color:#fff;}
+.slide-title{font-family:"Barlow Condensed",sans-serif;font-size:1.6em;font-weight:900;color:#fff;line-height:1.1;}
+.slide-sub{font-size:12px;color:rgba(255,255,255,.7);margin-top:3px;}
+.ss-dots{position:absolute;bottom:10px;right:12px;display:flex;gap:5px;z-index:10;}
+.ss-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.35);cursor:pointer;transition:.2s;}
+.ss-dot.active{background:#f5c800;width:18px;border-radius:3px;}
+/* Games grid */
+.games-section{padding:14px;}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.sec-hdr-title{font-family:"Barlow Condensed",sans-serif;font-size:1.2em;font-weight:900;color:#fff;display:flex;align-items:center;gap:7px;}
+.sec-hdr-title::before{content:"";width:3px;height:16px;background:#f5c800;border-radius:2px;}
+.games-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+@media(min-width:480px){.games-grid{grid-template-columns:repeat(4,1fr);}}
+@media(min-width:768px){.games-grid{grid-template-columns:repeat(5,1fr);}}
+.game-card{background:linear-gradient(135deg,#0f2040,#091525);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 8px;text-align:center;cursor:pointer;transition:transform .2s,border-color .2s;position:relative;overflow:hidden;}
+.game-card:hover{transform:translateY(-3px);border-color:rgba(245,200,0,.3);}
+.game-card:active{transform:scale(.97);}
+.gc-icon{font-size:2em;margin-bottom:7px;display:block;}
+.gc-name{font-size:12px;font-weight:800;color:#fff;margin-bottom:2px;}
+.gc-desc{font-size:10px;color:rgba(255,255,255,.45);}
+.gc-badge{position:absolute;top:7px;right:7px;background:#f5c800;color:#000;font-size:9px;font-weight:900;padding:1px 5px;border-radius:8px;}
+.gc-badge.hot{background:#e63946;color:#fff;}
+.gc-badge.new{background:#22c55e;color:#fff;}
+.live-dot{display:inline-block;width:6px;height:6px;background:#22c55e;border-radius:50%;animation:blink 1.5s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+/* Matches */
+.promos-section{padding:0 14px 14px;}
+.match-cards-row{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;}
+.match-cards-row::-webkit-scrollbar{display:none;}
+.match-card{background:#0f2040;border:1px solid rgba(255,255,255,.08);border-radius:12px;min-width:175px;padding:12px;flex-shrink:0;cursor:pointer;transition:.2s;}
+.match-card:hover{border-color:rgba(245,200,0,.3);}
+.mc-league{font-size:10px;color:rgba(255,255,255,.45);text-transform:uppercase;margin-bottom:6px;}
+.mc-teams{font-size:13px;font-weight:800;margin-bottom:3px;}
+.mc-teams .vs{color:rgba(255,255,255,.35);font-weight:400;margin:0 3px;}
+.mc-time{font-size:10px;color:#f5c800;margin-bottom:7px;}
+.mc-odds{display:flex;gap:3px;}
+.mc-odd{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:5px 3px;text-align:center;}
+.mc-odd:hover{background:rgba(245,200,0,.1);border-color:#f5c800;}
+.mc-odd-lbl{font-size:9px;color:rgba(255,255,255,.45);}
+.mc-odd-val{font-size:13px;font-weight:900;color:#f5c800;}
+/* Bottom nav */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#0d1b35;border-top:1px solid rgba(255,255,255,.1);display:flex;z-index:150;padding-bottom:env(safe-area-inset-bottom);}
+.bn-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 4px 6px;cursor:pointer;color:rgba(255,255,255,.45);font-size:10px;font-weight:600;gap:3px;transition:.2s;}
 .bn-item i{font-size:20px;}
-.bn-item.active{color:#22c55e;}
-.bn-item.casino-item{color:rgba(255,255,255,.5);}
-
-/* ===== LOGIN/SIGNUP MODALS ===== */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;display:none;align-items:flex-end;justify-content:center;}
-.modal-overlay.on{display:flex;animation:slideUp .3s ease both;}
-@keyframes slideUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
-.modal-sheet{background:#0d1b35;border:1px solid rgba(255,255,255,.1);border-radius:20px 20px 0 0;padding:24px 20px 40px;width:100%;max-width:480px;}
+.bn-item.active{color:#f5c800;}
+.spacer-bot{height:72px;}
+/* Modals */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:500;display:none;align-items:flex-end;justify-content:center;}
+.modal-overlay.on{display:flex;}
+.modal-sheet{background:#0d1b35;border:1px solid rgba(255,255,255,.1);border-radius:20px 20px 0 0;padding:24px 20px 40px;width:100%;max-width:500px;animation:slideUp .3s ease both;}
+@keyframes slideUp{from{transform:translateY(40px)}to{transform:translateY(0)}}
 .modal-handle{width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 20px;}
-.modal-title{font-family:"Barlow Condensed",sans-serif;font-size:1.6em;font-weight:900;color:#f5c800;margin-bottom:20px;text-align:center;letter-spacing:2px;}
+.modal-title{font-family:"Barlow Condensed",sans-serif;font-size:1.6em;font-weight:900;color:#f5c800;margin-bottom:18px;text-align:center;letter-spacing:2px;}
 .m-inp{width:100%;padding:13px 14px;background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.15);border-radius:10px;font-size:15px;outline:none;margin-bottom:12px;font-family:inherit;}
 .m-inp:focus{border-color:#f5c800;}
 .m-inp-wrap{position:relative;margin-bottom:12px;}
-.m-inp-wrap .m-inp{margin-bottom:0;}
-.m-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:16px;}
-.m-btn{width:100%;padding:14px;background:#22c55e;color:#fff;border:none;border-radius:10px;font-weight:900;font-size:16px;cursor:pointer;font-family:"Barlow Condensed",sans-serif;letter-spacing:2px;margin-top:4px;transition:.2s;}
-.m-btn:hover{background:#16a34a;transform:translateY(-1px);}
-.m-link{text-align:center;margin-top:12px;font-size:13px;color:rgba(255,255,255,.6);}
+.m-inp-wrap .m-inp{margin-bottom:0;padding-right:44px;}
+.m-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:16px;}
+.m-btn{width:100%;padding:14px;background:#22c55e;color:#fff;border:none;border-radius:10px;font-weight:900;font-size:16px;cursor:pointer;font-family:"Barlow Condensed",sans-serif;letter-spacing:2px;transition:.2s;}
+.m-btn:hover{background:#16a34a;}
+.m-btn.gold{background:linear-gradient(135deg,#f5c800,#d4a800);color:#000;}
+.m-link{text-align:center;margin-top:12px;font-size:13px;color:rgba(255,255,255,.55);}
 .m-link a{color:#f5c800;cursor:pointer;font-weight:700;}
 .m-err{background:rgba(230,57,70,.15);border:1px solid rgba(230,57,70,.4);color:#ff6b7a;padding:9px 12px;border-radius:8px;font-size:13px;margin-bottom:10px;display:none;}
 .m-err.show{display:block;}
-
-/* ===== SECRET BTN ===== */
-.secret-btn{position:fixed;bottom:62px;right:8px;width:12px;height:12px;background:transparent;border:none;cursor:pointer;opacity:.01;z-index:99;}
-.secret-ov{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:600;display:none;align-items:center;justify-content:center;padding:20px;}
+.m-select{width:100%;padding:13px 14px;background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.15);border-radius:10px;font-size:15px;outline:none;margin-bottom:12px;cursor:pointer;font-family:inherit;}
+.m-select option{background:#0d1b35;}
+/* Auth gate */
+.auth-gate{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:600;display:none;align-items:center;justify-content:center;padding:20px;}
+.auth-gate.on{display:flex;}
+.auth-gate-box{background:#0d1b35;border:1px solid rgba(245,200,0,.3);border-radius:20px;padding:28px 24px;width:100%;max-width:380px;text-align:center;}
+/* Secret */
+.secret-ov{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:700;display:none;align-items:center;justify-content:center;padding:20px;}
 .secret-ov.on{display:flex;}
-.secret-box{background:#152040;border:1px solid rgba(245,200,0,.3);border-radius:16px;padding:28px;width:100%;max-width:340px;text-align:center;}
-.secret-inp{width:100%;padding:14px;background:rgba(255,255,255,.06);color:#fff;border:2px solid rgba(255,255,255,.15);border-radius:10px;font-size:22px;font-weight:900;text-align:center;letter-spacing:8px;outline:none;margin:16px 0;font-family:"Barlow Condensed",sans-serif;}
+.secret-box{background:#0f2040;border:1px solid rgba(245,200,0,.3);border-radius:16px;padding:28px;width:100%;max-width:340px;text-align:center;}
+.secret-inp{width:100%;padding:14px;background:rgba(255,255,255,.06);color:#fff;border:2px solid rgba(255,255,255,.15);border-radius:10px;font-size:22px;font-weight:900;text-align:center;letter-spacing:8px;outline:none;margin:14px 0;font-family:"Barlow Condensed",sans-serif;}
 .secret-inp:focus{border-color:#f5c800;}
-.s-lbl{color:rgba(255,255,255,.6);font-size:13px;}
-
-/* Info modal */
+/* Info */
 .info-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:700;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px;}
-.info-modal.on{display:flex;animation:fadeInUp .4s ease both;}
-@keyframes fadeInUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.info-modal.on{display:flex;}
+/* Notif */
+.notif{position:fixed;top:16px;right:16px;padding:11px 16px;border-radius:8px;font-weight:700;font-size:14px;transform:translateY(-80px);opacity:0;transition:.3s;z-index:999;max-width:290px;box-shadow:0 4px 20px rgba(0,0,0,.4);}
+.notif.on{transform:translateY(0);opacity:1;}
+.notif.ok{background:#22c55e;color:#fff;} .notif.err{background:#e63946;color:#fff;} .notif.info{background:#f5c800;color:#000;}
+.secret-btn{position:fixed;bottom:68px;right:6px;width:14px;height:14px;background:transparent;border:none;cursor:pointer;opacity:.01;z-index:99;}
 </style>
 </head>
 <body>
 
-<!-- ===== TOP BAR ===== -->
+<!-- TOP BAR -->
 <div class="top-bar">
-  <img src="logo.png" onerror="this.src='logo.jpeg';this.onerror=null" class="top-bar-logo" alt="TK">
-  <div class="top-bar-text">
-    <div class="tagline">Avanw jwe, kob ou la</div>
-    <div class="sub">Tonton Kondo Paryaj</div>
+  <img src="logo.png" onerror="this.src='logo.jpeg';this.onerror=null" class="tb-logo" alt="TK">
+  <div class="tb-brand">
+    <div class="name">TONTON KONDO</div>
+    <div class="slogan">Lotto · Paryaj · Casino · Sports</div>
   </div>
-  <button class="btn-login" onclick="openModal('login-modal')">Le login</button>
-  <button class="btn-signup" onclick="openModal('signup-modal')">Inscription</button>
+  <div class="tb-actions">
+    <button class="btn-login" onclick="openModal('login-modal')"><i class="fas fa-sign-in-alt"></i> Konekte</button>
+    <button class="btn-signup" onclick="openModal('signup-modal')">Enskri</button>
+    <button class="btn-info" onclick="ouvrirInfo()"><i class="fas fa-info-circle"></i></button>
+  </div>
 </div>
 
-<!-- ===== MAIN NAV ===== -->
+<!-- MAIN NAV -->
 <div class="main-nav">
-  <div class="nav-link active"><i class="fas fa-home"></i> Accueil</div>
-  <div class="nav-link" onclick="openModal('login-modal')"><i class="fas fa-broadcast-tower"></i> Live</div>
-  <div class="nav-link" onclick="openModal('login-modal')"><i class="fas fa-futbol"></i> Sport</div>
-  <div class="nav-spacer"></div>
-  <div class="nav-actions">
-    <button class="nav-icon-btn"><i class="fas fa-search"></i></button>
-    <button class="nav-icon-btn" onclick="ouvrirInfo()"><i class="fas fa-bars"></i></button>
-  </div>
+  <div class="nav-link active"><i class="fas fa-home"></i> Akèy</div>
+  <div class="nav-link" onclick="reqAuth()"><i class="fas fa-broadcast-tower"></i> Live</div>
+  <div class="nav-link" onclick="reqAuth()"><i class="fas fa-futbol"></i> Sports</div>
+  <div class="nav-link" onclick="reqAuth()"><i class="fas fa-dice"></i> Casino</div>
+  <div class="nav-link" onclick="reqAuth()"><i class="fas fa-ticket-alt"></i> Tikè</div>
 </div>
 
-<!-- ===== SPORTS CATEGORIES ===== -->
-<div class="sports-cats">
-  <div class="sport-cat active">
-    <div class="icon">🏆 <span class="count">12</span></div>
-    <div class="name">Popular</div>
-  </div>
-  <div class="sport-cat">
-    <div class="icon" style="position:relative">⚽<span class="count">1767</span></div>
-    <div class="name">Football</div>
-  </div>
-  <div class="sport-cat">
-    <div class="icon" style="position:relative">🏏<span class="count">84</span></div>
-    <div class="name">Cricket</div>
-  </div>
-  <div class="sport-cat">
-    <div class="icon" style="position:relative">🏀<span class="count">323</span></div>
-    <div class="name">Basketball</div>
-  </div>
-  <div class="sport-cat">
-    <div class="icon" style="position:relative">🏐<span class="count">86</span></div>
-    <div class="name">Volley</div>
-  </div>
-  <div class="sport-cat">
-    <div class="icon" style="position:relative">⚾<span class="count">45</span></div>
-    <div class="name">Baseball</div>
-  </div>
-  <div class="sport-cat">
-    <div class="icon" style="position:relative">🎯<span class="count">38</span></div>
-    <div class="name">Keno</div>
-  </div>
-  <div class="sport-cat">
-    <div class="icon" style="position:relative">🎡<span class="count">1</span></div>
-    <div class="name">Roulette</div>
-  </div>
+<!-- GAME FILTER TABS -->
+<div class="game-tabs">
+  <div class="gtab active" onclick="filterGame(this,'all')"><span class="gi">🏆</span><span class="gn">Tout</span></div>
+  <div class="gtab" onclick="filterGame(this,'lotto')"><span class="gi">🎯</span><span class="gn">Lotto</span></div>
+  <div class="gtab" onclick="filterGame(this,'casino')"><span class="gi">🎰</span><span class="gn">Casino</span></div>
+  <div class="gtab" onclick="filterGame(this,'sports')"><span class="gi">⚽</span><span class="gn">Sports</span></div>
+  <div class="gtab" onclick="filterGame(this,'virtuel')"><span class="gi">🖥️</span><span class="gn">Virtuel</span></div>
 </div>
 
-<!-- ===== HERO BANNER (match phare) ===== -->
-<div class="hero-banner">
-  <img src="54750.jpg" onerror="this.style.display='none'" class="hero-img" alt="Match">
-  <div class="hero-overlay"></div>
-  <div class="hero-league">
-    <div class="hero-league-name">⚽ SERIE A</div>
-  </div>
-  <div class="hero-match">
-    <div class="hero-teams">
-      <div class="hero-team">🔵 <span>Como</span></div>
-      <div style="text-align:center">
-        <div class="hero-vs">VS</div>
-        <div class="hero-time">12.04.2026 14:45</div>
+<!-- SLIDESHOW PUB -->
+<div class="slideshow-wrap">
+  <div class="slideshow" id="slideshow">
+    <div class="slide">
+      <img src="1.png" onerror="this.style.display='none'" class="slide-bg" alt="">
+      <div class="slide-fallback" style="background:linear-gradient(135deg,#0d2151,#1d8c3e);">
+        <div style="font-size:3.5em">🎯</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:2.2em;font-weight:900;color:#f5c800">BORLETTE · LOTTO</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.7)">Tunisia · Florida · New York · Georgia · Texas</div>
       </div>
-      <div class="hero-team"><span>Inter Milan</span> 🔴</div>
-    </div>
-    <div class="hero-odds">
-      <div class="hero-odd-btn" onclick="openModal('login-modal')">
-        <div class="hero-odd-label">V1</div>
-        <div class="hero-odd-val">3.25</div>
-      </div>
-      <div class="hero-odd-btn" onclick="openModal('login-modal')">
-        <div class="hero-odd-label">X</div>
-        <div class="hero-odd-val">3.45</div>
-      </div>
-      <div class="hero-odd-btn" onclick="openModal('login-modal')">
-        <div class="hero-odd-label">V2</div>
-        <div class="hero-odd-val">2.28</div>
+      <div class="slide-overlay"></div>
+      <div class="slide-caption">
+        <span class="slide-tag">🎯 Lotto</span>
+        <div class="slide-title">Borlette & Lotto</div>
+        <div class="slide-sub">Lot1 · Lot2 · Lot3 · Mariage — Tiraj chak jou</div>
       </div>
     </div>
+    <div class="slide">
+      <img src="2.png" onerror="this.style.display='none'" class="slide-bg" alt="">
+      <div class="slide-fallback" style="background:linear-gradient(135deg,#1a0d40,#2979ff);">
+        <div style="font-size:3.5em">🎱</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:2.2em;font-weight:900;color:#f5c800">KENO LUCKY</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.7)">Chwazi 1 a 10 nimewo — Gain × 80</div>
+      </div>
+      <div class="slide-overlay"></div>
+      <div class="slide-caption">
+        <span class="slide-tag">🎱 Keno</span>
+        <div class="slide-title">Keno Lucky</div>
+        <div class="slide-sub">80 nimewo · Gain jusqu'à ×80</div>
+      </div>
+    </div>
+    <div class="slide">
+      <img src="3.png" onerror="this.style.display='none'" class="slide-bg" alt="">
+      <div class="slide-fallback" style="background:linear-gradient(135deg,#0d2151,#e63946);">
+        <div style="font-size:3.5em">🏎️</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:2.2em;font-weight:900;color:#f5c800">COURSE AUTO</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.7)">Ferrari · Red Bull · Mercedes · McLaren</div>
+      </div>
+      <div class="slide-overlay"></div>
+      <div class="slide-caption">
+        <span class="slide-tag">🏎️ Course</span>
+        <div class="slide-title">Course Automobile</div>
+        <div class="slide-sub">6 vwati · Gain jusqu'à ×5.50</div>
+      </div>
+    </div>
+    <div class="slide">
+      <img src="4.png" onerror="this.style.display='none'" class="slide-bg" alt="">
+      <div class="slide-fallback" style="background:linear-gradient(135deg,#0a2000,#28b04e);">
+        <div style="font-size:3.5em">⚽</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:2.2em;font-weight:900;color:#f5c800">PENALTY</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.7)">9 kazye · Chwazi tiratè · Paryè</div>
+      </div>
+      <div class="slide-overlay"></div>
+      <div class="slide-caption">
+        <span class="slide-tag hot">🔥 Nouvo</span>
+        <div class="slide-title">Tir au But — Penalty</div>
+        <div class="slide-sub">9 kazye · Gain jusqu'à ×4.50</div>
+      </div>
+    </div>
+    <div class="slide">
+      <img src="5.png" onerror="this.style.display='none'" class="slide-bg" alt="">
+      <div class="slide-fallback" style="background:linear-gradient(135deg,#1a0d40,#8a6820);">
+        <div style="font-size:3.5em">🎡</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:2.2em;font-weight:900;color:#f5c800">ROULETTE</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.7)">Américaine · 0 a 36 · Nimewo ak koulè</div>
+      </div>
+      <div class="slide-overlay"></div>
+      <div class="slide-caption">
+        <span class="slide-tag">🎡 Casino</span>
+        <div class="slide-title">Roulette Américaine</div>
+        <div class="slide-sub">Plein ×35 · Rouge/Noir ×2 · Douzaine ×3</div>
+      </div>
+    </div>
+    <div class="slide">
+      <img src="6.png" onerror="this.style.display='none'" class="slide-bg" alt="">
+      <div class="slide-fallback" style="background:linear-gradient(135deg,#061520,#1a3a8f);">
+        <div style="font-size:3.5em">🚁</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:2.2em;font-weight:900;color:#f5c800">HÉLICOPTÈRE</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.7)">Monte anlè · Encaisse avan crash la</div>
+      </div>
+      <div class="slide-overlay"></div>
+      <div class="slide-caption">
+        <span class="slide-tag">🚁 Casino</span>
+        <div class="slide-title">Jeu Hélicoptère</div>
+        <div class="slide-sub">Monte · Encaisse · Evite Crash</div>
+      </div>
+    </div>
+  </div>
+  <div class="ss-dots" id="ss-dots"></div>
+</div>
+
+<!-- GAMES GRID -->
+<div class="games-section">
+  <div class="sec-hdr">
+    <div class="sec-hdr-title">Nou Jwe</div>
+  </div>
+  <div class="games-grid" id="games-grid">
+    <div class="game-card" data-cat="lotto" onclick="goPlay('borlette')">
+      <span class="gc-icon">🎯</span>
+      <div class="gc-name">Borlette</div>
+      <div class="gc-desc">Lot1 · Lot2 · Lot3</div>
+    </div>
+    <div class="game-card" data-cat="lotto" onclick="goPlay('borlette')">
+      <span class="gc-icon">🔢</span>
+      <div class="gc-name">Lotto 3/4/5</div>
+      <div class="gc-desc">Gain ×500</div>
+    </div>
+    <div class="game-card" data-cat="lotto" onclick="goPlay('borlette')">
+      <span class="gc-icon">💍</span>
+      <div class="gc-name">Mariage</div>
+      <div class="gc-desc">Pè nimewo</div>
+    </div>
+    <div class="game-card" data-cat="casino" onclick="goPlay('keno')">
+      <span class="gc-badge">Pop</span>
+      <span class="gc-icon">🎱</span>
+      <div class="gc-name">Keno Lucky</div>
+      <div class="gc-desc">80 nimewo</div>
+    </div>
+    <div class="game-card" data-cat="casino" onclick="goPlay('lucky6')">
+      <span class="gc-icon">🍀</span>
+      <div class="gc-name">Lucky 6</div>
+      <div class="gc-desc">48 boul · ×30</div>
+    </div>
+    <div class="game-card" data-cat="virtuel" onclick="goPlay('course')">
+      <span class="gc-icon">🏎️</span>
+      <div class="gc-name">Course Auto</div>
+      <div class="gc-desc">6 vwati</div>
+    </div>
+    <div class="game-card" data-cat="casino" onclick="goPlay('roulette')">
+      <span class="gc-icon">🎡</span>
+      <div class="gc-name">Roulette</div>
+      <div class="gc-desc">0–36 · ×35</div>
+    </div>
+    <div class="game-card" data-cat="casino" onclick="goPlay('helico')">
+      <span class="gc-icon">🚁</span>
+      <div class="gc-name">Hélicoptère</div>
+      <div class="gc-desc">Monte & Encaisse</div>
+    </div>
+    <div class="game-card" data-cat="sports" onclick="goPlay('sports')">
+      <span class="gc-badge new" style="background:#22c55e">Live</span>
+      <span class="gc-icon"><span class="live-dot"></span> ⚽</span>
+      <div class="gc-name">Paris Sportifs</div>
+      <div class="gc-desc">Live · À venir</div>
+    </div>
+    <div class="game-card" data-cat="sports" onclick="goPlay('penalty')">
+      <span class="gc-badge hot">New</span>
+      <span class="gc-icon">🥅</span>
+      <div class="gc-name">Penalty</div>
+      <div class="gc-desc">Tir au but</div>
+    </div>
   </div>
 </div>
 
-<!-- ===== SUPER PROMOTIONS ===== -->
+<!-- MATCHES -->
 <div class="promos-section">
-  <div class="section-title-bar">⭐ Super Promotions</div>
-  <div class="promo-tabs">
-    <div class="promo-tab active">BB</div>
-    <div class="promo-tab">Multi Bet Of The Day</div>
+  <div class="sec-hdr">
+    <div class="sec-hdr-title">⚽ Matchs an vedèt</div>
   </div>
-  <div class="sport-filter-tabs">
-    <div class="sf-tab active-fb">⚽ Football</div>
-    <div class="sf-tab inactive">🏀</div>
-    <div class="sf-tab inactive">🎡 Roulette</div>
-    <div class="sf-tab inactive">⚽ Penalty</div>
-  </div>
-  <div class="match-promos">
-    <div class="match-promo-card" onclick="openModal('login-modal')">
-      <div class="mp-teams">⚽ Atletico M. — Barcelone</div>
-      <div class="mp-result">Résultat: <span>V2</span></div>
-      <div style="color:#f5c800;font-size:13px;font-weight:800;margin-top:6px">Cote: 1.95</div>
+  <div class="match-cards-row">
+    <div class="match-card" onclick="goPlay('sports')">
+      <div class="mc-league">🇫🇷 Ligue 1</div>
+      <div class="mc-teams">PSG <span class="vs">VS</span> Monaco</div>
+      <div class="mc-time"><span class="live-dot"></span> LIVE · 67'</div>
+      <div class="mc-odds">
+        <div class="mc-odd"><div class="mc-odd-lbl">1</div><div class="mc-odd-val">1.45</div></div>
+        <div class="mc-odd"><div class="mc-odd-lbl">X</div><div class="mc-odd-val">4.20</div></div>
+        <div class="mc-odd"><div class="mc-odd-lbl">2</div><div class="mc-odd-val">6.50</div></div>
+      </div>
     </div>
-    <div class="match-promo-card" onclick="openModal('login-modal')">
-      <div class="mp-teams">⚽ Liverpool — Chelsea</div>
-      <div class="mp-result">Résultat: <span>V1</span></div>
-      <div style="color:#f5c800;font-size:13px;font-weight:800;margin-top:6px">Cote: 1.75</div>
+    <div class="match-card" onclick="goPlay('sports')">
+      <div class="mc-league">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League</div>
+      <div class="mc-teams">Arsenal <span class="vs">VS</span> Man City</div>
+      <div class="mc-time"><span class="live-dot"></span> LIVE · 43'</div>
+      <div class="mc-odds">
+        <div class="mc-odd"><div class="mc-odd-lbl">1</div><div class="mc-odd-val">2.80</div></div>
+        <div class="mc-odd"><div class="mc-odd-lbl">X</div><div class="mc-odd-val">3.15</div></div>
+        <div class="mc-odd"><div class="mc-odd-lbl">2</div><div class="mc-odd-val">2.50</div></div>
+      </div>
     </div>
-    <div class="match-promo-card" onclick="openModal('login-modal')">
-      <div class="mp-teams">🎯 Keno Lucky — Jackpot</div>
-      <div class="mp-result">Mise min: <span>10 Gd</span></div>
-      <div style="color:#f5c800;font-size:13px;font-weight:800;margin-top:6px">Gain max: ×80</div>
+    <div class="match-card" onclick="goPlay('sports')">
+      <div class="mc-league">🇪🇸 La Liga</div>
+      <div class="mc-teams">Real Madrid <span class="vs">VS</span> Barça</div>
+      <div class="mc-time">📅 Ce soir 20:00</div>
+      <div class="mc-odds">
+        <div class="mc-odd"><div class="mc-odd-lbl">1</div><div class="mc-odd-val">2.10</div></div>
+        <div class="mc-odd"><div class="mc-odd-lbl">X</div><div class="mc-odd-val">3.30</div></div>
+        <div class="mc-odd"><div class="mc-odd-lbl">2</div><div class="mc-odd-val">3.60</div></div>
+      </div>
     </div>
-    <div class="match-promo-card" onclick="openModal('login-modal')">
-      <div class="mp-teams">🎡 Roulette — Rouge/Noir</div>
-      <div class="mp-result">Mise: <span>tout montant</span></div>
-      <div style="color:#f5c800;font-size:13px;font-weight:800;margin-top:6px">Cote: ×2.00</div>
+    <div class="match-card" onclick="goPlay('sports')">
+      <div class="mc-league">🇩🇪 Bundesliga</div>
+      <div class="mc-teams">Bayern <span class="vs">VS</span> Dortmund</div>
+      <div class="mc-time">📅 Demen 18:30</div>
+      <div class="mc-odds">
+        <div class="mc-odd"><div class="mc-odd-lbl">1</div><div class="mc-odd-val">1.65</div></div>
+        <div class="mc-odd"><div class="mc-odd-lbl">X</div><div class="mc-odd-val">3.80</div></div>
+        <div class="mc-odd"><div class="mc-odd-lbl">2</div><div class="mc-odd-val">5.00</div></div>
+      </div>
     </div>
-  </div>
-
-  <!-- About button -->
-  <div style="text-align:center;margin-top:14px">
-    <button onclick="ouvrirInfo()" style="padding:9px 20px;background:rgba(245,200,0,.1);border:1px solid rgba(245,200,0,.3);border-radius:20px;color:#f5c800;font-size:13px;font-weight:700;cursor:pointer"><i class="fas fa-info-circle"></i> À propos de Tonton Kondo</button>
   </div>
 </div>
 
-<!-- ===== BOTTOM NAV ===== -->
-<div class="bottom-nav" style="padding-bottom:env(safe-area-inset-bottom)">
-  <div class="bn-item active" onclick="void(0)">
-    <i class="fas fa-futbol"></i>Des sports
-  </div>
-  <div class="bn-item" onclick="openModal('login-modal')">
-    <i class="fas fa-broadcast-tower"></i>Pari direct
-  </div>
-  <div class="bn-item casino-item" onclick="openModal('login-modal')">
-    <i class="fas fa-dice"></i>Casino
-  </div>
-  <div class="bn-item casino-item" onclick="openModal('login-modal')">
-    <i class="fas fa-playing-card" style="font-size:18px">🃏</i>Casino live
-  </div>
-  <div class="bn-item" onclick="openModal('login-modal')">
-    <i class="fas fa-horse"></i>Virtuelle
+<div class="spacer-bot"></div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div class="bn-item active"><i class="fas fa-home"></i>Akèy</div>
+  <div class="bn-item" onclick="goPlay('sports')"><i class="fas fa-futbol"></i>Sports</div>
+  <div class="bn-item" onclick="goPlay('roulette')"><i class="fas fa-dice"></i>Casino</div>
+  <div class="bn-item" onclick="goPlay('penalty')"><i class="fas fa-trophy"></i>Jwe</div>
+  <div class="bn-item" onclick="openModal('login-modal')"><i class="fas fa-user"></i>Kont</div>
+</div>
+
+<!-- AUTH GATE -->
+<div class="auth-gate" id="auth-gate">
+  <div class="auth-gate-box">
+    <div style="font-size:3em;margin-bottom:10px">🔐</div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.7em;font-weight:900;color:#f5c800;margin-bottom:8px">Ou dwe konekte</div>
+    <div style="font-size:13px;color:rgba(255,255,255,.65);margin-bottom:22px;line-height:1.6">Pou jwe oswa plase yon paryaj, ou dwe konekte. Kreye yon kont gratis pou kòmanse!</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="m-btn" onclick="closeGate();openModal('login-modal')"><i class="fas fa-sign-in-alt"></i> KONEKTE</button>
+      <button class="m-btn" onclick="closeGate();openModal('signup-modal')" style="background:rgba(245,200,0,.15);border:1px solid #f5c800;color:#f5c800;">✨ KREYE KÒT GRATIS</button>
+      <button onclick="closeGate()" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:13px;cursor:pointer;padding:8px">Anile</button>
+    </div>
   </div>
 </div>
 
-<!-- SPACER -->
-<div style="height:70px"></div>
-
-<!-- ===== LOGIN MODAL ===== -->
+<!-- LOGIN MODAL -->
 <div class="modal-overlay" id="login-modal">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
@@ -286,15 +396,15 @@ body{background:#0d1b35;margin:0;padding:0;font-family:'Barlow',sans-serif;color
     <div class="m-err" id="ml-err"></div>
     <input type="tel" class="m-inp" id="ml-phone" placeholder="Nimewo telefòn" inputmode="numeric">
     <div class="m-inp-wrap">
-      <input type="password" class="m-inp" id="ml-pwd" placeholder="Mot de passe" style="padding-right:44px">
+      <input type="password" class="m-inp" id="ml-pwd" placeholder="Mot de passe">
       <button class="m-eye" onclick="toggleMdp('ml-pwd',this)"><i class="fas fa-eye"></i></button>
     </div>
     <button class="m-btn" onclick="loginJoueurMain()">SE CONNECTER</button>
-    <div class="m-link">Pas de compte ? <a onclick="switchModal('signup-modal')">S'inscrire</a></div>
+    <div class="m-link">Pas de compte ? <a onclick="switchModal('signup-modal')">Enskri gratis</a></div>
   </div>
 </div>
 
-<!-- ===== SIGNUP MODAL ===== -->
+<!-- SIGNUP MODAL -->
 <div class="modal-overlay" id="signup-modal">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
@@ -303,11 +413,11 @@ body{background:#0d1b35;margin:0;padding:0;font-family:'Barlow',sans-serif;color
     <input type="text" class="m-inp" id="mr-name" placeholder="Non konplè">
     <input type="tel" class="m-inp" id="mr-phone" placeholder="Nimewo telefòn" inputmode="numeric">
     <div class="m-inp-wrap">
-      <input type="password" class="m-inp" id="mr-pwd" placeholder="Mot de passe" style="padding-right:44px">
+      <input type="password" class="m-inp" id="mr-pwd" placeholder="Mot de passe">
       <button class="m-eye" onclick="toggleMdp('mr-pwd',this)"><i class="fas fa-eye"></i></button>
     </div>
     <div class="m-inp-wrap">
-      <input type="password" class="m-inp" id="mr-pwd2" placeholder="Konfime mot de passe" style="padding-right:44px">
+      <input type="password" class="m-inp" id="mr-pwd2" placeholder="Konfime mot de passe">
       <button class="m-eye" onclick="toggleMdp('mr-pwd2',this)"><i class="fas fa-eye"></i></button>
     </div>
     <button class="m-btn" onclick="registerJoueurMain()">KREYE KÒT MWEN</button>
@@ -315,184 +425,198 @@ body{background:#0d1b35;margin:0;padding:0;font-family:'Barlow',sans-serif;color
   </div>
 </div>
 
-<!-- STAFF secret modal -->
-<div class="secret-ov" id="secret-ov">
-  <div class="secret-box">
-    <div style="font-size:2em;margin-bottom:8px">🔑</div>
-    <div style="font-size:16px;font-weight:800;color:#f5c800;margin-bottom:4px">Kòd aksè</div>
-    <div class="s-lbl">Antre kòd 12 karaktè pou aksè pèsonèl</div>
-    <input type="text" class="secret-inp" id="secret-inp" placeholder="• • • • • • • • • • • •" maxlength="12" autocomplete="off">
-    <button class="m-btn" onclick="verifSecret()" style="background:#f5c800;color:#000">VALIDE</button>
-    <button onclick="hideSecretOv()" style="width:100%;margin-top:8px;padding:10px;background:none;border:1px solid rgba(255,255,255,.2);border-radius:8px;color:rgba(255,255,255,.6);cursor:pointer;font-size:13px">Anile</button>
-  </div>
-</div>
-
-<!-- STAFF modal -->
+<!-- STAFF MODAL -->
 <div class="modal-overlay" id="staff-modal">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-title">🔐 AKSÈ PÈSONÈL</div>
+    <div class="modal-title">🔑 AKSÈ PÈSONÈL</div>
     <div class="m-err" id="staff-err"></div>
-    <select id="staff-role" class="m-inp" onchange="updateStaffForm()" style="background:#152040;cursor:pointer">
+    <select id="staff-role" class="m-select" onchange="updateStaffForm()">
       <option value="admin">👑 Administratè</option>
       <option value="directeur">🏢 Direktè</option>
-      <option value="caissier">🏧 Kachè (Caissier)</option>
+      <option value="caissier">🏧 Caissier</option>
     </select>
-    <div id="staff-code-wrap" style="display:none">
-      <input type="text" class="m-inp" id="staff-code" placeholder="Idantifyan (ex: DIR-NORD)" style="letter-spacing:2px;font-weight:800">
+    <div id="staff-code-wrap" style="display:none;margin-bottom:12px">
+      <input type="text" class="m-inp" id="staff-code" placeholder="Idantifyan (ex: DIR-NORD)" style="margin-bottom:0;letter-spacing:2px;font-weight:800">
     </div>
     <div class="m-inp-wrap">
-      <input type="password" class="m-inp" id="staff-pwd" placeholder="Mot de passe" style="padding-right:44px">
+      <input type="password" class="m-inp" id="staff-pwd" placeholder="Mot de passe">
       <button class="m-eye" onclick="toggleMdp('staff-pwd',this)"><i class="fas fa-eye"></i></button>
     </div>
-    <button class="m-btn" onclick="loginStaffMain()" style="background:#f5c800;color:#000">AKSEDE</button>
-    <div class="m-link"><a onclick="hideModal('staff-modal')" style="color:rgba(255,255,255,.5)">← Retounen</a></div>
+    <button class="m-btn gold" onclick="loginStaffMain()">AKSEDE</button>
+    <div class="m-link"><a onclick="hideModal('staff-modal')" style="color:rgba(255,255,255,.4)">← Retounen</a></div>
   </div>
 </div>
 
-<!-- INFO MODAL (light) -->
+<!-- SECRET OVERLAY -->
+<div class="secret-ov" id="secret-ov">
+  <div class="secret-box">
+    <div style="font-size:2em;margin-bottom:8px">🔑</div>
+    <div style="font-size:16px;font-weight:800;color:#f5c800;margin-bottom:4px">Kòd aksè pèsonèl</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.5)">Antre kòd 12 karaktè</div>
+    <input type="text" class="secret-inp" id="secret-inp" maxlength="12" autocomplete="off" placeholder="• • • • • • • • • • • •">
+    <button class="m-btn gold" onclick="verifSecret()">VALIDE</button>
+    <button onclick="hideSecretOv()" style="width:100%;margin-top:8px;padding:10px;background:none;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:rgba(255,255,255,.5);cursor:pointer;font-size:13px">Anile</button>
+  </div>
+</div>
+
+<!-- INFO MODAL -->
 <div class="info-modal" id="info-modal">
-  <div style="background:#fff;color:#1a1a2e;border-radius:20px;padding:28px;max-width:700px;width:100%;margin:auto;position:relative;">
-    <button onclick="fermerInfo()" style="position:absolute;top:14px;right:14px;background:#f0f0f0;border:none;color:#555;font-size:18px;cursor:pointer;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center">✕</button>
-    <div style="text-align:center;margin-bottom:20px">
+  <div style="background:#fff;color:#1a1a2e;border-radius:20px;padding:28px;max-width:700px;width:100%;margin:auto;position:relative">
+    <button onclick="fermerInfo()" style="position:absolute;top:14px;right:14px;background:#f0f0f0;border:none;color:#555;font-size:18px;cursor:pointer;width:32px;height:32px;border-radius:50%">✕</button>
+    <div style="text-align:center;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #f0f0f0">
       <img src="logo.png" onerror="this.src='logo.jpeg';this.onerror=null" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:4px solid #1a3a8f">
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.8em;font-weight:900;color:#1a3a8f;letter-spacing:3px;margin-top:8px">TONTON KONDO</div>
       <div style="font-size:12px;color:#888">Lotto · Paryaj · Casino · Sports</div>
     </div>
-    <p style="font-size:14px;color:#333;line-height:1.7;margin-bottom:10px"><strong>Tonton Kondo Lotto Paryaj</strong> se yon sosyete paryaj sportif ki fonksyone dapre lwa ayisyen. Syèj sosyal li se nan Flon 7 #32, Léogane, Lwès, Ayiti. Li dirije pa <strong>Mesye Lafleur Dutheau</strong>.</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0">
-      <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:8px;padding:10px"><div style="font-size:11px;color:#888">Email</div><div style="font-size:13px;font-weight:700;color:#1a3a8f">tontonkondo@gmail.com</div></div>
-      <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:8px;padding:10px"><div style="font-size:11px;color:#888">Instagram</div><div style="font-size:13px;font-weight:700;color:#1a3a8f">@tontonkondo</div></div>
-      <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:8px;padding:10px"><div style="font-size:11px;color:#888">TikTok</div><div style="font-size:13px;font-weight:700;color:#1a3a8f">@tontonkondo</div></div>
-      <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:8px;padding:10px"><div style="font-size:11px;color:#888">Adresse</div><div style="font-size:13px;font-weight:700;color:#1a3a8f">32 Flon 7, Léogane</div></div>
+    <p style="font-size:14px;color:#333;line-height:1.7;margin-bottom:12px"><strong>Tonton Kondo Lotto Paryaj</strong> se yon sosyete paryaj sportif ki fonksyone dapre lwa ayisyen. Syèj sosyal li se nan Flon 7 #32, Léogane, Lwès, Ayiti. Li dirije pa <strong>Mesye Lafleur Dutheau</strong>.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:8px;padding:10px"><div style="font-size:10px;color:#888">Email</div><div style="font-size:13px;font-weight:700;color:#1a3a8f">tontonkondo@gmail.com</div></div>
+      <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:8px;padding:10px"><div style="font-size:10px;color:#888">Instagram</div><div style="font-size:13px;font-weight:700;color:#1a3a8f">@tontonkondo</div></div>
+      <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:8px;padding:10px"><div style="font-size:10px;color:#888">TikTok</div><div style="font-size:13px;font-weight:700;color:#1a3a8f">@tontonkondo</div></div>
+      <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:8px;padding:10px"><div style="font-size:10px;color:#888">Adresse</div><div style="font-size:13px;font-weight:700;color:#1a3a8f">32 Flon 7, Léogane, Ayiti</div></div>
     </div>
-    <div style="background:#fff8e1;border:1px solid #ffd54f;border-radius:8px;padding:12px;margin-top:10px">
-      <p style="color:#7a5f00;font-size:13px">⚠️ <strong>Jeu responsable.</strong> 18 ans et plus. Ne misez que ce que vous pouvez vous permettre de perdre.</p>
-    </div>
-    <div style="text-align:center;margin-top:16px;font-size:12px;color:#888">© 2024 Tonton Kondo · Développé par <strong style="color:#1a3a8f">La Nova Technologie</strong></div>
+    <div style="background:#fff8e1;border:1px solid #ffd54f;border-radius:8px;padding:12px;margin-bottom:14px"><p style="color:#7a5f00;font-size:13px">⚠️ <strong>Jeu responsable.</strong> 18 an ak plis sèlman.</p></div>
+    <div style="text-align:center;font-size:12px;color:#888">© 2024 Tonton Kondo · Développé par <strong style="color:#1a3a8f">La Nova Technologie</strong></div>
     <button onclick="fermerInfo()" style="width:100%;padding:12px;background:#e63946;color:#fff;border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer;margin-top:14px">Fermer</button>
   </div>
 </div>
 
 <div class="notif" id="notif-login"></div>
-<!-- Bouton secret invisible -->
 <button class="secret-btn" onclick="showSecretOv()"></button>
 
 <script>
-const gJ=()=>JSON.parse(localStorage.getItem('tk_joueurs'))||{};
-const sJ=v=>localStorage.setItem('tk_joueurs',JSON.stringify(v));
+const gJ   =()=>JSON.parse(localStorage.getItem('tk_joueurs'))||{};
+const sJ   =v =>localStorage.setItem('tk_joueurs',JSON.stringify(v));
 const gDirs=()=>JSON.parse(localStorage.getItem('tk_dirs'))||{};
 const gCaiss=()=>JSON.parse(localStorage.getItem('tk_caiss'))||{};
 const SECRET_CODE='TONTONKONDO12';
+let pendingGame=null;
 
-// Click outside closes modal
+// SLIDESHOW
+(function(){
+  const ss=document.getElementById('slideshow');
+  const dotsEl=document.getElementById('ss-dots');
+  const slides=ss.querySelectorAll('.slide');
+  const N=slides.length;
+  let cur=0,timer=null;
+  for(let i=0;i<N;i++){
+    const d=document.createElement('div');
+    d.className='ss-dot'+(i===0?' active':'');
+    d.onclick=()=>go(i);
+    dotsEl.appendChild(d);
+  }
+  function go(n){
+    cur=((n%N)+N)%N;
+    ss.style.transform=`translateX(-${cur*100}%)`;
+    dotsEl.querySelectorAll('.ss-dot').forEach((d,i)=>d.classList.toggle('active',i===cur));
+  }
+  function startAuto(){timer=setInterval(()=>go(cur+1),4500);}
+  function stopAuto(){clearInterval(timer);}
+  let sx=0;
+  ss.addEventListener('touchstart',e=>{stopAuto();sx=e.touches[0].clientX;},{passive:true});
+  ss.addEventListener('touchend',e=>{
+    const dx=e.changedTouches[0].clientX-sx;
+    if(Math.abs(dx)>40)go(dx<0?cur+1:cur-1);
+    startAuto();
+  });
+  startAuto();
+})();
+
+// FILTER
+function filterGame(el,cat){
+  document.querySelectorAll('.gtab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.game-card').forEach(c=>{
+    c.style.display=(cat==='all'||c.dataset.cat===cat)?'':'none';
+  });
+}
+
+// AUTH GATE - joueur VOIT les jeux mais doit se connecter pour JOUER
+function goPlay(game){pendingGame=game;showGate();}
+function reqAuth(){pendingGame=null;showGate();}
+function showGate(){document.getElementById('auth-gate').classList.add('on');}
+function closeGate(){document.getElementById('auth-gate').classList.remove('on');}
+
+function afterLogin(){
+  if(pendingGame)localStorage.setItem('tk_pending_game',pendingGame);
+  window.location.href='tk_app.html';
+}
+
+// MODALS
 document.querySelectorAll('.modal-overlay').forEach(ov=>{
-  ov.addEventListener('click',e=>{ if(e.target===ov) hideModal(ov.id); });
+  ov.addEventListener('click',e=>{if(e.target===ov)hideModal(ov.id);});
 });
-document.getElementById('info-modal').addEventListener('click',function(e){
-  if(e.target===this) fermerInfo();
-});
+document.getElementById('auth-gate').addEventListener('click',e=>{if(e.target===document.getElementById('auth-gate'))closeGate();});
+document.getElementById('info-modal').addEventListener('click',function(e){if(e.target===this)fermerInfo();});
 
-function openModal(id){
-  document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('on'));
-  document.getElementById(id)?.classList.add('on');
+function openModal(id){document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('on'));document.getElementById(id)?.classList.add('on');}
+function hideModal(id){document.getElementById(id)?.classList.remove('on');}
+function switchModal(id){document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('on'));document.getElementById(id)?.classList.add('on');}
+function ouvrirInfo(){document.getElementById('info-modal').classList.add('on');}
+function fermerInfo(){document.getElementById('info-modal').classList.remove('on');}
+function toggleMdp(id,btn){
+  const inp=document.getElementById(id);if(!inp)return;
+  inp.type=inp.type==='password'?'text':'password';
+  btn.innerHTML=inp.type==='password'?'<i class="fas fa-eye"></i>':'<i class="fas fa-eye-slash"></i>';
 }
-function hideModal(id){ document.getElementById(id)?.classList.remove('on'); }
-function switchModal(id){
-  document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('on'));
-  document.getElementById(id)?.classList.add('on');
-}
-function ouvrirInfo(){ document.getElementById('info-modal').classList.add('on'); }
-function fermerInfo(){ document.getElementById('info-modal').classList.remove('on'); }
-
-function toggleMdp(id, btn){
-  const inp=document.getElementById(id);
-  if(!inp)return;
-  if(inp.type==='password'){inp.type='text';btn.innerHTML='<i class="fas fa-eye-slash"></i>';}
-  else{inp.type='password';btn.innerHTML='<i class="fas fa-eye"></i>';}
-}
-
-function showSecretOv(){
-  document.getElementById('secret-ov').classList.add('on');
-  setTimeout(()=>document.getElementById('secret-inp').focus(),100);
-}
-function hideSecretOv(){ document.getElementById('secret-ov').classList.remove('on'); }
-document.getElementById('secret-inp').addEventListener('keypress',e=>{ if(e.key==='Enter') verifSecret(); });
+function showSecretOv(){document.getElementById('secret-ov').classList.add('on');setTimeout(()=>document.getElementById('secret-inp').focus(),100);}
+function hideSecretOv(){document.getElementById('secret-ov').classList.remove('on');}
+document.getElementById('secret-inp').addEventListener('keypress',e=>{if(e.key==='Enter')verifSecret();});
 function verifSecret(){
   const val=document.getElementById('secret-inp').value.trim().toUpperCase();
-  if(val===SECRET_CODE){ hideSecretOv(); openModal('staff-modal'); showN('✅ Aksè otorize','ok'); }
-  else { const inp=document.getElementById('secret-inp'); inp.style.borderColor='#e63946'; setTimeout(()=>inp.style.borderColor='rgba(255,255,255,.15)',1000); showN('Kòd enkòrèk','err'); }
+  if(val===SECRET_CODE){hideSecretOv();closeGate();document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('on'));openModal('staff-modal');showN('✅ Aksè otorize','ok');}
+  else{const inp=document.getElementById('secret-inp');inp.style.borderColor='#e63946';setTimeout(()=>inp.style.borderColor='rgba(255,255,255,.15)',1000);showN('Kòd enkòrèk','err');}
 }
-
 function updateStaffForm(){
-  const role=document.getElementById('staff-role').value;
-  document.getElementById('staff-code-wrap').style.display=(role!=='admin')?'block':'none';
+  const r=document.getElementById('staff-role').value;
+  document.getElementById('staff-code-wrap').style.display=(r!=='admin')?'block':'none';
 }
-
 function loginJoueurMain(){
   const phone=document.getElementById('ml-phone').value.trim();
   const pwd=document.getElementById('ml-pwd').value;
-  const err=document.getElementById('ml-err');
-  err.classList.remove('show');
+  const err=document.getElementById('ml-err');err.classList.remove('show');
   const j=gJ();
   if(!j[phone]||j[phone].pwd!==pwd){err.textContent='Nimewo oswa mot de passe enkòrèk.';err.classList.add('show');return;}
   localStorage.setItem('tk_session_phone',phone);
   localStorage.setItem('tk_session_role','joueur');
-  window.location.href='tk_app.html';
+  afterLogin();
 }
-
 function registerJoueurMain(){
   const name=document.getElementById('mr-name').value.trim();
   const phone=document.getElementById('mr-phone').value.trim();
   const pwd=document.getElementById('mr-pwd').value;
   const pwd2=document.getElementById('mr-pwd2').value;
-  const err=document.getElementById('mr-err');
-  err.classList.remove('show');
+  const err=document.getElementById('mr-err');err.classList.remove('show');
   if(!name||!phone||!pwd){err.textContent='Tout champ obligatoires.';err.classList.add('show');return;}
   if(pwd!==pwd2){err.textContent='Mot de passe pa menm.';err.classList.add('show');return;}
   const j=gJ();
   if(j[phone]){err.textContent='Nimewo sa a deja itilize.';err.classList.add('show');return;}
   j[phone]={name,phone,pwd,solde:0,dirCode:'',caissCode:'',createdAt:new Date().toLocaleString(),transactions:[]};
-  sJ(j);
-  showN('✅ Kont kree! Konekte ou.','ok');
-  switchModal('login-modal');
-  document.getElementById('ml-phone').value=phone;
+  sJ(j);showN('✅ Kont kree! Konekte ou.','ok');switchModal('login-modal');document.getElementById('ml-phone').value=phone;
 }
-
 function loginStaffMain(){
   const role=document.getElementById('staff-role').value;
   const code=document.getElementById('staff-code').value.trim().toUpperCase();
   const pwd=document.getElementById('staff-pwd').value;
-  const err=document.getElementById('staff-err');
-  err.classList.remove('show');
+  const err=document.getElementById('staff-err');err.classList.remove('show');
   if(role==='admin'){
     if(pwd==='admin'){localStorage.setItem('tk_session_role','admin');window.location.href='tk_app.html';}
     else{err.textContent='Mot de passe incorrect.';err.classList.add('show');}
     return;
   }
   if(role==='directeur'){
-    const dirs=gDirs();
-    const found=Object.values(dirs).find(d=>d.code===code&&d.pwd===pwd);
+    const dirs=gDirs();const found=Object.values(dirs).find(d=>d.code===code&&d.pwd===pwd);
     if(!found){err.textContent='Code ou mot de passe incorrect.';err.classList.add('show');return;}
-    localStorage.setItem('tk_session_role','directeur');
-    localStorage.setItem('tk_session_code',found.code);
-    window.location.href='tk_app.html';return;
+    localStorage.setItem('tk_session_role','directeur');localStorage.setItem('tk_session_code',found.code);window.location.href='tk_app.html';return;
   }
   if(role==='caissier'){
-    const caiss=gCaiss();
-    const found=Object.values(caiss).find(c=>c.code===code&&c.pwd===pwd);
+    const caiss=gCaiss();const found=Object.values(caiss).find(c=>c.code===code&&c.pwd===pwd);
     if(!found){err.textContent='Code ou mot de passe incorrect.';err.classList.add('show');return;}
-    localStorage.setItem('tk_session_role','caissier');
-    localStorage.setItem('tk_session_code',found.code);
-    window.location.href='tk_app.html';return;
+    localStorage.setItem('tk_session_role','caissier');localStorage.setItem('tk_session_code',found.code);window.location.href='tk_app.html';return;
   }
 }
-
-function showN(msg,type){
-  const n=document.getElementById('notif-login');
-  n.textContent=msg;n.className='notif '+type+' on';
-  setTimeout(()=>n.classList.remove('on'),3000);
-}
+function showN(msg,type){const n=document.getElementById('notif-login');n.textContent=msg;n.className='notif '+type+' on';setTimeout(()=>n.classList.remove('on'),3000);}
 </script>
 </body>
 </html>
