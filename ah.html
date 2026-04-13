@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Ship'Log - Espace Client</title>
+    <title>Ship'Log - Espace Client (USD / Gourdes)</title>
     <style>
         * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', sans-serif; }
         body { background: #f0f2f5; margin: 0; padding: 20px; position: relative; }
@@ -16,15 +16,20 @@
         .logo-name { display: flex; align-items: center; gap: 15px; }
         .company-logo { max-height: 50px; max-width: 100px; object-fit: contain; }
         .company-name { font-size: 1.5rem; font-weight: bold; color: #1e3c72; }
+        .wallet-badge {
+            background: #e9f0f9; padding: 6px 14px; border-radius: 40px;
+            font-weight: bold; color: #1e3c72;
+        }
         .btn { background: #1e3c72; color: white; border: none; padding: 8px 18px; border-radius: 40px; cursor: pointer; font-weight: bold; }
         .btn-secondary { background: #2c5a8c; }
         .btn-outline { background: transparent; border: 1px solid #1e3c72; color: #1e3c72; }
+        .btn-success { background: #2b6e3c; }
         .card { background: white; border-radius: 28px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .form-group { margin-bottom: 15px; }
         label { font-weight: 600; display: block; margin-bottom: 5px; color: #1e4663; }
         input, select { width: 100%; padding: 10px 14px; border: 1px solid #ccc; border-radius: 30px; font-size: 1rem; }
         button { background: #1e3c72; color: white; border: none; padding: 10px 20px; border-radius: 40px; cursor: pointer; font-weight: bold; }
-        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
         .colis-card { border: 1px solid #e2e8f0; border-radius: 24px; padding: 16px; margin-bottom: 12px; background: #fefefe; }
         .badge { display: inline-block; padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: bold; }
         .status-transit { background: #bfdbfe; color: #1e3a8a; }
@@ -45,7 +50,8 @@
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         .notification-list { max-height: 300px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 20px; padding: 10px; background: #fafafa; }
         .notif-item { border-bottom: 1px solid #e2e8f0; padding: 12px; font-size: 0.85rem; }
-        .notif-item img { max-width: 100%; border-radius: 16px; margin-top: 8px; max-height: 150px; object-fit: cover; }
+        .photo-thumb { max-width: 80px; border-radius: 12px; margin-top: 8px; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         @media (max-width: 680px) { .toast-area { width: 90%; right: 5%; left: 5%; } }
     </style>
 </head>
@@ -60,7 +66,7 @@
         users: [],
         colis: [],
         clients: [],
-        notificationsGlobales: [] // publicités avec message + image
+        notificationsGlobales: []
     };
     let currentClient = null;
 
@@ -73,6 +79,7 @@
             appData.colis = data.colis || [];
             appData.clients = data.clients || [];
             appData.notificationsGlobales = data.notificationsGlobales || [];
+            appData.clients.forEach(c => { if(c.balance === undefined) c.balance = 0; });
         } else {
             appData.company = { name: "Ship'Log Express", logo: "", tauxUSDToHTG: 130, prixParLivre: 2.5, fraisFixe: 5 };
             appData.users = [];
@@ -103,7 +110,6 @@
         setTimeout(() => toast.remove(), 5000);
     }
 
-    // Ajouter une notification à un client spécifique
     function notifyClient(clientId, message, type = 'info', image = null) {
         const client = appData.clients.find(c => c.id === clientId);
         if(client) {
@@ -111,13 +117,10 @@
             client.notifications.unshift({ date: new Date().toISOString(), message, type, image, lu: false });
             if(client.notifications.length > 50) client.notifications.pop();
             saveData();
-            if(currentClient && currentClient.id === clientId) {
-                showClientNotification(message, type);
-            }
+            if(currentClient && currentClient.id === clientId) showClientNotification(message, type);
         }
     }
 
-    // Notifier tous les clients (publicité)
     function notifyAllClients(message, type = 'info', image = null) {
         const ad = { date: new Date().toISOString(), message, type, image };
         appData.notificationsGlobales.unshift(ad);
@@ -128,10 +131,48 @@
             if(client.notifications.length > 50) client.notifications.pop();
         });
         saveData();
-        if(currentClient) renderClientDashboard();
+        if(currentClient) render();
     }
 
-    // Vérifier les changements de statut des colis du client
+    // Recharger le portefeuille (simulation Moncash/Natcash) - montant en USD
+    function rechargeWallet(amountUSD, method) {
+        if(!currentClient) return;
+        if(amountUSD <= 0) { showClientNotification("Montant invalide", "error"); return; }
+        currentClient.balance = (currentClient.balance || 0) + amountUSD;
+        saveData();
+        const amountGdes = (amountUSD * appData.company.tauxUSDToHTG).toFixed(2);
+        notifyClient(currentClient.id, `💸 Recharge de ${amountUSD} USD (${amountGdes} HTG) via ${method} effectuée. Nouveau solde: ${currentClient.balance} USD (${(currentClient.balance * appData.company.tauxUSDToHTG).toFixed(2)} HTG)`, "success");
+        render();
+    }
+
+    // Payer un colis depuis le portefeuille (USD)
+    function payerColisAvecWallet(colis) {
+        if(!currentClient) return false;
+        if(colis.paiement && colis.paiement.effectue) {
+            showClientNotification("Ce colis est déjà payé.", "error");
+            return false;
+        }
+        const montantUSD = colis.prixUsd;
+        if(currentClient.balance < montantUSD) {
+            showClientNotification(`Solde insuffisant. Vous avez ${currentClient.balance} USD (${(currentClient.balance * appData.company.tauxUSDToHTG).toFixed(2)} HTG), besoin de ${montantUSD} USD (${(montantUSD * appData.company.tauxUSDToHTG).toFixed(2)} HTG).`, "error");
+            return false;
+        }
+        currentClient.balance -= montantUSD;
+        colis.paiement = {
+            effectue: true,
+            montantRecu: montantUSD,
+            devise: "USD",
+            moyen: "Portefeuille client",
+            photoCNI: null,
+            photoColisLivraison: null
+        };
+        saveData();
+        notifyClient(currentClient.id, `✅ Paiement de ${montantUSD} USD (${(montantUSD * appData.company.tauxUSDToHTG).toFixed(2)} HTG) pour le colis ${colis.numeroSuivi} effectué depuis votre portefeuille.`, "success");
+        render();
+        return true;
+    }
+
+    // Vérifier les changements de statut des colis
     function notifyClientForColisChanges(client) {
         if(!client) return;
         const mesColis = appData.colis.filter(c => c.destinataire && c.destinataire.telephone === client.telephone);
@@ -151,9 +192,6 @@
             }
             client.colisStatusCache[colis.id] = colis.statut;
         });
-        Object.keys(client.colisStatusCache).forEach(id => {
-            if(!mesColis.find(c => c.id === id)) delete client.colisStatusCache[id];
-        });
         saveData();
     }
 
@@ -161,7 +199,6 @@
     function render() {
         const root = document.getElementById('appRoot');
         if(!currentClient) {
-            // Connexion / inscription
             root.innerHTML = `
                 <div class="app-container">
                     <div class="header">
@@ -180,7 +217,7 @@
                             <div class="form-group"><label>📞 Téléphone</label><input type="tel" id="loginTel" placeholder="+509 1234 5678"></div>
                             <div class="form-group"><label>🔒 Mot de passe</label><input type="password" id="loginPwd"></div>
                             <button id="doLoginBtn">Se connecter</button>
-                            <div id="loginError" class="error-msg" style="color:red; margin-top:10px;"></div>
+                            <div id="loginError" style="color:red; margin-top:10px;"></div>
                         </div>
                         <div id="registerForm" style="display:none;">
                             <div class="form-group"><label>👤 Nom complet</label><input type="text" id="regNom"></div>
@@ -231,6 +268,7 @@
                     email: email,
                     telephone: tel,
                     password: pwd,
+                    balance: 0,
                     notifications: [],
                     colisStatusCache: {}
                 };
@@ -243,12 +281,14 @@
             return;
         }
 
-        // Dashboard client
+        // Dashboard client connecté
         notifyClientForColisChanges(currentClient);
         let mesColis = appData.colis.filter(c => c.destinataire && c.destinataire.telephone === currentClient.telephone);
         const clientNotifications = currentClient.notifications || [];
         const allNotifs = [...clientNotifications].sort((a,b) => new Date(b.date) - new Date(a.date));
-        
+        const balanceUSD = currentClient.balance || 0;
+        const balanceHTG = (balanceUSD * appData.company.tauxUSDToHTG).toFixed(2);
+
         root.innerHTML = `
             <div class="app-container">
                 <div class="header">
@@ -256,28 +296,59 @@
                         ${appData.company.logo ? `<img src="${appData.company.logo}" class="company-logo">` : ''}
                         <div class="company-name">${appData.company.name}</div>
                     </div>
-                    <div>👋 Bonjour, ${currentClient.nom}</div>
+                    <div class="wallet-badge">💰 Solde: ${balanceUSD} USD / ${balanceHTG} HTG</div>
                     <button id="logoutBtn" class="btn-outline btn">Déconnexion</button>
                 </div>
                 <div class="grid-2">
                     <div class="card">
-                        <h3>📦 Mes colis</h3>
+                        <div class="flex-between">
+                            <h3>📦 Mes colis</h3>
+                            <button id="refreshColisBtn" class="btn-secondary" style="padding:6px 12px;">🔄</button>
+                        </div>
                         ${mesColis.length === 0 ? '<p>Aucun colis trouvé pour votre numéro.</p>' : ''}
                         <div id="colisList">
-                            ${mesColis.map(colis => `
+                            ${mesColis.map(colis => {
+                                const prixHTG = (colis.prixUsd * appData.company.tauxUSDToHTG).toFixed(2);
+                                return `
                                 <div class="colis-card">
-                                    <div><strong>${colis.numeroSuivi}</strong> 
-                                        <span class="badge ${colis.statut === 'En transit' ? 'status-transit' : (colis.statut === 'Arrivé' ? 'status-arrive' : 'status-livre')}">${colis.statut}</span>
+                                    <div class="flex-between">
+                                        <div><strong>${colis.numeroSuivi}</strong> 
+                                            <span class="badge ${colis.statut === 'En transit' ? 'status-transit' : (colis.statut === 'Arrivé' ? 'status-arrive' : 'status-livre')}">${colis.statut}</span>
+                                        </div>
+                                        ${!colis.paiement?.effectue && colis.statut !== 'Livré' ? 
+                                            `<button class="btn-success payer-wallet" data-id="${colis.id}" style="padding:4px 12px;">💳 Payer (${colis.prixUsd} USD / ${prixHTG} HTG)</button>` : 
+                                            (colis.paiement?.effectue ? '<span class="badge" style="background:#d1fae5;">Payé</span>' : '')}
                                     </div>
                                     <div>📤 Expéditeur: ${colis.expediteurNom}</div>
                                     <div>📍 Livraison: ${colis.destinataire.adresse}</div>
-                                    <div>⚖️ ${colis.poidsLivre} lb | 💰 ${colis.prixUsd} USD / ${colis.prixGourdes} HTG</div>
-                                    ${colis.paiement?.effectue ? `<div>💵 Payé: ${colis.paiement.montantRecu} ${colis.paiement.devise}</div>` : '<div>⏳ En attente de paiement à la livraison</div>'}
-                                    ${colis.photoColis ? `<img src="${colis.photoColis}" class="photo-thumb" style="max-width:80px; border-radius:12px;">` : ''}
+                                    <div>⚖️ ${colis.poidsLivre} lb | 💰 ${colis.prixUsd} USD / ${prixHTG} HTG</div>
+                                    ${colis.paiement?.effectue ? `<div>💵 Payé: ${colis.paiement.montantRecu} ${colis.paiement.devise} (${colis.paiement.moyen})</div>` : '<div>⏳ En attente de paiement</div>'}
+                                    ${colis.photoColis ? `<img src="${colis.photoColis}" class="photo-thumb">` : ''}
                                 </div>
-                            `).join('')}
+                            `}).join('')}
                         </div>
-                        <button id="refreshColisBtn" class="btn-secondary" style="margin-top:10px;">🔄 Actualiser</button>
+                    </div>
+                    <div class="card">
+                        <div class="flex-between">
+                            <h3>💰 Portefeuille</h3>
+                            <button id="rechargeBtn" class="btn-secondary">➕ Recharger</button>
+                        </div>
+                        <p style="font-size:1.8rem; font-weight:bold; margin:10px 0;">${balanceUSD} USD / ${balanceHTG} HTG</p>
+                        <div id="rechargePanel" style="display:none; margin-top:15px;">
+                            <div class="form-group">
+                                <label>Montant (USD)</label>
+                                <input type="number" id="rechargeAmount" step="1" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label>Moyen de paiement</label>
+                                <select id="rechargeMethod">
+                                    <option value="Moncash">Moncash</option>
+                                    <option value="Natcash">Natcash</option>
+                                </select>
+                            </div>
+                            <button id="confirmRechargeBtn" class="btn-success">Confirmer recharge</button>
+                            <button id="cancelRechargeBtn" class="btn-outline">Annuler</button>
+                        </div>
                     </div>
                     <div class="card">
                         <h3>🔔 Notifications & Publicités</h3>
@@ -286,7 +357,7 @@
                                 <div class="notif-item">
                                     <strong>${new Date(n.date).toLocaleString()}</strong><br>
                                     <span style="color:${n.type === 'success' ? '#166534' : (n.type === 'error' ? '#b91c1c' : '#1e3c72')}">${n.message}</span>
-                                    ${n.image ? `<div><img src="${n.image}" alt="publicité"></div>` : ''}
+                                    ${n.image ? `<div><img src="${n.image}" style="max-width:100%; border-radius:12px; margin-top:6px;"></div>` : ''}
                                 </div>
                             `).join('')}
                         </div>
@@ -300,6 +371,35 @@
                 </div>
             </div>
         `;
+
+        // Recharge
+        const rechargeBtn = document.getElementById('rechargeBtn');
+        const rechargePanel = document.getElementById('rechargePanel');
+        const cancelRecharge = document.getElementById('cancelRechargeBtn');
+        const confirmRecharge = document.getElementById('confirmRechargeBtn');
+        rechargeBtn.onclick = () => { rechargePanel.style.display = 'block'; };
+        cancelRecharge.onclick = () => { rechargePanel.style.display = 'none'; };
+        confirmRecharge.onclick = () => {
+            const amount = parseFloat(document.getElementById('rechargeAmount').value);
+            const method = document.getElementById('rechargeMethod').value;
+            if(isNaN(amount) || amount <= 0) {
+                showClientNotification("Montant invalide", "error");
+                return;
+            }
+            rechargeWallet(amount, method);
+            rechargePanel.style.display = 'none';
+            document.getElementById('rechargeAmount').value = '';
+        };
+
+        // Paiement des colis
+        document.querySelectorAll('.payer-wallet').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const colisId = btn.getAttribute('data-id');
+                const colis = appData.colis.find(c => c.id === colisId);
+                if(colis) payerColisAvecWallet(colis);
+            });
+        });
+
         document.getElementById('logoutBtn').onclick = () => { currentClient = null; render(); };
         document.getElementById('refreshColisBtn').onclick = () => { notifyClientForColisChanges(currentClient); render(); };
         document.getElementById('clearNotifsBtn').onclick = () => { currentClient.notifications = []; saveData(); render(); };
