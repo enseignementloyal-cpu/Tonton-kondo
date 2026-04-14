@@ -487,23 +487,126 @@ body{background:#061a2e;color:#fff;font-family:'Barlow',sans-serif;min-height:10
 
 <!-- INFO MODAL -->
 <div class="info-modal" id="info-modal">
-  <div style="background:#fff;color:#1a1a2e;border-radius:18px;padding:26px;max-width:680px;width:100%;margin:auto;position:relative">
-    <button onclick="fermerInfo()" style="position:absolute;top:12px;right:12px;background:#f0f0f0;border:none;color:#555;font-size:17px;cursor:pointer;width:30px;height:30px;border-radius:50%">✕</button>
-    <div style="text-align:center;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #f0f0f0">
-      <img src="logo.png" onerror="this.src='logo.jpeg';this.onerror=null" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #1a3a8f">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.7em;font-weight:900;color:#1a3a8f;letter-spacing:2px;margin-top:7px">TONTON KONDO</div>
-      <div style="font-size:11px;color:#888">Lotto · Paryaj · Casino · Sports</div>
+  <div class="info-modal-inner" style="background:#fff;color:#1a1a2e;border-radius:20px;padding:28px;max-width:750px;width:100%;margin:auto;position:relative;">
+    <button onclick="fermerInfo()" style="position:absolute;top:16px;right:16px;background:#f0f0f0;border:none;color:#555;font-size:20px;cursor:pointer;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:2">✕</button>
+
+    <!-- Logo header -->
+    <div style="text-align:center;margin-bottom:24px;padding-bottom:20px;border-bottom:2px solid #f0f0f0;">
+      <img src="logo.png" onerror="this.src='logo.jpeg';this.onerror=null" alt="Tonton Kondo" style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:4px solid #1a3a8f;box-shadow:0 0 0 6px rgba(26,58,143,.1),0 8px 30px rgba(0,0,0,.15);margin-bottom:12px;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:2em;font-weight:900;color:#1a3a8f;letter-spacing:3px">TONTON KONDO</div>
+      <div style="font-size:13px;color:#888;margin-top:4px">Lotto · Paryaj · Casino · Sports</div>
     </div>
-    <p style="font-size:13px;color:#333;line-height:1.7;margin-bottom:11px"><strong>Tonton Kondo Lotto Paryaj</strong> se yon sosyete paryaj sportif ki fonksyone dapre lwa ayisyen. Syèj sosyal: Flon 7 #32, Léogane, Lwès, Ayiti. Dirije pa <strong>Mesye Lafleur Dutheau</strong>.</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px">
-      <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:7px;padding:9px"><div style="font-size:10px;color:#888">Email</div><div style="font-size:12px;font-weight:700;color:#1a3a8f">tontonkondo@gmail.com</div></div>
-      <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:7px;padding:9px"><div style="font-size:10px;color:#888">Instagram</div><div style="font-size:12px;font-weight:700;color:#1a3a8f">@tontonkondo</div></div>
-      <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:7px;padding:9px"><div style="font-size:10px;color:#888">TikTok</div><div style="font-size:12px;font-weight:700;color:#1a3a8f">@tontonkondo</div></div>
-      <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:7px;padding:9px"><div style="font-size:10px;color:#888">Adresse</div><div style="font-size:12px;font-weight:700;color:#1a3a8f">32 Flon 7, Léogane</div></div>
+
+    <!-- Contact info -->
+    <div class="info-section" style="margin-bottom:22px;">
+      <h3 style="color:#1a3a8f;font-size:15px;font-weight:800;margin-bottom:10px;padding-bottom:7px;border-bottom:2px solid #f0f0f0">📍 Kontakt & Siège Social</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:12px;">
+        <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:10px;padding:13px;">
+          <div style="font-size:1.4em;margin-bottom:4px">🏠</div>
+          <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px">Siège Social</div>
+          <div style="font-size:14px;font-weight:700;color:#1a3a8f;margin-top:3px">32 Flon 7, Léogane<br>Lwès, Ayiti</div>
+        </div>
+        <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:10px;padding:13px;">
+          <div style="font-size:1.4em;margin-bottom:4px">📧</div>
+          <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px">Email</div>
+          <div style="font-size:14px;font-weight:700;color:#1a3a8f;margin-top:3px"><a href="mailto:tontonkondo@gmail.com" style="color:#1a3a8f">tontonkondo@gmail.com</a></div>
+        </div>
+        <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:10px;padding:13px;">
+          <div style="font-size:1.4em;margin-bottom:4px">🎵</div>
+          <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px">TikTok</div>
+          <div style="font-size:14px;font-weight:700;color:#1a3a8f;margin-top:3px"><a href="https://www.tiktok.com/@tontonkondo" target="_blank" style="color:#1a3a8f">@tontonkondo</a></div>
+        </div>
+        <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:10px;padding:13px;">
+          <div style="font-size:1.4em;margin-bottom:4px">📸</div>
+          <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px">Instagram</div>
+          <div style="font-size:14px;font-weight:700;color:#1a3a8f;margin-top:3px"><a href="https://www.instagram.com/tontonkondo" target="_blank" style="color:#1a3a8f">@tontonkondo</a></div>
+        </div>
+      </div>
     </div>
-    <div style="background:#fff8e1;border:1px solid #ffd54f;border-radius:7px;padding:11px;margin-bottom:12px"><p style="color:#7a5f00;font-size:12px">⚠️ <strong>Jeu responsable.</strong> 18 an ak plis sèlman. Pa jwe plis ke ou kapab pèdi.</p></div>
-    <div style="text-align:center;font-size:11px;color:#888">© 2024 Tonton Kondo · Développé par <strong style="color:#1a3a8f">La Nova Technologie</strong></div>
-    <button onclick="fermerInfo()" style="width:100%;padding:11px;background:#e63946;color:#fff;border:none;border-radius:9px;font-weight:800;font-size:14px;cursor:pointer;margin-top:13px">Fermer</button>
+
+    <!-- Jeux -->
+    <div style="margin-bottom:22px;">
+      <h3 style="color:#1a3a8f;font-size:15px;font-weight:800;margin-bottom:10px;padding-bottom:7px;border-bottom:2px solid #f0f0f0">🎮 Nos Jeux</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:7px;">
+        <span style="background:#f0f4ff;border:1px solid #d0d8ff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;color:#1a3a8f">🎯 Borlette/Lotto</span>
+        <span style="background:#f0f4ff;border:1px solid #d0d8ff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;color:#1a3a8f">🎱 Keno Lucky</span>
+        <span style="background:#f0f4ff;border:1px solid #d0d8ff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;color:#1a3a8f">🍀 Lucky 6</span>
+        <span style="background:#f0f4ff;border:1px solid #d0d8ff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;color:#1a3a8f">🏎️ Course Auto</span>
+        <span style="background:#f0f4ff;border:1px solid #d0d8ff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;color:#1a3a8f">🚁 Hélicoptère</span>
+        <span style="background:#f0f4ff;border:1px solid #d0d8ff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;color:#1a3a8f">🎡 Roulette</span>
+        <span style="background:#f0f4ff;border:1px solid #d0d8ff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;color:#1a3a8f">⚽ Paris Sportifs</span>
+      </div>
+    </div>
+
+    <!-- Full text content -->
+    
+    <div class="info-section">
+      <h3 style="color:#1a3a8f;font-size:15px;font-weight:800;margin-bottom:10px;padding-bottom:7px;border-bottom:2px solid #f0f0f0">Prezantasyon</h3>
+      <p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Tonton kondo lotto paryaj 
+C'est une société de Paris sportif régie selon la loi haïtienne 
+Don le siège social Est a flon 7 # 32  TONTON KONDO LOTTO PARYAJ participé dans différentes activités culturelles spécialement dans le sport musique et autres DIRIGÉ PAR MONSIEUR LAFLEUR DUTHEAU</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">L’essentiel
+Bien que limitées, les estimations mondiales standardisées des méfaits des jeux d’argent 
+et de hasard semblent indiquer que 1,2 % de la population adulte mondiale souffre d’un trouble du jeu. En outre, la pratique de jeux d’argent et de hasard est en général nuisible pour les personnes qui ne jouent pas.
+Les analystes de l’industrie estiment que les revenus mondiaux tirés des jeux d’argent atteindront 700 milliards de dollars des États-Unis (USD) d’ici à 2028 (1). Cet essor sera favorisé en grande partie par l’utilisation des smartphones dans les pays à revenu faible ou intermédiaire.
+Les personnes qui s’adonnent aux jeux d’argent à des niveaux nocifs sont à l’origine d’environ 60 % des pertes de revenus (2).
+Les jeux d’argent et de hasard peuvent menacer la santé, dans la mesure où ils entraînent une augmentation de l’incidence des maladies mentales et du suicide. Ils peuvent contribuer à la pauvreté, car les ménages dépensent pour ces jeux des sommes qu’ils auraient pu consacrer à des biens et des services essentiels.
+Les jeux d’argent et de hasard ont aussi d’autres méfaits, dont la rupture des relations, la violence familiale, de graves difficultés financières, la stigmatisation, la commission de délits en vue d’obtenir de l’argent (vol, fraude), la négligence des enfants et l’érosion des institutions civiles en raison de la corruption et d’activités politiques menées par les entreprises de l’industrie du jeu. Les jeux de hasard sont également un moyen courant de blanchir de l’argent obtenu par le biais d’activités illégales.
+La commercialisation et la numérisation accélèrent la normalisation des jeux d’argent et de hasard. Le parrainage et le marketing sont également des facteurs clés de l’essor mondial rapide des jeux d’argent.
+Vue d’ensemble
+Les jeux d’argent et de hasard consistent à miser de l’argent (ou un autre objet de valeur), avec la possibilité d’obtenir un intéressement financier lors d’une partie à l’issue incertaine. Les paris, les machines à sous, les jeux de casino, les loteries et les lotos sont des jeux d’argent et de hasard. On considère souvent que les plus grands méfaits sont causés par les machines de jeu électroniques et les jeux de casino. Ceux-ci sont disponibles à la fois dans des lieux physiques et en ligne. Bien que de nombreuses juridictions aient maintenant légalisé les jeux d’argent et de hasard, le statut juridique de ces jeux varie d’un pays à l’autre et à l’intérieur d’un même pays. Comme les jeux d’argent sont disponibles en ligne, ils sont accessibles presque partout, à tout moment, même dans les pays où ils sont interdits.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Ils peuvent entraîner de graves problèmes de santé liés à des difficultés financières, à des ruptures, à la violence familiale, à une maladie mentale ou au suicide. Les conséquences des méfaits des jeux d’argent et de hasard peuvent perdurer toute la vie et même toucher plusieurs générations. Les interventions à l’échelle de la population peuvent aider à prévenir et à atténuer ces méfaits. On peut, par exemple, mettre fin à la publicité et à la promotion et mettre en place la création de comptes centralisés pour obliger les personnes qui jouent à fixer des limites de perte et imposer des restrictions à l’accès (heures d’ouverture, densité). En outre, la réglementation doit être stricte et bien appliquée pour garantir le respect des lois existantes.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Ampleur du problème
+Les jeux d’argent et de hasard sont aujourd’hui autorisés par la loi dans de nombreux pays. Ils ont été normalisés par la mise en place de nouvelles associations commerciales avec des activités sportives et culturelles dont la promotion est maintenant très vive. Environ 5,5 % des femmes et 11,9 % des hommes dans le monde souffrent, à des degrés variables, des méfaits des jeux d’argent et de hasard (3). Selon une étude suédoise, les personnes atteintes d’un trouble du jeu étaient 15 fois plus susceptibles de se suicider que les membres de la population générale (4). Dans l’État de Victoria, en Australie, au moins 4,2 % des suicides étaient liés aux jeux d’argent et de hasard (5).</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Quand une personne s’adonne aux jeux à un haut niveau de risque, six autres personnes en moyenne (généralement des non-joueurs) en subissent les conséquences (6). Ce nombre est probablement beaucoup plus élevé dans les cultures fondées sur la parenté, y compris dans les peuples autochtones. Les jeux d’argent et de hasard peuvent également priver d’autres entreprises de revenus tirés des dépenses de consommation normales.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">La réglementation des jeux d’argent est un moyen courant d’autorégulation du secteur. Cependant, il existe de nombreux exemples de l’échec de cette approche. Le fonctionnement de nombreux produits de jeu est souvent peu transparent. Les machines de jeu électroniques sont parfois conçues pour pousser les utilisateurs et les utilisatrices à jouer longtemps. Les messages de promotion de la santé sont souvent inadaptés et reposent parfois sur le « nudge » qui encourage la consommation de produits nocifs (par exemple, en exploitant les biais cognitifs des joueurs et des joueuses) et peuvent favoriser la normalisation. Parallèlement à une réglementation stricte des produits de jeu et de leur disponibilité, des mises en garde claires sur les méfaits associés au jeu sont susceptibles d’être plus efficaces que les messages suggérant d’arrêter simplement lorsque le jeu n’est plus amusant, par exemple.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Il n’y a pas de consensus mondial sur la réglementation des jeux d’argent et de hasard en ligne. Des prestataires non agréés proposent régulièrement des produits de jeu non réglementés, et il est urgent de réglementer les jeux d’argent et de hasard en ligne.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Quelles sont les personnes à risque ?
+Lors d’événements importants de leur vie, notamment une séparation, un départ à la retraite, un accident ou le décès d’un être cher, certaines personnes peuvent être exposées à un risque accru. Les facteurs de stress sociaux tels que la pauvreté, la discrimination ou d’autres circonstances défavorables augmentent également les risques. La forte promotion des jeux d’argent et de hasard en ligne et dans le cadre du sport risque également de normaliser les jeux d’argent pour les enfants et les jeunes.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Signes et symptômes
+Le trouble du jeu est décrit aux côtés des troubles dus à l’utilisation de substances dans la cinquième édition du Manuel diagnostique et statistique des troubles mentaux (DSM-5), et dans la onzième révision de la Classification internationale des maladies (CIM-11). La CIM-11 décrit trois critères diagnostiques :</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">1) contrôle altéré sur les jeux ;</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">2) priorité croissante donnée aux jeux au point que ceux-ci dominent les autres aspects de la vie et les activités quotidiennes ; et</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">3) poursuite ou escalade de la pratique de jeux malgré l’occurrence de conséquences négatives.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Les méfaits du jeu apparaissent également bien en deçà des seuils cliniques. Par exemple, certaines personnes renoncent à des dépenses essentielles pour leur famille au profit du jeu. Ceci peut entraîner de l’insécurité alimentaire, des problèmes de logement et des difficultés d’accès aux soins et à l’éducation.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Transmission
+La facilité d’accès aux produits de jeu augmente le risque de s’y adonner. Les possibilités de jouer sont souvent disponibles de manière disproportionnée dans les zones les plus défavorisées. Les produits à haute intensité, dont les machines de jeu électroniques, les plateformes de pari rapide et les jeux de casino, y compris en ligne, sont facilement accessibles presque partout.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">La commercialisation des jeux d’argent et de hasard dans de nombreux pays non seulement favorise la normalisation, mais aussi augmente l’incidence des méfaits. Le parrainage ou toute autre association avec des ligues sportives populaires, ainsi que la colocation de produits de jeu dans des contextes sociaux, sont des mécanismes clés de promotion. La promotion agressive des jeux d’argent dans les médias sociaux et à forte audience augmente également le recours au jeu.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Prévention et lutte
+La prévention des méfaits des jeux d’argent et de hasard repose sur des approches de santé publique universelles à l’échelle de la population. On peut citer en exemple :</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">mettre fin à la publicité des jeux d’argent, à la promotion et au parrainage des sports et d’autres activités culturelles ;
+combattre la stigmatisation et la honte vécues par les personnes victimes des méfaits du jeu ;
+mettre en place la création de comptes centralisés et d’outils contraignants de pré-engagement et d’auto-exclusion efficaces ;
+instaurer des mesures de sécurité, y compris une limitation universelle des pertes, des mises maximales et des pauses obligatoires pendant les sessions de jeu ;
+réglementer efficacement l’activité des fournisseurs de jeux d’argent et de hasard, y compris grâce à des dispositifs suffisamment financés pour faire appliquer la loi ;
+lutter contre l’activité politique et l’influence de l’industrie du jeu sur la recherche ; et
+diffuser des mises en garde sur les méfaits associés aux produits de jeu.
+Traitement
+Il existe une gamme de thérapies pour les personnes atteintes de troubles du jeu. À l’heure actuelle, les plus efficaces sont la thérapie cognitivo-comportementale à long terme et les entretiens motivationnels. L’efficacité de l’auto-assistance, des interventions pharmacologiques et du soutien mutuel est moins avérée, bien que ces interventions soient parmi les plus utilisées. Certaines données montrent l’intérêt des thérapies sur Internet, bien que l’attrition soit un problème important.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Le taux de recours aux traitements des troubles du jeu est faible, environ 0,14 % de la population cherchant une aide officielle ou informelle pour régler ce type de problèmes. La stigmatisation et la honte empêchent souvent de demander de l’aide. L’approche réglementaire privilégiée par l’industrie des jeux d’argent et de hasard – le jeu dit « responsable » – aggrave le problème en rejetant la faute sur les personnes victimes des méfaits. Les interventions en matière de jeu responsable sont généralement inefficaces, en particulier lorsque l’adoption de mesures est facultative.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Les personnes qui cherchent à mieux maîtriser leur pratique des jeux d’argent ou à arrêter de jouer devraient disposer d’outils qui les y aident. Il s’agit notamment du pré-engagement universel (obligeant à fixer des limites contraignantes de temps et de dépenses) et de l’auto-exclusion (permettant de s’interdire l’accès aux fournisseurs de jeux d’argent). Les systèmes universels (également appelés obligatoires) sont les plus efficaces. Les systèmes volontaires sont peu utilisés et ne sont pas exécutoires. La prévention est la stratégie la plus rentable pour minimiser les méfaits des jeux d’argent et de hasard.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Problèmes
+Dans les pays où les jeux d’argent et de hasard ont été légalisés, les pouvoirs publics en tirent généralement des recettes fiscales substantielles. Cela peut créer une certaine dépendance et dissuader de lutter contre les méfaits. Les avantages économiques perçus des marchés des jeux d’argent et de hasard peuvent l’emporter sur les effets mal compris sur la santé et le bien-être.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">En général, les groupes de l’industrie des jeux d’argent s’opposent fermement aux réglementations à fort impact et à d’autres mesures qui nuisent à leurs intérêts commerciaux. Ces entreprises usent généralement de leur influence politique pour préserver leurs intérêts. L’industrie a aussi utilisé des fonds et d’autres formes d’aide pour influer sur le monde de la recherche. L’un des principaux objectifs de santé publique est de limiter la capacité des intérêts particuliers à influer sur le programme de recherche et les politiques publiques.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Impact mondial
+Les méfaits des jeux d’argent et de hasard augmentent à mesure que les marchés de ces jeux se développent, ce qui nuit à la santé et au bien-être des populations. Les jeux d’argent et de hasard non autorisés, illégaux ou délocalisés posent d’importants problèmes réglementaires à tous les gouvernements. Pour y faire face efficacement, les gouvernements doivent coopérer afin d’échanger des données, de protéger les consommateurs et les consommatrices contre les pratiques non réglementées et de percevoir les recettes fiscales légales. En l’absence de mesures de protection efficaces, les jeux d’argent et de hasard peuvent compromettre les progrès vers la réalisation des objectifs de développement durable (ODD), en particulier les objectifs 3, 10 et 16.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Action de l’OMS
+L’OMS est consciente des effets négatifs des jeux d’argent et de hasard sur la santé. Il faut mener une action multisectorielle visant à atténuer les méfaits de ces jeux pour éviter qu’ils n’entravent la réalisation des ODD. L’OMS reconnaît la nécessité pour les États Membres de surveiller de près et de réglementer efficacement les opérations, les produits et les activités liés aux jeux d’argent et de hasard. Il faut notamment lutter contre la stigmatisation et la honte liées aux jeux d’argent et de hasard, éliminer la publicité et la promotion et privilégier d’autres démarches en amont pour prévenir et atténuer les méfaits du jeu.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">L’OMS coordonne un groupe d’experts et d’expertes mondiaux pour renforcer les capacités afin de faire face aux conséquences des jeux d’argent et de hasard sur la santé publique. Les premières démarches comprennent la mise au point de nouveaux instruments de diagnostic des troubles du jeu afin de mieux tenir compte des populations ailleurs qu’en Amérique du Nord et la recherche d’un consensus entre experts sur les limites diagnostiques. L’OMS reconnaît que certaines juridictions ont mis en place des systèmes efficaces de réglementation des jeux d’argent et de hasard. Des démarches sont en cours pour documenter et diffuser les enseignements qui en ont été tirés, en particulier pour soutenir les pays à revenu faible ou intermédiaire où l’activité commerciale liée aux jeux d’argent augmente rapidement.</p>
+    </div>
+
+    <!-- Warning -->
+    <div style="background:#fff8e1;border:1px solid #ffd54f;border-radius:10px;padding:14px;margin-bottom:20px;">
+      <p style="color:#7a5f00;font-size:14px;line-height:1.7">⚠️ <strong>Le jeu peut créer une dépendance.</strong> Jouez de manière responsable. Ne misez que ce que vous pouvez vous permettre de perdre. Les jeux sont réservés aux personnes de <strong>18 ans et plus</strong>.</p>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align:center;padding-top:16px;border-top:2px solid #f0f0f0;">
+      <p style="font-size:13px;color:#888">© 2024 Tonton Kondo Lotto Paryaj · Tous droits réservés</p>
+      <p style="font-size:13px;color:#888;margin-top:5px">Développé par <strong style="color:#1a3a8f">La Nova Technologie</strong></p>
+    </div>
+
+    <button onclick="fermerInfo()" style="width:100%;padding:13px;background:#e63946;color:#fff;border:none;border-radius:10px;font-weight:800;font-size:16px;cursor:pointer;margin-top:20px;letter-spacing:1px;">Fermer</button>
   </div>
 </div>
 

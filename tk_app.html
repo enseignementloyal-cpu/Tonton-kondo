@@ -1603,6 +1603,10 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
       <h1>TONTON <span>KONDO</span></h1>
       <p>👑 Administration Centrale</p>
     </div>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+      <button onclick="ouvrirInfo()" style="background:rgba(245,200,0,.15);border:1px solid rgba(245,200,0,.4);color:var(--gold);padding:7px 13px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;"><i class="fas fa-info-circle"></i> À propos</button>
+      <button onclick="logoutAdmin()" style="background:rgba(230,57,70,.15);border:1px solid var(--red);color:var(--red);padding:7px 13px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;">⏻ Déco</button>
+    </div>
   </div>
   <div class="inner">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
@@ -1617,6 +1621,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
       <div class="ptab" data-ptab="trans" onclick="selAdmTab(this)">💸 Transactions</div>
       <div class="ptab" data-ptab="recharges" onclick="selAdmTab(this)">💳 Recharges</div>
     <div class="ptab" data-ptab="params" onclick="selAdmTab(this)">⚙️ Paramètres</div>
+    <div class="ptab" data-ptab="borlette" onclick="selAdmTab(this)">🎯 Borlette</div>
     </div>
 
     <div class="psec on" id="atab-overview">
@@ -2177,6 +2182,13 @@ function _entrerApp(){
   goTo('sc-app');
 }
 
+
+function logoutAdmin(){
+  localStorage.removeItem('tk_session_role');
+  localStorage.removeItem('tk_session_code');
+  localStorage.removeItem('tk_session_phone');
+  window.location.href='tk_login.html';
+}
 function logoutJoueur(){
   CJ=null;CT=null;MODE=null;clearSlip();
   document.getElementById('cpbar').classList.remove('on');
@@ -3658,6 +3670,7 @@ function selAdmTab(el){
   refreshAdmin();
   if(el.dataset.ptab==='recharges')admRefreshRecharges();
   if(el.dataset.ptab==='params')loadAdminMessageFields();
+  if(el.dataset.ptab==='borlette'){loadBorletteAdmin();}
 }
 
 // ==================== JOUEUR: tab borlette support ====================
