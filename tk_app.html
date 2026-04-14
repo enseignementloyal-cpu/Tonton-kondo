@@ -528,29 +528,11 @@ th{background:var(--blue);color:#fff;font-size:12px;font-weight:700;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
 
 
-/* Casino vertical game tabs */
-.casino-layout{display:flex;gap:0;min-height:300px;}
-.jtabs{
-  display:flex;flex-direction:column;
-  background:var(--bg3);
-  border-right:1px solid var(--border);
-  min-width:80px;width:80px;flex-shrink:0;
-  padding:6px 0;border-radius:8px 0 0 8px;
-}
-.jtab{
-  padding:12px 8px;text-align:center;cursor:pointer;
-  font-size:11px;font-weight:700;color:var(--muted);
-  transition:.2s;border-left:3px solid transparent;
-  display:flex;flex-direction:column;align-items:center;gap:3px;
-  line-height:1.2;
-}
-.jtab.on{
-  color:var(--gold);border-left-color:var(--gold);
-  background:rgba(245,200,0,.08);
-}
-.jtab:hover:not(.on){color:var(--text);background:rgba(255,255,255,.04);}
-.jtab-icon{font-size:1.4em;}
-.jcontent{flex:1;padding:10px;overflow-y:auto;border-radius:0 8px 8px 0;background:var(--card);}
+
+.jtabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.jtab{padding:8px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;cursor:pointer;font-weight:700;font-size:13px;white-space:nowrap;transition:.2s;color:var(--muted);}
+.jtab.on{background:var(--blue);border-color:var(--gold);color:var(--gold);}
+.jtab:hover:not(.on){border-color:var(--gold);color:var(--text);}
 </style>
 </head>
 <body>
@@ -656,15 +638,13 @@ th{background:var(--blue);color:#fff;font-size:12px;font-weight:700;}
 
   <!-- CASINO -->
   <div class="asec on" id="tab-casino">
-    <div class="card" style="margin-top:10px;padding:0;overflow:hidden;">
-      <div class="casino-layout">
-        <div class="jtabs">
-          <div class="jtab on" onclick="selJeu(this,'keno')"><span class="jtab-icon">🎱</span>Keno</div>
-          <div class="jtab" onclick="selJeu(this,'lucky6')"><span class="jtab-icon">🍀</span>Lucky 6</div>
-          <div class="jtab" onclick="selJeu(this,'course')"><span class="jtab-icon">🏎️</span>Course</div>
-          <div class="jtab" onclick="selJeu(this,'helico')"><span class="jtab-icon">🚁</span>Hélico</div>
-        </div>
-        <div class="jcontent">
+    <div class="card" style="margin-top:10px">
+      <div class="jtabs">
+        <div class="jtab on" onclick="selJeu(this,'keno')">🎱 Keno</div>
+        <div class="jtab" onclick="selJeu(this,'lucky6')">🍀 Lucky 6</div>
+        <div class="jtab" onclick="selJeu(this,'course')">🏎️ Course</div>
+        <div class="jtab" onclick="selJeu(this,'helico')">🚁 Hélico</div>
+      </div>
       <!-- KENO -->
       <div id="jeu-keno">
         <h3 style="text-align:center;color:#5b8ef5;margin-bottom:10px">KENO LUCKY</h3>
@@ -852,11 +832,9 @@ th{background:var(--blue);color:#fff;font-size:12px;font-weight:700;}
           <button onclick="simulerTirage()" style="padding:8px 18px;background:rgba(26,58,143,.3);border:1px solid var(--blue);border-radius:8px;color:var(--text);font-size:12px;font-weight:700;cursor:pointer">🎲 Simuler un tirage (test)</button>
         </div>
       </div>
-      </div><!-- close last game div -->
-        </div><!-- close jcontent -->
-      </div><!-- close casino-layout -->
-    </div><!-- close card -->
-  </div><!-- close asec -->
+      </div>
+    </div>
+  </div>
 
 
   <!-- ROULETTE -->
@@ -1686,6 +1664,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
           </div>
         </div>
       </div>
+      </div><!-- /comptes-body -->
       <div class="statcards" id="admin-stats"></div>
       <div class="card" style="margin-top:8px">
         <h3>🏢 Performance par Directeur</h3>
