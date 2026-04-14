@@ -527,6 +527,30 @@ th{background:var(--blue);color:#fff;font-size:12px;font-weight:700;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
 
+
+/* Casino vertical game tabs */
+.casino-layout{display:flex;gap:0;min-height:300px;}
+.jtabs{
+  display:flex;flex-direction:column;
+  background:var(--bg3);
+  border-right:1px solid var(--border);
+  min-width:80px;width:80px;flex-shrink:0;
+  padding:6px 0;border-radius:8px 0 0 8px;
+}
+.jtab{
+  padding:12px 8px;text-align:center;cursor:pointer;
+  font-size:11px;font-weight:700;color:var(--muted);
+  transition:.2s;border-left:3px solid transparent;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  line-height:1.2;
+}
+.jtab.on{
+  color:var(--gold);border-left-color:var(--gold);
+  background:rgba(245,200,0,.08);
+}
+.jtab:hover:not(.on){color:var(--text);background:rgba(255,255,255,.04);}
+.jtab-icon{font-size:1.4em;}
+.jcontent{flex:1;padding:10px;overflow-y:auto;border-radius:0 8px 8px 0;background:var(--card);}
 </style>
 </head>
 <body>
@@ -632,13 +656,15 @@ th{background:var(--blue);color:#fff;font-size:12px;font-weight:700;}
 
   <!-- CASINO -->
   <div class="asec on" id="tab-casino">
-    <div class="card" style="margin-top:10px">
-      <div class="jtabs">
-        <div class="jtab on" onclick="selJeu(this,'keno')">🎯 Keno</div>
-        <div class="jtab" onclick="selJeu(this,'lucky6')">🍀 Lucky 6</div>
-        <div class="jtab" onclick="selJeu(this,'course')">🏎️ Course</div>
-        <div class="jtab" onclick="selJeu(this,'helico')">🚁 Hélico</div>
-      </div>
+    <div class="card" style="margin-top:10px;padding:0;overflow:hidden;">
+      <div class="casino-layout">
+        <div class="jtabs">
+          <div class="jtab on" onclick="selJeu(this,'keno')"><span class="jtab-icon">🎱</span>Keno</div>
+          <div class="jtab" onclick="selJeu(this,'lucky6')"><span class="jtab-icon">🍀</span>Lucky 6</div>
+          <div class="jtab" onclick="selJeu(this,'course')"><span class="jtab-icon">🏎️</span>Course</div>
+          <div class="jtab" onclick="selJeu(this,'helico')"><span class="jtab-icon">🚁</span>Hélico</div>
+        </div>
+        <div class="jcontent">
       <!-- KENO -->
       <div id="jeu-keno">
         <h3 style="text-align:center;color:#5b8ef5;margin-bottom:10px">KENO LUCKY</h3>
@@ -826,9 +852,11 @@ th{background:var(--blue);color:#fff;font-size:12px;font-weight:700;}
           <button onclick="simulerTirage()" style="padding:8px 18px;background:rgba(26,58,143,.3);border:1px solid var(--blue);border-radius:8px;color:var(--text);font-size:12px;font-weight:700;cursor:pointer">🎲 Simuler un tirage (test)</button>
         </div>
       </div>
-      </div>
-    </div>
-  </div>
+      </div><!-- close last game div -->
+        </div><!-- close jcontent -->
+      </div><!-- close casino-layout -->
+    </div><!-- close card -->
+  </div><!-- close asec -->
 
 
   <!-- ROULETTE -->
@@ -1604,7 +1632,6 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
       <p>👑 Administration Centrale</p>
     </div>
     <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
-      <button onclick="ouvrirInfo()" style="background:rgba(245,200,0,.15);border:1px solid rgba(245,200,0,.4);color:var(--gold);padding:7px 13px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;"><i class="fas fa-info-circle"></i> À propos</button>
       <button onclick="logoutAdmin()" style="background:rgba(230,57,70,.15);border:1px solid var(--red);color:var(--red);padding:7px 13px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;">⏻ Déco</button>
     </div>
   </div>
@@ -1625,9 +1652,13 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
     </div>
 
     <div class="psec on" id="atab-overview">
-      <!-- Comptes de caisse -->
+      <!-- Comptes de caisse (collapsible) -->
       <div class="card" style="margin-bottom:12px">
-        <h3>💰 Comptes de Caisse</h3>
+        <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="toggleComptes(this)">
+          <h3 style="margin-bottom:0">💰 Comptes de Caisse</h3>
+          <span id="comptes-toggle-icon" style="font-size:18px;color:var(--gold);transition:.2s;">▼</span>
+        </div>
+        <div id="comptes-body" style="display:none;margin-top:12px;">
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:10px;">
           <div style="background:rgba(255,152,0,.1);border:2px solid rgba(255,152,0,.4);border-radius:12px;padding:14px;text-align:center;">
             <div style="font-size:1.4em;margin-bottom:5px">📱</div>
@@ -2183,11 +2214,20 @@ function _entrerApp(){
 }
 
 
+function toggleComptes(el){
+  const body = document.getElementById('comptes-body');
+  const icon = document.getElementById('comptes-toggle-icon');
+  if(!body) return;
+  const visible = body.style.display !== 'none';
+  body.style.display = visible ? 'none' : 'block';
+  if(icon) icon.textContent = visible ? '▼' : '▲';
+}
+
 function logoutAdmin(){
   localStorage.removeItem('tk_session_role');
   localStorage.removeItem('tk_session_code');
   localStorage.removeItem('tk_session_phone');
-  window.location.href='tk_login.html';
+  window.location.href='index.html';
 }
 function logoutJoueur(){
   CJ=null;CT=null;MODE=null;clearSlip();
@@ -3664,13 +3704,19 @@ function rejeterRecharge(id){
 // ==================== ADMIN: atab-recharges support ====================
 // selAdmTab with recharges
 function selAdmTab(el){
-  document.querySelectorAll('#sc-admin .ptab').forEach(t=>t.classList.remove('on'));el.classList.add('on');
+  document.querySelectorAll('#sc-admin .ptab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
   document.querySelectorAll('#sc-admin .psec').forEach(s=>s.classList.remove('on'));
-  document.getElementById('atab-'+el.dataset.ptab).classList.add('on');
-  refreshAdmin();
-  if(el.dataset.ptab==='recharges')admRefreshRecharges();
-  if(el.dataset.ptab==='params')loadAdminMessageFields();
-  if(el.dataset.ptab==='borlette'){loadBorletteAdmin();}
+  const target = document.getElementById('atab-'+el.dataset.ptab);
+  if(target) target.classList.add('on');
+  const tab = el.dataset.ptab;
+  if(tab==='borlette'){
+    loadBorletteAdmin();
+  } else {
+    refreshAdmin();
+    if(tab==='recharges') admRefreshRecharges();
+    if(tab==='params') loadAdminMessageFields();
+  }
 }
 
 // ==================== JOUEUR: tab borlette support ====================
@@ -5864,24 +5910,24 @@ function getBorLimit(num, draw){
   const role = localStorage.getItem('tk_session_role');
   const phone = localStorage.getItem('tk_session_phone');
   const code = localStorage.getItem('tk_session_code');
-  if(!role){ window.location.href='tk_login.html'; return; }
+  if(!role){ window.location.href='index.html'; return; }
   if(role==='joueur'&&phone){
     const j=gJ();
     if(j[phone]){ CJ=j[phone]; goTo('sc-app'); updateAppBar(); initKeno(); initLucky6(); initCourse(); renderSports(); renderJHist(); if(typeof renderJoueurDraws==='function') renderJoueurDraws(); }
-    else { window.location.href='tk_login.html'; }
+    else { window.location.href='index.html'; }
   } else if(role==='admin'){
     refreshAdmin(); goTo('sc-admin');
   } else if(role==='directeur'&&code){
     const dirs=gDirs();
     const found=Object.values(dirs).find(d=>d.code===code);
     if(found){ CDir=found; document.getElementById('dir-zone-name').textContent=found.zone; refreshDir(); goTo('sc-dir'); }
-    else { window.location.href='tk_login.html'; }
+    else { window.location.href='index.html'; }
   } else if(role==='caissier'&&code){
     const caiss=gCaiss();
     const found=Object.values(caiss).find(c=>c.code===code);
     if(found){ CCaiss=found; document.getElementById('caiss-name-display').textContent=found.name; document.getElementById('caiss-jeu-label').textContent=JEU_LABELS[found.jeu]||found.jeu; goTo('sc-sec'); }
-    else { window.location.href='tk_login.html'; }
-  } else { window.location.href='tk_login.html'; }
+    else { window.location.href='index.html'; }
+  } else { window.location.href='index.html'; }
 
   // Game init on tab switch
   document.querySelectorAll('.atab[data-tab]').forEach(tab=>{
