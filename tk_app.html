@@ -625,6 +625,15 @@ th{background:var(--blue);color:#fff;font-size:12px;font-weight:700;}
       <button class="btn-logout" onclick="logoutJoueur()">✕</button>
     </div>
   </div>
+  <!-- JACKPOT WIDGET - shown if jackpot > 0 -->
+  <div id="jackpot-display" style="display:none;background:linear-gradient(135deg,#1a0d40,#8a6820);border-bottom:2px solid var(--gold);padding:8px 14px;text-align:center;cursor:pointer;position:relative;overflow:hidden;" onclick="renderJackpotWidget()">
+    <div style="position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(245,200,0,.08) 50%,transparent 100%);animation:shimmerJK 2s linear infinite;"></div>
+    <style>@keyframes shimmerJK{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}</style>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:900;color:rgba(255,255,255,.7);letter-spacing:2px;text-transform:uppercase;">🎰 JACKPOT DISPONIBLE</div>
+    <div id="jackpot-amount" style="font-family:'Barlow Condensed',sans-serif;font-size:2em;font-weight:900;color:#f5c800;text-shadow:0 0 15px rgba(245,200,0,.6);line-height:1.1;">0 Gd</div>
+    <div style="font-size:10px;color:rgba(255,255,255,.5)">Chaque tikè ka genyen jackpot la!</div>
+  </div>
+
   <div class="app-tabs">
     <div class="atab on" data-tab="casino" onclick="switchToTab(this)">🎰 Casino</div>
     <div class="atab" data-tab="roulette" onclick="switchToTab(this)">🎡 Roulette</div>
@@ -1525,6 +1534,13 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
     </div>
   </div>
   <div class="inner">
+
+    <!-- JACKPOT DIRECTEUR -->
+    <div id="jackpot-display-dir" style="display:none;background:linear-gradient(135deg,#1a0d40,#8a6820);border:2px solid var(--gold);border-radius:14px;padding:16px;text-align:center;margin-bottom:14px;position:relative;overflow:hidden;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:900;color:rgba(255,255,255,.7);letter-spacing:2px;text-transform:uppercase;">🎰 JACKPOT MON BUREAU</div>
+      <div id="jackpot-amount-dir" style="font-family:'Barlow Condensed',sans-serif;font-size:2.4em;font-weight:900;color:#f5c800;text-shadow:0 0 20px rgba(245,200,0,.6);line-height:1.2;">0 Gd</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:4px">5% de chaque mise accumulée cette semaine</div>
+    </div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
       <button class="btn-back" onclick="goTo('sc-landing')" style="margin-bottom:0">← Accueil</button>
     </div>
@@ -1627,6 +1643,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
       <div class="ptab" data-ptab="recharges" onclick="selAdmTab(this)">💳 Recharges</div>
     <div class="ptab" data-ptab="params" onclick="selAdmTab(this)">⚙️ Paramètres</div>
     <div class="ptab" data-ptab="borlette" onclick="selAdmTab(this)">🎯 Borlette</div>
+    <div class="ptab" data-ptab="jackpot" onclick="selAdmTab(this)">🎰 Jackpot</div>
     </div>
 
     <div class="psec on" id="atab-overview">
@@ -1679,13 +1696,14 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
         <div class="fg"><label>Code / Identifiant</label><input type="text" id="adm-dir-code" placeholder="Ex: DIR-NORD, DIR-CENTRE..." style="font-weight:800;letter-spacing:1px"></div>
         <div class="fg"><label>Zone / Espace de jeu</label><input type="text" id="adm-dir-zone" placeholder="Ex: Zone Nord, Casino Central..."></div>
         <div class="fg"><label>Téléphone</label><input type="tel" id="adm-dir-phone" placeholder="50912345678"></div>
+        <div class="fg"><label>Pourcentage sur profits (%)</label><input type="number" id="adm-dir-pct" min="0" max="100" step="0.5" placeholder="Ex: 15" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;outline:none;"><small style="color:var(--muted);font-size:11px;">% des profits nets de la maison attribué à ce directeur</small></div>
         <div class="fg"><label>Mot de passe <button type="button" onclick="togglePwdInline('adm-dir-pwd',this)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;margin-left:5px"><i class="fas fa-eye"></i></button></label>
           <input type="password" id="adm-dir-pwd" placeholder="••••••••"></div>
         <button onclick="admCreerDirecteur()" style="padding:10px 18px;background:linear-gradient(135deg,var(--blue),#0a2070);color:#fff;border:none;border-radius:7px;font-weight:700;cursor:pointer">+ Créer Directeur</button>
       </div>
       <div class="card">
         <h3>🏢 Tous les Directeurs</h3>
-        <div class="twrap"><table><thead><tr><th>Nom</th><th>Zone</th><th>Code</th><th>Mot de passe</th><th>Caissiers</th><th>Action</th></tr></thead><tbody id="adm-dirs-body"></tbody></table></div>
+        <div class="twrap"><table><thead><tr><th>Nom</th><th>Zone</th><th>Code</th><th>Téléphone</th><th>Mot de passe</th><th>Caissiers</th><th>%</th><th>Part profits</th><th>Action</th></tr></thead><tbody id="adm-dirs-body"></tbody></table></div>
       </div>
     </div>
 
@@ -1759,7 +1777,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
           </div>
         </div>
         <button onclick="borPublierResultat()" style="background:linear-gradient(135deg,var(--gold),#d4a800);color:#000;border:none;padding:11px 24px;border-radius:8px;font-weight:900;font-size:14px;cursor:pointer;">📢 Publier le Résultat</button>
-      </div>
+      
 
       <!-- HISTORIQUE TIRAGES -->
       <div class="card">
@@ -1866,6 +1884,34 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
           <div class="statcard"><div class="sv spurp" id="bor-stat-net">0 Gd</div><div class="sl">Bénéfice NET</div></div>
         </div>
       </div>
+    </div><!-- /atab-borlette -->
+
+    <!-- ===== JACKPOT ADMIN ===== -->
+    <div class="psec" id="atab-jackpot">
+      <div class="card">
+        <h3>🎰 Gestion des Jackpots</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">
+          Chaque directeur a son propre jackpot. 5% de chaque mise y est accumulé automatiquement. 
+          L'administrateur décide quand attribuer le jackpot à un joueur au hasard.
+        </p>
+        <div style="background:rgba(245,200,0,.08);border:1px solid rgba(245,200,0,.2);border-radius:10px;padding:12px;margin-bottom:14px;font-size:13px;">
+          <strong style="color:var(--gold)">📋 Règles:</strong> 5% de chaque mise → jackpot du directeur concerné · 
+          Montant visible pour joueurs et directeurs · Admin attribue à un joueur au hasard
+        </div>
+        <div id="admin-jackpot-list">
+          <div style="color:var(--muted);font-size:13px;padding:10px">Chargement...</div>
+        </div>
+      </div>
+
+      <!-- Historique jackpots gagnés -->
+      <div class="card">
+        <h3>🏆 Historique des Jackpots Attribués</h3>
+        <div id="jackpot-history" style="max-height:300px;overflow-y:auto;">
+          <div style="color:var(--muted);font-size:13px">Aucun jackpot attribué</div>
+        </div>
+      </div>
+    </div>
+
 
     </div>
 
@@ -3691,6 +3737,8 @@ function selAdmTab(el){
   const tab = el.dataset.ptab;
   if(tab==='borlette'){
     loadBorletteAdmin();
+  } else if(tab==='jackpot'){
+    renderAdminJackpot();
   } else {
     refreshAdmin();
     if(tab==='recharges') admRefreshRecharges();
@@ -4527,13 +4575,14 @@ function admCreerDirecteur(){
   const zone = document.getElementById('adm-dir-zone')?.value.trim();
   const phone= document.getElementById('adm-dir-phone')?.value.trim();
   const pwd  = document.getElementById('adm-dir-pwd')?.value;
+  const pct  = parseFloat(document.getElementById('adm-dir-pct')?.value)||0;
   if(!name||!code||!zone||!pwd){ showNotif('Tous les champs obligatoires','err'); return; }
   const dirs = gDirs();
   if(dirs[code]){ showNotif('Ce code existe déjà','err'); return; }
-  dirs[code] = {name, code, zone, phone:phone||'', pwd, createdAt:new Date().toLocaleString()};
+  dirs[code] = {name, code, zone, phone:phone||'', pwd, pct:pct, createdAt:new Date().toLocaleString()};
   sDirs(dirs);
-  showNotif('✅ Directeur créé: '+name+' ('+code+')','ok');
-  ['adm-dir-name','adm-dir-code','adm-dir-zone','adm-dir-phone','adm-dir-pwd'].forEach(id=>{
+  showNotif('✅ Directeur créé: '+name+' ('+code+') — '+pct+'%','ok');
+  ['adm-dir-name','adm-dir-code','adm-dir-zone','adm-dir-phone','adm-dir-pwd','adm-dir-pct'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
   refreshAdmin();
@@ -5884,6 +5933,139 @@ function getBorLimit(num, draw){
   return specific ? specific.amt : global ? global.amt : null;
 }
 
+// ============================================================
+// JACKPOT SYSTEM
+// 5% of weekly sales accumulate per directeur
+// Admin decides when to award it
+// ============================================================
+const JK_KEY = 'tk_jackpots'; // {dirCode: {amount, weekMises, lastReset, history}}
+const gJK = () => JSON.parse(localStorage.getItem(JK_KEY))||{};
+const sJK = v  => localStorage.setItem(JK_KEY, JSON.stringify(v));
+
+// Called when a bet is placed - accumulate 5% to jackpot of that dir
+function jackpotAccumuler(mise, dirCode){
+  if(!dirCode) dirCode = CCaiss?.dirCode || CDir?.code || '';
+  if(!dirCode) return;
+  const jk = gJK();
+  if(!jk[dirCode]) jk[dirCode]={amount:0, weekMises:0, lastReset:new Date().toISOString(), history:[]};
+  const contribution = Math.round(mise * 0.05);
+  jk[dirCode].amount += contribution;
+  jk[dirCode].weekMises += mise;
+  sJK(jk);
+}
+
+// Admin: attribute jackpot to a random ticket
+function jackpotAttribuer(dirCode){
+  const jk = gJK();
+  if(!jk[dirCode]||jk[dirCode].amount<=0){
+    showNotif('Jackpot vide pour ce directeur','err'); return;
+  }
+  const amount = jk[dirCode].amount;
+  // Pick a random player from that director
+  const j = gJ();
+  const players = Object.values(j).filter(p=>p.dirCode===dirCode);
+  if(!players.length){ showNotif('Aucun joueur pour ce directeur','err'); return; }
+  const winner = players[Math.floor(Math.random()*players.length)];
+  // Credit winner
+  const jj = gJ();
+  if(jj[winner.phone]){
+    jj[winner.phone].solde = (jj[winner.phone].solde||0) + amount;
+    sJ(jj);
+  }
+  // Record and reset
+  jk[dirCode].history.unshift({
+    date: new Date().toLocaleString(),
+    amount,
+    winner: winner.name,
+    winnerPhone: winner.phone
+  });
+  jk[dirCode].amount = 0;
+  jk[dirCode].weekMises = 0;
+  jk[dirCode].lastReset = new Date().toISOString();
+  sJK(jk);
+  showNotif('🎉 Jackpot '+amount+' Gd attribué à '+winner.name,'ok');
+  renderAdminJackpot();
+}
+
+// Admin: manually set jackpot amount
+function jackpotSetManuel(dirCode){
+  const amt = parseInt(document.getElementById('jk-manual-'+dirCode)?.value||'0');
+  if(!amt||amt<=0){ showNotif('Montant invalide','err'); return; }
+  const jk = gJK();
+  if(!jk[dirCode]) jk[dirCode]={amount:0,weekMises:0,lastReset:new Date().toISOString(),history:[]};
+  jk[dirCode].amount = amt;
+  sJK(jk);
+  showNotif('✅ Jackpot défini: '+amt+' Gd','ok');
+  renderAdminJackpot();
+}
+
+// Render admin jackpot panel
+function renderAdminJackpot(){
+  const el = document.getElementById('admin-jackpot-list');
+  if(!el) return;
+  const dirs = gDirs();
+  const jk = gJK();
+  const list = Object.values(dirs);
+  if(!list.length){ el.innerHTML='<div style="color:var(--muted);font-size:13px">Aucun directeur</div>'; return; }
+  el.innerHTML = list.map(d=>{
+    const djk = jk[d.code]||{amount:0,weekMises:0};
+    const bgColor = djk.amount > 50000 ? 'rgba(245,200,0,.15)' : 'var(--bg2)';
+    const borderColor = djk.amount > 50000 ? 'rgba(245,200,0,.5)' : 'var(--border)';
+    return `<div style="background:${bgColor};border:1px solid ${borderColor};border-radius:12px;padding:14px;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div>
+          <div style="font-weight:800;color:var(--gold);font-size:15px">${d.name}</div>
+          <div style="font-size:11px;color:var(--muted)">${d.zone} · Code: ${d.code}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:2em;font-weight:900;color:#f5c800;text-shadow:0 0 10px rgba(245,200,0,.5);">
+            ${djk.amount.toLocaleString('fr-FR')} Gd
+          </div>
+          <div style="font-size:10px;color:var(--muted)">JACKPOT</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">
+        Ventes cette semaine: <strong style="color:var(--text)">${(djk.weekMises||0).toLocaleString('fr-FR')} Gd</strong>
+        · 5% accumulé: <strong style="color:var(--gold)">${Math.round((djk.weekMises||0)*0.05).toLocaleString('fr-FR')} Gd</strong>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <button onclick="jackpotAttribuer('${d.code}')" style="background:linear-gradient(135deg,var(--gold),#d4a800);color:#000;border:none;padding:8px 14px;border-radius:7px;font-weight:800;font-size:12px;cursor:pointer;${djk.amount<=0?'opacity:.4;cursor:not-allowed':''}"
+          ${djk.amount<=0?'disabled':''}>🎉 Attribuer à un joueur</button>
+        <input type="number" id="jk-manual-${d.code}" placeholder="Montant manuel" style="width:130px;padding:7px 10px;background:var(--bg);color:#fff;border:1px solid var(--border);border-radius:7px;font-size:12px;outline:none;">
+        <button onclick="jackpotSetManuel('${d.code}')" style="background:var(--blue);color:#fff;border:none;padding:8px 12px;border-radius:7px;font-weight:700;font-size:12px;cursor:pointer;">Définir</button>
+        <button onclick="jackpotReset('${d.code}')" style="background:var(--red);color:#fff;border:none;padding:8px 12px;border-radius:7px;font-weight:700;font-size:12px;cursor:pointer;">🔄 Réinitialiser</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function jackpotReset(dirCode){
+  if(!confirm('Réinitialiser le jackpot de ce directeur ?')) return;
+  const jk = gJK();
+  if(jk[dirCode]){ jk[dirCode].amount=0; jk[dirCode].weekMises=0; sJK(jk); }
+  renderAdminJackpot();
+  showNotif('Jackpot réinitialisé','ok');
+}
+
+// Get jackpot for current director (shown to dir + players)
+function getJackpotDir(){
+  const dirCode = CDir?.code || CCaiss?.dirCode || '';
+  if(!dirCode) return 0;
+  const jk = gJK();
+  return jk[dirCode]?.amount || 0;
+}
+
+// Jackpot display widget for player screen
+function renderJackpotWidget(){
+  const el = document.getElementById('jackpot-display');
+  if(!el) return;
+  const amount = getJackpotDir();
+  if(amount <= 0){ el.style.display='none'; return; }
+  el.style.display='block';
+  const amtEl = document.getElementById('jackpot-amount');
+  if(amtEl) amtEl.textContent = amount.toLocaleString('fr-FR')+' Gd';
+}
+
 // ===== SESSION RESTORE =====
 (function(){
   const role = localStorage.getItem('tk_session_role');
@@ -5892,14 +6074,14 @@ function getBorLimit(num, draw){
   if(!role){ window.location.href='index.html'; return; }
   if(role==='joueur'&&phone){
     const j=gJ();
-    if(j[phone]){ CJ=j[phone]; goTo('sc-app'); updateAppBar(); initKeno(); initLucky6(); initCourse(); renderSports(); renderJHist(); if(typeof renderJoueurDraws==='function') renderJoueurDraws(); }
+    if(j[phone]){ CJ=j[phone]; goTo('sc-app'); updateAppBar(); initKeno(); initLucky6(); initCourse(); renderSports(); renderJHist(); setTimeout(renderJackpotWidget,200); if(typeof renderJoueurDraws==='function') renderJoueurDraws(); }
     else { window.location.href='index.html'; }
   } else if(role==='admin'){
     refreshAdmin(); goTo('sc-admin');
   } else if(role==='directeur'&&code){
     const dirs=gDirs();
     const found=Object.values(dirs).find(d=>d.code===code);
-    if(found){ CDir=found; document.getElementById('dir-zone-name').textContent=found.zone; refreshDir(); goTo('sc-dir'); }
+    if(found){ CDir=found; document.getElementById('dir-zone-name').textContent=found.zone; refreshDir(); goTo('sc-dir'); setTimeout(()=>{const jk=gJK();const djk=jk[found.code];const el=document.getElementById('jackpot-display-dir');const amt=document.getElementById('jackpot-amount-dir');if(el&&djk&&djk.amount>0){el.style.display='block';if(amt)amt.textContent=djk.amount.toLocaleString('fr-FR')+' Gd';}},300); }
     else { window.location.href='index.html'; }
   } else if(role==='caissier'&&code){
     const caiss=gCaiss();
