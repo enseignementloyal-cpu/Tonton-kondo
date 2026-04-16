@@ -658,6 +658,12 @@ th{background:var(--blue);color:#fff;font-size:12px;font-weight:700;}
       <div id="jeu-keno">
         <h3 style="text-align:center;color:#5b8ef5;margin-bottom:10px">KENO LUCKY</h3>
         <div id="keno-grid" class="keno-grid"></div>
+        <!-- Color zone legend -->
+        <div style="display:flex;gap:4px;margin:8px 0;flex-wrap:wrap;">
+          <span style="font-size:11px;color:var(--muted);align-self:center;margin-right:4px">Paris couleur:</span>
+          <div id="keno-couleurs" style="display:flex;gap:6px;flex:1;"></div>
+        </div>
+        <div id="keno-couleur-info" style="font-size:11px;color:var(--muted);margin-bottom:6px;min-height:14px;"></div>
         <div class="mise-row">
           <label>Mise:</label>
           <input type="number" id="keno-mise" min="1" value="10">
@@ -675,6 +681,10 @@ th{background:var(--blue);color:#fff;font-size:12px;font-weight:700;}
           <div class="draw-table" id="draw-container"></div>
         </div>
         <div id="lucky6-grid" class="l6-grid"></div>
+        <div style="display:flex;gap:4px;margin:8px 0;flex-wrap:wrap;align-items:center;">
+          <span style="font-size:11px;color:var(--muted);margin-right:4px">Paris couleur:</span>
+          <div id="l6-couleurs" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;flex:1;"></div>
+        </div>
         <div class="mise-row">
           <label>Mise:</label>
           <input type="number" id="lucky6-mise" min="1" value="10">
@@ -1632,6 +1642,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
   <div class="inner">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
       <button class="btn-back" onclick="goTo('sc-landing')" style="margin-bottom:0">← Accueil</button>
+      <button onclick="ouvrirInfo()" style="background:rgba(245,200,0,.1);border:1px solid rgba(245,200,0,.3);color:var(--gold);padding:6px 13px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;"><i class="fas fa-info-circle"></i> À propos</button>
     </div>
     <div class="ptabs">
       <div class="ptab on" data-ptab="overview" onclick="selAdmTab(this)">📈 Vue d'ensemble</div>
@@ -1746,7 +1757,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
       </div>
 
     <!-- ===== BORLETTE ADMIN ===== -->
-    <div class="psec" id="atab-borlette">
+    <div class="psec" id="atab-borlette" data-tab="borlette">
 
       <!-- PUBLIER RÉSULTATS -->
       <div class="card">
@@ -1887,7 +1898,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
     </div><!-- /atab-borlette -->
 
     <!-- ===== JACKPOT ADMIN ===== -->
-    <div class="psec" id="atab-jackpot">
+    <div class="psec" id="atab-jackpot" data-tab="jackpot">
       <div class="card">
         <h3>🎰 Gestion des Jackpots</h3>
         <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">
@@ -2120,6 +2131,17 @@ L’OMS est consciente des effets négatifs des jeux d’argent et de hasard sur
 
 </div>
 
+
+<!-- SPORTS MARKETS MODAL -->
+<div class="mov" id="mov-sports">
+  <div class="mdl">
+    <div class="mdlhd">
+      <div class="mdltitle" id="mov-sports-title">Marchés</div>
+      <button class="mdlclose" onclick="closeSportsMov()">✕</button>
+    </div>
+    <div class="mdlbody" id="mov-sports-body"></div>
+  </div>
+</div>
 <div class="notif" id="notif"></div>
 
 
@@ -2607,19 +2629,59 @@ document.querySelectorAll('.mov').forEach(ov=>ov.addEventListener('click',e=>{if
 
 // ===== KENO =====
 let kenoSel=[];
+// Keno color zones: 1-20=Rouge, 21-40=Bleu, 41-60=Vert, 61-80=Or
+const KENO_COLORS=[
+  {min:1,max:20,name:'Rouge',css:'#c0152a',light:'#ff4466'},
+  {min:21,max:40,name:'Bleu',css:'#1565c0',light:'#42a5f5'},
+  {min:41,max:60,name:'Vert',css:'#1b5e20',light:'#66bb6a'},
+  {min:61,max:80,name:'Or',css:'#8a6820',light:'#f5c800'},
+];
+function getKenoBallColor(n){return KENO_COLORS.find(c=>n>=c.min&&n<=c.max)||KENO_COLORS[0];}
+
 function initKeno(){
   const g=document.getElementById('keno-grid');
   g.innerHTML=''; kenoSel=[];
   for(let i=1;i<=80;i++){
+    const col=getKenoBallColor(i);
     const b=document.createElement('button');
-    b.className='kbtn';b.textContent=i;b.id='kn'+i;
+    b.className='kbtn';b.id='kn'+i;
+    b.style.cssText=`background:${col.css};border:1px solid ${col.light};color:#fff;`;
+    b.textContent=i;
     b.onclick=()=>{
-      if(kenoSel.includes(i)){kenoSel=kenoSel.filter(x=>x!==i);b.classList.remove('sel');}
-      else if(kenoSel.length<10){kenoSel.push(i);b.classList.add('sel');}
-      else showNotif('Maximum 10 numéros !','err');
+      if(kenoSel.includes(i)){
+        kenoSel=kenoSel.filter(x=>x!==i);
+        b.style.background=col.css;b.style.borderColor=col.light;b.style.transform='';
+      } else if(kenoSel.length<10){
+        kenoSel.push(i);
+        b.style.background=col.light;b.style.borderColor='#fff';b.style.transform='scale(1.1)';
+      } else showNotif('Maximum 10 numéros !','err');
     };
     g.appendChild(b);
   }
+  // Color bet section
+  renderKenoCouleurs();
+}
+
+function renderKenoCouleurs(){
+  const el=document.getElementById('keno-couleurs');
+  if(!el)return;
+  el.innerHTML=KENO_COLORS.map(c=>`
+    <div onclick="betKenoCouleur('${c.name}')"
+      style="background:${c.css};border:2px solid ${c.light};border-radius:10px;padding:10px;text-align:center;cursor:pointer;transition:.2s;"
+      id="kc-${c.name}">
+      <div style="font-size:11px;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:1px">${c.name}</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.1em;font-weight:900;color:#fff;">${c.min}–${c.max}</div>
+      <div style="font-size:10px;color:${c.light};margin-top:2px">×4</div>
+    </div>`).join('');
+}
+
+let kenoCouleurSel=null;
+function betKenoCouleur(name){
+  kenoCouleurSel=kenoCouleurSel===name?null:name;
+  KENO_COLORS.forEach(c=>{
+    const el=document.getElementById('kc-'+c.name);
+    if(el)el.style.outline=kenoCouleurSel===c.name?'3px solid #fff':'none';
+  });
 }
 async function jouerKeno(){
   if(!CJ){showNotif("Connectez-vous d'abord",'err');return;}
@@ -2648,22 +2710,66 @@ document.getElementById('keno-play').addEventListener('click',jouerKeno);
 
 // ===== LUCKY6 =====
 let l6sel=[];
+// Lucky6 color zones: 1-12=Rouge, 13-24=Bleu, 25-36=Vert, 37-48=Or
+const L6_COLORS=[
+  {min:1,max:12,name:'Rouge',css:'#c0152a',light:'#ff4466',hex:'#c0152a'},
+  {min:13,max:24,name:'Bleu',css:'#1565c0',light:'#42a5f5',hex:'#1565c0'},
+  {min:25,max:36,name:'Vert',css:'#1b5e20',light:'#66bb6a',hex:'#1b5e20'},
+  {min:37,max:48,name:'Or',css:'#7a5800',light:'#f5c800',hex:'#7a5800'},
+];
+function getL6BallColor(n){return L6_COLORS.find(c=>n>=c.min&&n<=c.max)||L6_COLORS[0];}
+
 function initLucky6(){
   const g=document.getElementById('lucky6-grid');
   g.innerHTML='';l6sel=[];
   for(let i=1;i<=48;i++){
+    const col=getL6BallColor(i);
     const b=document.createElement('div');
-    b.className='ball';b.textContent=i;b.id='l6n'+i;
+    b.className='ball';b.id='l6n'+i;
+    b.style.cssText=`background:radial-gradient(circle at 35% 35%,${col.light},${col.css});border:2px solid ${col.light};color:#fff;font-weight:900;box-shadow:0 2px 6px rgba(0,0,0,.4);`;
+    b.textContent=i;
     b.onclick=()=>{
-      if(l6sel.includes(i)){l6sel=l6sel.filter(x=>x!==i);b.classList.remove('sel');}
-      else if(l6sel.length<6){l6sel.push(i);b.classList.add('sel');}
+      if(l6sel.includes(i)){
+        l6sel=l6sel.filter(x=>x!==i);
+        b.style.background=`radial-gradient(circle at 35% 35%,${col.light},${col.css})`;
+        b.style.transform='';b.style.boxShadow='0 2px 6px rgba(0,0,0,.4)';
+      } else if(l6sel.length<6){
+        l6sel.push(i);
+        b.style.background=`radial-gradient(circle at 35% 35%,#fff,${col.light})`;
+        b.style.transform='scale(1.15)';
+        b.style.boxShadow=`0 0 12px ${col.light}`;
+      }
     };
     g.appendChild(b);
   }
+  // Color bet section for Lucky6
+  renderL6Couleurs();
   // Reset tableau tirage
   document.getElementById('draw-container').innerHTML='';
   document.getElementById('draw-progress-txt').textContent='en attente';
   document.getElementById('draw-hits').textContent='0 / 6 trouvés';
+}
+
+function renderL6Couleurs(){
+  const el=document.getElementById('l6-couleurs');
+  if(!el)return;
+  el.innerHTML=L6_COLORS.map(c=>`
+    <div onclick="betL6Couleur('${c.name}')"
+      style="background:radial-gradient(135deg,${c.light},${c.css});border:2px solid ${c.light};border-radius:10px;padding:9px;text-align:center;cursor:pointer;transition:.2s;"
+      id="l6c-${c.name}">
+      <div style="font-size:10px;color:rgba(255,255,255,.8);text-transform:uppercase;letter-spacing:1px">${c.name}</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1em;font-weight:900;color:#fff;">${c.min}–${c.max}</div>
+      <div style="font-size:10px;color:#fff;margin-top:1px">×4</div>
+    </div>`).join('');
+}
+
+let l6CouleurSel=null;
+function betL6Couleur(name){
+  l6CouleurSel=l6CouleurSel===name?null:name;
+  L6_COLORS.forEach(c=>{
+    const el=document.getElementById('l6c-'+c.name);
+    if(el)el.style.outline=l6CouleurSel===c.name?'3px solid #fff':'none';
+  });
 }
 
 async function jouerLucky6(){
@@ -3423,8 +3529,7 @@ function updPay(){
 function setStk(v){const i=document.getElementById('stkin');if(i){i.value=v;updPay();}}
 function updateCPBar(){
   const bar=document.getElementById('cpbar');
-  const onSports=document.querySelector('.atab.on[data-tab="sports"]');
-  if(betSlip.length>0&&curSc==='sc-app'&&onSports&&MODE==='compte'){
+  if(betSlip.length>0&&curSc==='sc-app'&&(MODE==='compte'||CJ)){
     bar.classList.add('on');
     document.getElementById('cpbcnt').textContent=betSlip.length;
     const c=betSlip.reduce((a,b)=>a*b.odd,1);
@@ -3438,36 +3543,8 @@ function toggleCP(){document.getElementById('cppanel').classList.toggle('on');}
 
 
 // ===== MARCHÉS =====
-function openMkt(id){
-  const m=MATCHES.find(x=>x.id===id);
-  document.getElementById('mktTitle').textContent=m.f1+' '+m.t1+' vs '+m.f2+' '+m.t2;
-  const fn=(m.f1+' '+m.t1+' vs '+m.f2+' '+m.t2).replace(/'/g,"\'");
-  let html=`<div class="mktgrp"><div class="mktgrp-title">Résultat 1X2</div><div class="mktgrid">
-    ${[{l:'1 — '+m.t1,v:m.odds[0],r:'1'},{l:'Nul',v:m.odds[1],r:'X'},{l:'2 — '+m.t2,v:m.odds[2],r:'2'}].map(o=>`<div class="mbt" onclick="addBetMdl(${id},'${o.r}',${o.v},'${fn}',this)"><div class="ml">${o.l}</div><div class="mv">${o.v.toFixed(2)}</div></div>`).join('')}
-  </div></div>`;
-  Object.entries(EMKTS).forEach(([t,items])=>{
-    html+=`<div class="mktgrp"><div class="mktgrp-title">${t}</div><div class="mktgrid">${items.map(([l,v])=>`<div class="mbt" onclick="addBetMdl(${id},'${l}',${v},'${fn}',this)"><div class="ml">${l}</div><div class="mv">${parseFloat(v).toFixed(2)}</div></div>`).join('')}</div></div>`;
-  });
-  document.getElementById('mktBody').innerHTML=html;
-  document.getElementById('mktMov').classList.add('on');
-}
-function openH2H(id){
-  const m=MATCHES.find(x=>x.id===id);
-  document.getElementById('h2hTitle').textContent='📈 '+m.t1+' vs '+m.t2;
-  const d=H2H;
-  const fb=arr=>arr.map(f=>`<span class="fb ${f}">${f}</span>`).join(' ');
-  const wl=(arr,r)=>arr.filter(f=>f===r).length;
-  document.getElementById('h2hBody').innerHTML=`
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-    <div style="background:var(--card);border-radius:8px;padding:10px;border:1px solid var(--border)"><div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:7px">${m.f1} ${m.t1}</div><div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px">${fb(d.fr1)}</div><div style="font-size:11px;color:var(--muted)">${wl(d.fr1,'W')}V ${wl(d.fr1,'D')}N ${wl(d.fr1,'L')}D</div></div>
-    <div style="background:var(--card);border-radius:8px;padding:10px;border:1px solid var(--border)"><div style="font-size:12px;font-weight:700;color:#2979ff;margin-bottom:7px">${m.f2} ${m.t2}</div><div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px">${fb(d.fr2)}</div><div style="font-size:11px;color:var(--muted)">${wl(d.fr2,'W')}V ${wl(d.fr2,'D')}N ${wl(d.fr2,'L')}D</div></div>
-  </div>
-  <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:7px">🆚 Confrontations directes</div>
-  ${d.h2h.map(h=>`<div class="h2hrow"><span class="h2hdt">${h.dt}</span><span class="h2htm">${m.t1} – ${m.t2}</span><span class="h2hsc ${h.w===1?'w1':h.w===2?'w2':'dr'}">${h.s1}-${h.s2}</span><span class="h2hcp">${h.cp}</span></div>`).join('')}
-  <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin:12px 0 7px">📊 Stats saison</div>
-  ${d.stats.map(s=>{const tot=s.v1+s.v2,p=Math.round(s.v1/tot*100);return`<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="color:var(--accent);font-weight:700;font-size:13px">${s.v1}</span><span style="color:var(--muted);font-size:11px">${s.n}</span><span style="color:#2979ff;font-weight:700;font-size:13px">${s.v2}</span></div><div style="height:6px;background:var(--card2);border-radius:3px;overflow:hidden;display:flex"><div style="width:${p}%;background:var(--accent)"></div><div style="flex:1;background:#2979ff"></div></div></div>`;}).join('')}`;
-  document.getElementById('h2hMov').classList.add('on');
-}
+
+
 
 document.querySelectorAll('.mov').forEach(ov=>ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.remove('on');}));
 
@@ -5141,6 +5218,106 @@ function selectChip(val){
 }
 // ======================================================
 
+// Match details modals
+function openMkt(matchId){
+  const m=MATCHES.find(x=>x.id===matchId);
+  if(!m){showNotif('Match introuvable','err');return;}
+  const modal=document.getElementById('mov-sports');
+  if(!modal)return;
+  document.getElementById('mov-sports-title').textContent=m.t1+' vs '+m.t2;
+  const body=document.getElementById('mov-sports-body');
+  // Generate extra markets based on match
+  const mkts=[
+    {g:'Résultat final',bets:[
+      {l:'1 - '+m.t1,v:(m.odds[0]*1.05).toFixed(2)},
+      {l:'Match nul',v:(m.odds[1]*1.05).toFixed(2)},
+      {l:'2 - '+m.t2,v:(m.odds[2]*1.05).toFixed(2)},
+    ]},
+    {g:'Double Chance',bets:[
+      {l:'1X ('+m.t1+' ou nul)',v:(m.odds[0]*0.6).toFixed(2)},
+      {l:'X2 (nul ou '+m.t2+')',v:(m.odds[2]*0.6).toFixed(2)},
+      {l:'12 ('+m.t1+' ou '+m.t2+')',v:'1.35'},
+    ]},
+    {g:'Mi-temps/Final',bets:[
+      {l:'1/1',v:'3.50'},{l:'1/X',v:'7.00'},{l:'1/2',v:'9.00'},
+      {l:'X/1',v:'4.50'},{l:'X/X',v:'3.80'},{l:'X/2',v:'4.50'},
+    ]},
+    {g:'Total Buts',bets:[
+      {l:'Moins de 1.5',v:'2.80'},{l:'Plus de 1.5',v:'1.40'},
+      {l:'Moins de 2.5',v:'1.65'},{l:'Plus de 2.5',v:'2.15'},
+      {l:'Moins de 3.5',v:'1.30'},{l:'Plus de 3.5',v:'3.20'},
+    ]},
+  ];
+  body.innerHTML=mkts.map(mk=>`
+    <div class="mktgrp">
+      <div class="mktgrp-title">${mk.g}</div>
+      <div class="mktgrid">
+        ${mk.bets.map(b=>`
+          <div class="mbt" onclick="addBetMkt(${matchId},'${b.l}',${b.v},'${(m.t1+' vs '+m.t2).replace(/'/g,'\'')}',this)">
+            <div class="ml">${b.l}</div>
+            <div class="mv">${b.v}</div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+  modal.classList.add('on');
+}
+
+function addBetMkt(matchId,result,odd,matchName,el){
+  if(!CJ){showNotif('Connectez-vous pour parier !','err');return;}
+  const ex=betSlip.findIndex(b=>b.matchId===matchId);
+  if(ex>=0) betSlip.splice(ex,1);
+  betSlip.push({matchId,result,odd:parseFloat(odd),matchName});
+  document.querySelectorAll('.mbt.sel').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  renderCP();updateCPBar();
+  showNotif(result+' @ '+odd+' ajouté','info');
+}
+
+function openH2H(matchId){
+  const m=MATCHES.find(x=>x.id===matchId);
+  if(!m)return;
+  const modal=document.getElementById('mov-sports');
+  if(!modal)return;
+  document.getElementById('mov-sports-title').textContent='H2H: '+m.t1+' vs '+m.t2;
+  const body=document.getElementById('mov-sports-body');
+  // Generate H2H data
+  const recent=[
+    {date:'15/03/2025',score:'2 - 1',winner:0},
+    {date:'28/11/2024',score:'0 - 0',winner:2},
+    {date:'05/08/2024',score:'1 - 3',winner:1},
+    {date:'12/04/2024',score:'2 - 2',winner:2},
+    {date:'20/01/2024',score:'1 - 0',winner:0},
+  ];
+  const form1=['W','W','D','L','W'];
+  const form2=['L','D','W','W','L'];
+  body.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+      <div style="background:var(--bg2);border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-weight:800;font-size:14px;margin-bottom:6px">${m.t1}</div>
+        <div style="display:flex;gap:3px;justify-content:center;">${form1.map(r=>`<span class="fb ${r==='W'?'W':r==='D'?'D':'L'}">${r}</span>`).join('')}</div>
+      </div>
+      <div style="background:var(--bg2);border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-weight:800;font-size:14px;margin-bottom:6px">${m.t2}</div>
+        <div style="display:flex;gap:3px;justify-content:center;">${form2.map(r=>`<span class="fb ${r==='W'?'W':r==='D'?'D':'L'}">${r}</span>`).join('')}</div>
+      </div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">5 dernières confrontations</div>
+    ${recent.map(r=>`
+      <div class="h2hrow">
+        <span class="h2hdt">${r.date}</span>
+        <span class="h2htm">${m.t1}</span>
+        <span class="h2hsc ${r.winner===0?'w1':r.winner===1?'w2':'dr'}">${r.score}</span>
+        <span class="h2htm">${m.t2}</span>
+      </div>`).join('')}
+  `;
+  modal.classList.add('on');
+}
+
+function closeSportsMov(){
+  const m=document.getElementById('mov-sports');
+  if(m)m.classList.remove('on');
+}
+
 // ===== PENALTY =====
 
 /* ══════════════════════════
@@ -6034,6 +6211,7 @@ function renderAdminJackpot(){
         <input type="number" id="jk-manual-${d.code}" placeholder="Montant manuel" style="width:130px;padding:7px 10px;background:var(--bg);color:#fff;border:1px solid var(--border);border-radius:7px;font-size:12px;outline:none;">
         <button onclick="jackpotSetManuel('${d.code}')" style="background:var(--blue);color:#fff;border:none;padding:8px 12px;border-radius:7px;font-weight:700;font-size:12px;cursor:pointer;">Définir</button>
         <button onclick="jackpotReset('${d.code}')" style="background:var(--red);color:#fff;border:none;padding:8px 12px;border-radius:7px;font-weight:700;font-size:12px;cursor:pointer;">🔄 Réinitialiser</button>
+        <button onclick="jackpotOuvrirEcran('${d.code}')" style="background:rgba(26,58,143,.6);border:1px solid var(--blue);color:#fff;padding:8px 12px;border-radius:7px;font-weight:700;font-size:12px;cursor:pointer;">🖥️ Écran Extérieur</button>
       </div>
     </div>`;
   }).join('');
@@ -6066,6 +6244,70 @@ function renderJackpotWidget(){
   if(amtEl) amtEl.textContent = amount.toLocaleString('fr-FR')+' Gd';
 }
 
+// ============================================================
+// JACKPOT ECRAN EXTÉRIEUR
+// Ouvrir dans un nouvel onglet pour afficher sur écran TV/moniteur
+// ============================================================
+function jackpotOuvrirEcran(dirCode){
+  const jk=gJK();
+  const dirs=gDirs();
+  const d=dirs[dirCode];
+  if(!d){showNotif('Directeur introuvable','err');return;}
+  const amount=(jk[dirCode]?.amount||0).toLocaleString('fr-FR');
+  const html=`<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="refresh" content="30">
+<title>Jackpot — ${d.name}</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#000;color:#fff;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;font-family:'Barlow Condensed',sans-serif;}
+.bg{position:fixed;inset:0;background:radial-gradient(ellipse at center,#1a0d40 0%,#000 70%);z-index:0;}
+.stars{position:fixed;inset:0;z-index:1;}
+.content{position:relative;z-index:2;text-align:center;padding:40px;}
+.logo-wrap{margin-bottom:30px;}
+.logo-wrap img{width:100px;height:100px;border-radius:50%;border:4px solid #f5c800;box-shadow:0 0 30px rgba(245,200,0,.5);}
+.label{font-size:clamp(20px,3vw,32px);color:rgba(255,255,255,.6);letter-spacing:6px;text-transform:uppercase;margin-bottom:10px;}
+.bureau{font-size:clamp(24px,4vw,40px);color:#f5c800;letter-spacing:4px;margin-bottom:30px;}
+@keyframes pulse{0%,100%{text-shadow:0 0 20px rgba(245,200,0,.5),0 0 40px rgba(245,200,0,.3)}50%{text-shadow:0 0 40px rgba(245,200,0,.9),0 0 80px rgba(245,200,0,.6),0 0 120px rgba(245,200,0,.3)}}
+.amount{font-size:clamp(60px,12vw,140px);font-weight:900;color:#f5c800;animation:pulse 2s ease-in-out infinite;line-height:1;}
+.currency{font-size:clamp(30px,5vw,60px);color:#f5c800;margin-top:10px;}
+@keyframes scroll{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
+.ticker{position:fixed;bottom:0;left:0;right:0;background:rgba(245,200,0,.15);border-top:2px solid #f5c800;padding:10px 0;overflow:hidden;}
+.ticker-inner{white-space:nowrap;animation:scroll 20s linear infinite;font-size:20px;color:#f5c800;letter-spacing:2px;}
+.refresh{position:fixed;top:10px;right:15px;font-size:12px;color:rgba(255,255,255,.3);}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="content">
+  <div class="logo-wrap"><img src="logo.png" onerror="this.style.display='none'" alt="TK"></div>
+  <div class="label">🎰 JACKPOT EN JEU</div>
+  <div class="bureau">Bureau: ${d.name} — ${d.zone}</div>
+  <div class="amount">${amount}</div>
+  <div class="currency">GOURDES HAÏTIENS</div>
+</div>
+<div class="ticker"><div class="ticker-inner">🎰 JACKPOT TONTON KONDO — Bureau ${d.name} — ${amount} Gd — Chak tikè ka genyen jackpot la! &nbsp;&nbsp;&nbsp; 🎰 JACKPOT TONTON KONDO — Bureau ${d.name} — ${amount} Gd — Chak tikè ka genyen jackpot la!</div></div>
+<div class="refresh">Rafraîchi chaque 30s</div>
+</body></html>`;
+  const blob=new Blob([html],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  window.open(url,'_blank');
+}
+
+// Jackpot screen via URL parameter (for external display)
+function jackpotCheckURLParam(){
+  const params=new URLSearchParams(window.location.search);
+  const dirCode=params.get('jackpot');
+  if(dirCode){
+    // Redirect to jackpot display
+    jackpotOuvrirEcran(dirCode);
+  }
+}
+
 // ===== SESSION RESTORE =====
 (function(){
   const role = localStorage.getItem('tk_session_role');
@@ -6074,7 +6316,7 @@ function renderJackpotWidget(){
   if(!role){ window.location.href='index.html'; return; }
   if(role==='joueur'&&phone){
     const j=gJ();
-    if(j[phone]){ CJ=j[phone]; goTo('sc-app'); updateAppBar(); initKeno(); initLucky6(); initCourse(); renderSports(); renderJHist(); setTimeout(renderJackpotWidget,200); if(typeof renderJoueurDraws==='function') renderJoueurDraws(); }
+    if(j[phone]){ CJ=j[phone]; MODE='compte'; goTo('sc-app'); updateAppBar(); initKeno(); initLucky6(); initCourse(); renderSports(); renderJHist(); setTimeout(renderJackpotWidget,200); if(typeof renderJoueurDraws==='function') renderJoueurDraws(); }
     else { window.location.href='index.html'; }
   } else if(role==='admin'){
     refreshAdmin(); goTo('sc-admin');
