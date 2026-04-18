@@ -1007,12 +1007,17 @@ function switchToTab(el){
 
 // ===== INFO MODAL for staff pages =====
 function ouvrirInfo(){
-  const m = document.getElementById('info-modal');
-  if(m) m.classList.add('on');
+  const m=document.getElementById('info-modal');
+  if(!m)return;
+  m.classList.add('on');
+  m.style.display='flex';
+  m.style.zIndex='9999';
 }
 function fermerInfo(){
-  const m = document.getElementById('info-modal');
-  if(m) m.classList.remove('on');
+  const m=document.getElementById('info-modal');
+  if(!m)return;
+  m.classList.remove('on');
+  m.style.display='none';
 }
 
 // ============================================================
