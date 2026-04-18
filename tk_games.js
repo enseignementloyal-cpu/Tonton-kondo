@@ -1672,15 +1672,18 @@ function selAdmTab(el){
   const target = document.getElementById('atab-'+el.dataset.ptab);
   if(target) target.classList.add('on');
   const tab = el.dataset.ptab;
-  if(tab==='borlette'){
-    loadBorletteAdmin();
-  } else if(tab==='jackpot'){
-    renderAdminJackpot();
-  } else {
-    refreshAdmin();
-    if(tab==='recharges') admRefreshRecharges();
-    if(tab==='params') loadAdminMessageFields();
-  }
+  // Small delay ensures DOM is painted before we fill content
+  setTimeout(()=>{
+    if(tab==='borlette'){
+      if(typeof loadBorletteAdmin==='function') loadBorletteAdmin();
+    } else if(tab==='jackpot'){
+      if(typeof renderAdminJackpot==='function') renderAdminJackpot();
+    } else {
+      if(typeof refreshAdmin==='function') refreshAdmin();
+      if(tab==='recharges' && typeof admRefreshRecharges==='function') admRefreshRecharges();
+      if(tab==='params' && typeof loadAdminMessageFields==='function') loadAdminMessageFields();
+    }
+  }, 50);
 }
 
 // ==================== JOUEUR: tab borlette support ====================
