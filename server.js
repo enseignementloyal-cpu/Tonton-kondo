@@ -34,6 +34,7 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
 });
+console.log('DATABASE_URL:', process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 60) + '...' : 'UNDEFINED');
 
 // ── CONFIG ─────────────────────────────────────────────────
 const ADMIN_PASSWORD    = process.env.ADMIN_PASSWORD    || 'admin';
