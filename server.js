@@ -16,13 +16,23 @@ const PORT = process.env.PORT || 3000;
 // ── CORS ───────────────────────────────────────────────────
 app.use(cors({ origin: '*' }));
 app.use(express.json());
+const path = require('path');
+
+// Servir tous les fichiers statiques (HTML, CSS, JS, images) depuis la racine
+app.use(express.static(__dirname));
+
+// Pour toutes les autres requêtes (non-API), renvoyer index.html
+// Cela permet de gérer le routage côté frontend (si l'utilisateur rafraîchit une page)
+app.get('*', (req, res, next) => {
+  // Ne pas intercepter les appels API
+  if (req.path.startsWith('/api')) return next();
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // ── DATABASE ───────────────────────────────────────────────
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
-  max: 10,
-  idleTimeoutMillis: 30000,
 });
 
 // ── CONFIG ─────────────────────────────────────────────────
