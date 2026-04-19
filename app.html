@@ -2145,6 +2145,7 @@ L’OMS est consciente des effets négatifs des jeux d’argent et de hasard sur
 <div class="notif" id="notif"></div>
 
 
+<script src="config.js"></script>
 <script>
 
 /* ═══════════════════════════════════════════════════
@@ -2157,25 +2158,120 @@ L’OMS est consciente des effets négatifs des jeux d’argent et de hasard sur
 
 
 // ===== STORAGE =====
-const SK={j:'tk_joueurs',tix:'tk_tickets',stats:'tk_stats',bets:'tk_bets',diff:'tk_diff',allT:'tk_alltrans',dir:'tk_dirs',caiss:'tk_caiss',rch:'tk_recharges',caissBets:'tk_caisse_bets'};
-const gJ=()=>JSON.parse(localStorage.getItem(SK.j))||{};
-const sJ=v=>localStorage.setItem(SK.j,JSON.stringify(v));
-const gSt=()=>JSON.parse(localStorage.getItem(SK.stats))||{dep:0,pay:0};
-const sSt=v=>localStorage.setItem(SK.stats,JSON.stringify(v));
-const gB=()=>JSON.parse(localStorage.getItem(SK.bets))||[];
-const sB=v=>localStorage.setItem(SK.bets,JSON.stringify(v));
-const gAT=()=>JSON.parse(localStorage.getItem(SK.allT))||[];
-const sAT=v=>localStorage.setItem(SK.allT,JSON.stringify(v));
-const gDirs=()=>JSON.parse(localStorage.getItem(SK.dir))||{};
-const sDirs=v=>localStorage.setItem(SK.dir,JSON.stringify(v));
-const gCaiss=()=>JSON.parse(localStorage.getItem(SK.caiss))||{};
-const sCaiss=v=>localStorage.setItem(SK.caiss,JSON.stringify(v));
-const gRch=()=>JSON.parse(localStorage.getItem(SK.rch))||[];
-const sRch=v=>localStorage.setItem(SK.rch,JSON.stringify(v));
-const gCB=()=>JSON.parse(localStorage.getItem(SK.caissBets))||[];
-const sCB=v=>localStorage.setItem(SK.caissBets,JSON.stringify(v));
-const getDiff=()=>localStorage.getItem(SK.diff)||'medium';
-const setDiff=d=>localStorage.setItem(SK.diff,d);
+
+// ============================================================
+// API LAYER — Remplace localStorage (production)
+// ============================================================
+const API = (typeof CONFIG !== 'undefined') ? CONFIG.SERVER_URL : '';
+const FOOTBALL_KEY = (typeof CONFIG !== 'undefined') ? CONFIG.FOOTBALL_API_KEY : '369f772ca235e44f4d4b743c2df1cac8';
+
+const getToken   = ()  => localStorage.getItem('tk_token') || '';
+const setToken   = (t) => localStorage.setItem('tk_token', t);
+const clearToken = ()  => { localStorage.removeItem('tk_token'); localStorage.removeItem('tk_session_role'); };
+
+async function apiCall(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json', 'X-Session-Token': getToken() } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(API + path, opts);
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || 'Erreur serveur');
+  return data;
+}
+const apiGet  = (p)    => apiCall('GET',    p);
+const apiPost = (p, b) => apiCall('POST',   p, b);
+const apiDel  = (p)    => apiCall('DELETE', p);
+
+// Local caches (refreshed from server)
+const gJ     = () => JSON.parse(localStorage.getItem('tk_player_cache') || 'null') || {};
+const sJ     = () => {};
+const gDirs  = () => JSON.parse(localStorage.getItem('tk_dirs_cache')  || '{}');
+const sDirs  = () => {};
+const gCaiss = () => JSON.parse(localStorage.getItem('tk_caiss_cache') || '{}');
+const sCaiss = () => {};
+const gB     = () => JSON.parse(localStorage.getItem('tk_bets_cache')  || '[]');
+const sB     = () => {};
+const gAT    = () => JSON.parse(localStorage.getItem('tk_trans_cache') || '[]');
+const sAT    = () => {};
+const gRch   = () => JSON.parse(localStorage.getItem('tk_rch_cache')   || '[]');
+const sRch   = () => {};
+const gCB    = () => [];
+const sCB    = () => {};
+const gSt    = () => ({ dep: 0, pay: 0 });
+const sSt    = () => {};
+const getDiff = () => localStorage.getItem('tk_diff') || 'medium';
+const setDiff = (d) => localStorage.setItem('tk_diff', d);
+
+// Borlette caches
+const BOR_KEY_RES    = 'tk_bor_res_cache';
+const BOR_KEY_BLOCK  = 'tk_bor_block_cache';
+const BOR_KEY_LIMITS = 'tk_bor_lim_cache';
+const BOR_KEY_DRAWS  = 'tk_bor_draw_cache';
+const gBorRes    = () => JSON.parse(localStorage.getItem(BOR_KEY_RES)    || '[]');
+const sBorRes    = v  => localStorage.setItem(BOR_KEY_RES,    JSON.stringify(v));
+const gBorBlock  = () => JSON.parse(localStorage.getItem(BOR_KEY_BLOCK)  || '[]');
+const sBorBlock  = v  => localStorage.setItem(BOR_KEY_BLOCK,  JSON.stringify(v));
+const gBorLimits = () => JSON.parse(localStorage.getItem(BOR_KEY_LIMITS) || '[]');
+const sBorLimits = v  => localStorage.setItem(BOR_KEY_LIMITS, JSON.stringify(v));
+const gBorDraws  = () => JSON.parse(localStorage.getItem(BOR_KEY_DRAWS)  || '[]');
+const sBorDraws  = v  => localStorage.setItem(BOR_KEY_DRAWS,  JSON.stringify(v));
+
+// Jackpot cache
+const JK_KEY = 'tk_jk_cache';
+const gJK = () => JSON.parse(localStorage.getItem(JK_KEY) || '{}');
+const sJK = v  => localStorage.setItem(JK_KEY, JSON.stringify(v));
+
+// Load all data from server into local caches
+async function refreshAllCaches() {
+  try {
+    const [dirs, caiss] = await Promise.all([
+      apiGet('/api/admin/directors').catch(()=>({directors:[]})),
+      apiGet('/api/admin/cashiers').catch(()=>({cashiers:[]})),
+    ]);
+    // Build map objects for backward compat
+    const dirsMap = {};
+    (dirs.directors||[]).forEach(d => { dirsMap[d.code] = { name:d.name, code:d.code, zone:d.zone, phone:d.phone, pct:d.pct, pwd:'' }; });
+    localStorage.setItem('tk_dirs_cache', JSON.stringify(dirsMap));
+    const caissMap = {};
+    (caiss.cashiers||[]).forEach(c => { caissMap[c.code] = { name:c.name, code:c.code, dirCode:c.dir_code, jeu:c.jeu, phone:c.phone, pwd:'' }; });
+    localStorage.setItem('tk_caiss_cache', JSON.stringify(caissMap));
+  } catch(e) { console.warn('refreshAllCaches:', e.message); }
+}
+
+async function refreshPlayerCache(phone) {
+  try {
+    const data = await apiGet('/api/player/me');
+    const map = {}; map[phone] = { name:data.name, phone:data.phone, solde:data.solde, dirCode:data.dir_code, pwd:'' };
+    localStorage.setItem('tk_player_cache', JSON.stringify(map));
+    const bets = await apiGet('/api/player/bets?limit=50');
+    localStorage.setItem('tk_bets_cache', JSON.stringify(bets.bets||[]));
+    const trans = await apiGet('/api/player/transactions');
+    localStorage.setItem('tk_trans_cache', JSON.stringify(trans.transactions||[]));
+  } catch(e) { console.warn('refreshPlayerCache:', e.message); }
+}
+
+async function loadBorletteAdminData() {
+  try {
+    const [res, blocked, limits] = await Promise.all([
+      apiGet('/api/borlette/results'),
+      apiGet('/api/borlette/blocked'),
+      apiGet('/api/borlette/limits'),
+    ]);
+    sBorRes((res.results||[]).map(r => ({ id:r.id, date:r.created_at, draw:r.draw, lotto3:r.lotto3, lot1:r.lot1, lot2:r.lot2, lot3:r.lot3 })));
+    sBorBlock((blocked.blocked||[]).map(b => (b.draw ? b.draw+':'+b.number : 'all:'+b.number)));
+    sBorLimits((limits.limits||[]).map(l => ({ key:(l.draw?l.draw+':'+l.number:'all:'+l.number), num:l.number, draw:l.draw, amt:parseFloat(l.max_amount), id:l.id })));
+  } catch(e) { console.warn('loadBorletteAdminData:', e.message); }
+}
+
+async function loadJackpotData() {
+  try {
+    const data = await apiGet('/api/jackpots');
+    const map = {};
+    (data.jackpots||[]).forEach(j => { map[j.dir_code] = { amount:parseFloat(j.amount), weekMises:parseFloat(j.week_sales), lastReset:j.last_reset, history:[] }; });
+    sJK(map);
+    return map;
+  } catch(e) { return {}; }
+}
+
 
 const JEU_LABELS={keno:'🎯 Keno Lucky',lucky6:'🍀 Lucky 6',course:'🏎️ Course Auto',sports:'⚽ Paris Sportifs',helico:'🚁 Hélicoptère',all:'🎰 Tous les jeux'};
 
@@ -2225,32 +2321,42 @@ function showBox(id){
   });
 }
 
-function loginJoueur(){
+async function loginJoueur(){
   const phone=document.getElementById('lphone').value.trim();
   const pwd=document.getElementById('lpwd').value;
   const err=document.getElementById('lerr');
   err.classList.remove('show');
-  const j=gJ();
-  if(!j[phone]||j[phone].pwd!==pwd){err.textContent='Numéro ou mot de passe incorrect.';err.classList.add('show');return;}
-  CJ=j[phone];MODE='compte';
-  _entrerApp();
+  try {
+    const data = await apiPost('/api/auth/player', { phone, pwd });
+    setToken(data.token);
+    CJ = { name:data.name, phone:data.phone, solde:data.solde, dirCode:data.dirCode, pwd:'' };
+    MODE = 'compte';
+    await refreshPlayerCache(data.phone);
+    _entrerApp();
+  } catch(e) {
+    err.textContent = e.message || 'Numéro ou mot de passe incorrect.';
+    err.classList.add('show');
+  }
 }
 
-function registerJoueur(){
+async function registerJoueur(){
   const name=document.getElementById('rname').value.trim();
   const phone=document.getElementById('rphone').value.trim();
   const pwd=document.getElementById('rpwd').value;
   const pwd2=document.getElementById('rpwd2').value;
   const err=document.getElementById('rerr');
   err.classList.remove('show');
-  if(!name||!phone||!pwd){err.textContent='Tous les champs sont obligatoires.';err.classList.add('show');return;}
-  if(pwd!==pwd2){err.textContent='Mots de passe différents.';err.classList.add('show');return;}
-  const j=gJ();
-  if(j[phone]){err.textContent='Ce numéro est déjà utilisé.';err.classList.add('show');return;}
-  j[phone]={name,phone,pwd,solde:0,dirCode:'',caissCode:'',createdAt:new Date().toLocaleString(),transactions:[]};
-  sJ(j);
-  showNotif('✅ Compte créé ! Connectez-vous.','ok');
-  showBox('box-login');
+  if(!name||!phone||!pwd){err.textContent='Tout champ obligatoires.';err.classList.add('show');return;}
+  if(pwd!==pwd2){err.textContent='Mot de passe pa menm.';err.classList.add('show');return;}
+  try {
+    await apiPost('/api/auth/register', { name, phone, pwd });
+    showNotif('✅ Kont kree! Konekte ou.','ok');
+    showBox('box-login');
+    document.getElementById('lphone').value = phone;
+  } catch(e) {
+    err.textContent = e.message;
+    err.classList.add('show');
+  }
 }
 
 function _entrerApp(){
@@ -2280,18 +2386,16 @@ function toggleComptes(el){
 }
 
 function logoutAdmin(){
-  localStorage.removeItem('tk_session_role');
-  localStorage.removeItem('tk_session_code');
-  localStorage.removeItem('tk_session_phone');
+  apiPost('/api/auth/logout',{}).catch(()=>{});
+  clearToken();
   window.location.href='index.html';
 }
 function logoutJoueur(){
-  CJ=null;CT=null;MODE=null;clearSlip();
+  apiPost('/api/auth/logout',{}).catch(()=>{});
+  clearToken(); CJ=null; CT=null; MODE=null; clearSlip();
   document.getElementById('cpbar').classList.remove('on');
   document.getElementById('cppanel').classList.remove('on');
-  showBox('box-login');
-  if(CCaiss){goTo('sc-sec');refreshSec();}
-  else goTo('sc-landing');
+  if(CCaiss){goTo('sc-sec');refreshSec();} else {goTo('sc-landing');}
 }
 
 function updateAppBar(){
@@ -2511,17 +2615,20 @@ function refreshCaisseBets(){
 
 
 // ===== DIRECTEUR AUTH =====
-function authDir(){
-  const cod=document.getElementById('dcod').value.trim().toUpperCase();
-  const pwd=document.getElementById('dpwd').value;
-  const err=document.getElementById('derr');err.classList.remove('show');
-  const dirs=gDirs();
-  const found=Object.values(dirs).find(d=>d.code===cod&&d.pwd===pwd);
-  if(!found){err.textContent='Code ou mot de passe incorrect.';err.classList.add('show');return;}
-  CDir=found;
-  document.getElementById('dir-zone-name').textContent=found.zone;
-  refreshDir();
-  goTo('sc-dir');
+async function authDir(){
+  const code=document.getElementById('dcode')?.value.trim().toUpperCase();
+  const pwd=document.getElementById('dpwd')?.value;
+  const err=document.getElementById('derr');if(err)err.classList.remove('show');
+  try {
+    const data = await apiPost('/api/auth/director', { code, pwd });
+    setToken(data.token);
+    localStorage.setItem('tk_session_role','directeur');
+    localStorage.setItem('tk_session_code',data.code);
+    await refreshAllCaches();
+    CDir = { name:data.name, code:data.code, zone:data.zone, pct:data.pct };
+    if(document.getElementById('dir-zone-name')) document.getElementById('dir-zone-name').textContent=data.zone||'';
+    refreshDir(); goTo('sc-dir');
+  } catch(e) { if(err){err.textContent=e.message;err.classList.add('show');} }
 }
 
 function selDirTab(el){
@@ -2587,11 +2694,16 @@ function supprimerCaissier(code){
 }
 
 // ===== ADMIN AUTH =====
-function authAdmin(){
+async function authAdmin(){
   const p=document.getElementById('apwd').value;
   const err=document.getElementById('aerr');err.classList.remove('show');
-  if(p==='admin'){refreshAdmin();goTo('sc-admin');}
-  else{err.textContent='Mot de passe incorrect.';err.classList.add('show');}
+  try {
+    const data = await apiPost('/api/auth/admin', { pwd: p });
+    setToken(data.token);
+    await refreshAllCaches();
+    localStorage.setItem('tk_session_role','admin');
+    refreshAdmin(); goTo('sc-admin');
+  } catch(e) { err.textContent=e.message||'Mot de passe incorrect.'; err.classList.add('show'); }
 }
 
 
@@ -3287,127 +3399,28 @@ document.getElementById('helico-start').addEventListener('click',demarrerHelico)
 document.getElementById('helico-cash').addEventListener('click',encaisserHelico);
 
 // ===== SPORTS DATA =====
-const MATCHES=[
-  // ===== LIVE =====
-  {id:1,lk:'ligue1',lg:'🇫🇷 Ligue 1',t1:'Paris Saint-Germain',t2:'AS Monaco',f1:'🔵',f2:'🔴',s1:2,s2:1,time:"67'",odds:[1.45,4.20,6.50],mkt:48,live:true},
-  {id:2,lk:'premier',lg:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League',t1:'Arsenal',t2:'Manchester City',f1:'🔴',f2:'🔵',s1:1,s2:1,time:"43'",odds:[2.80,3.15,2.50],mkt:62,live:true},
-  {id:3,lk:'laliga',lg:'🇪🇸 La Liga',t1:'Real Madrid',t2:'FC Barcelone',f1:'⚪',f2:'🔵',s1:0,s2:1,time:"28'",odds:[2.10,3.30,3.60],mkt:55,live:true},
-  {id:4,lk:'bundesliga',lg:'🇩🇪 Bundesliga',t1:'Bayern Munich',t2:'Dortmund',f1:'🔴',f2:'🟡',s1:3,s2:1,time:"74'",odds:[1.65,3.80,5.00],mkt:60,live:true},
-  {id:5,lk:'seriea',lg:'🇮🇹 Serie A',t1:'Inter Milan',t2:'Juventus',f1:'🔵',f2:'⚫',s1:1,s2:0,time:"55'",odds:[1.80,3.40,4.50],mkt:52,live:true},
-  {id:6,lk:'ucl',lg:'🌍 Champions League',t1:'Manchester City',t2:'Real Madrid',f1:'🔵',f2:'⚪',s1:2,s2:2,time:"88'",odds:[2.50,3.30,2.80],mkt:70,live:true},
 
-  // ===== FRANCE =====
-  {id:101,lk:'ligue1',lg:'🇫🇷 Ligue 1',t1:'Marseille',t2:'Lyon',f1:'🔵',f2:'🔴',time:'19:00',odds:[2.00,3.10,3.70],mkt:41,live:false},
-  {id:102,lk:'ligue1',lg:'🇫🇷 Ligue 1',t1:'RC Lens',t2:'Stade Rennais',f1:'🟡',f2:'🔴',time:'19:00',odds:[2.20,3.00,3.40],mkt:38,live:false},
-  {id:103,lk:'ligue1',lg:'🇫🇷 Ligue 1',t1:'OGC Nice',t2:'Montpellier',f1:'🔴',f2:'🔵',time:'21:05',odds:[1.80,3.30,4.50],mkt:35,live:false},
-  {id:104,lk:'ligue1',lg:'🇫🇷 Ligue 1',t1:'Strasbourg',t2:'Toulouse',f1:'🔵',f2:'🟣',time:'15:00',odds:[2.10,3.00,3.60],mkt:30,live:false},
-  {id:105,lk:'ligue2',lg:'🇫🇷 Ligue 2',t1:'Auxerre',t2:'Grenoble',f1:'🔴',f2:'🔵',time:'20:00',odds:[2.30,3.10,3.20],mkt:22,live:false},
-  {id:106,lk:'ligue2',lg:'🇫🇷 Ligue 2',t1:'Caen',t2:'Dunkerque',f1:'🔵',f2:'🔴',time:'20:00',odds:[1.95,3.20,4.00],mkt:20,live:false},
+// MATCHES fetched from server (real football-data.org)
+let MATCHES = [];
+let MATCHES_LOADED = false;
+async function loadMatches() {
+  try {
+    const el = document.getElementById('sports-loading');
+    if(el) el.style.display='block';
+    const data = await apiGet('/api/matches');
+    MATCHES = data.matches || [];
+    MATCHES_LOADED = true;
+    if(el) el.style.display='none';
+    renderSports();
+  } catch(e) {
+    console.error('loadMatches:', e.message);
+    // Fallback: show message
+    const upEl = document.getElementById('upcomingSection');
+    if(upEl) upEl.innerHTML='<div style="text-align:center;padding:30px;color:#e63946">Erreur chargement matchs. Vérifiez votre connexion.</div>';
+  }
+}
 
-  // ===== ANGLETERRE =====
-  {id:201,lk:'premier',lg:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League',t1:'Liverpool',t2:'Chelsea',f1:'🔴',f2:'🔵',time:'18:30',odds:[1.90,3.40,4.20],mkt:58,live:false},
-  {id:202,lk:'premier',lg:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League',t1:'Manchester Utd',t2:'Newcastle',f1:'🔴',f2:'⚫',time:'16:00',odds:[2.10,3.20,3.50],mkt:52,live:false},
-  {id:203,lk:'premier',lg:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League',t1:'Tottenham',t2:'Aston Villa',f1:'⚪',f2:'🟣',time:'14:00',odds:[2.40,3.10,2.90],mkt:48,live:false},
-  {id:204,lk:'premier',lg:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League',t1:'Brighton',t2:'West Ham',f1:'🔵',f2:'🔵',time:'15:00',odds:[2.20,3.10,3.30],mkt:42,live:false},
-  {id:205,lk:'championship',lg:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship',t1:'Leeds United',t2:'Sheffield Utd',f1:'⚪',f2:'🔴',time:'16:00',odds:[2.30,3.00,3.20],mkt:28,live:false},
-  {id:206,lk:'championship',lg:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship',t1:'Burnley',t2:'Middlesbrough',f1:'🔵',f2:'🔴',time:'19:00',odds:[1.80,3.30,4.40],mkt:25,live:false},
 
-  // ===== ESPAGNE =====
-  {id:301,lk:'laliga',lg:'🇪🇸 La Liga',t1:'Atlético Madrid',t2:'Séville FC',f1:'🔴',f2:'🔴',time:'20:00',odds:[1.75,3.50,5.00],mkt:50,live:false},
-  {id:302,lk:'laliga',lg:'🇪🇸 La Liga',t1:'Real Sociedad',t2:'Athletic Bilbao',f1:'🔵',f2:'🔴',time:'22:00',odds:[2.30,3.10,3.20],mkt:42,live:false},
-  {id:303,lk:'laliga',lg:'🇪🇸 La Liga',t1:'Valencia',t2:'Villarreal',f1:'🟠',f2:'🟡',time:'19:00',odds:[2.50,3.20,2.80],mkt:38,live:false},
-  {id:304,lk:'laliga',lg:'🇪🇸 La Liga',t1:'Betis',t2:'Getafe',f1:'🟢',f2:'🔵',time:'17:00',odds:[1.85,3.40,4.30],mkt:32,live:false},
-  {id:305,lk:'liga2',lg:'🇪🇸 Liga 2',t1:'Eibar',t2:'Mirandes',f1:'🔵',f2:'🔴',time:'20:00',odds:[2.00,3.10,3.70],mkt:20,live:false},
-
-  // ===== ALLEMAGNE =====
-  {id:401,lk:'bundesliga',lg:'🇩🇪 Bundesliga',t1:'Bayer Leverkusen',t2:'RB Leipzig',f1:'🔴',f2:'🔵',time:'19:30',odds:[2.00,3.20,3.80],mkt:44,live:false},
-  {id:402,lk:'bundesliga',lg:'🇩🇪 Bundesliga',t1:'Freiburg',t2:'Wolfsburg',f1:'🔴',f2:'🟢',time:'17:30',odds:[2.30,3.10,3.20],mkt:36,live:false},
-  {id:403,lk:'bundesliga',lg:'🇩🇪 Bundesliga',t1:'Eintracht Frankfurt',t2:'Mönchengladbach',f1:'🔴',f2:'🟢',time:'15:30',odds:[1.90,3.30,4.20],mkt:38,live:false},
-  {id:404,lk:'bundesliga2',lg:'🇩🇪 Bundesliga 2',t1:'Hambourg SV',t2:'Kaiserslautern',f1:'🔵',f2:'🔴',time:'18:30',odds:[1.70,3.50,5.00],mkt:24,live:false},
-
-  // ===== ITALIE =====
-  {id:501,lk:'seriea',lg:'🇮🇹 Serie A',t1:'Juventus',t2:'AC Milan',f1:'⚫',f2:'🔴',time:'20:45',odds:[2.30,3.20,3.10],mkt:50,live:false},
-  {id:502,lk:'seriea',lg:'🇮🇹 Serie A',t1:'Napoli',t2:'Fiorentina',f1:'🔵',f2:'🟣',time:'15:00',odds:[1.55,3.80,6.00],mkt:45,live:false},
-  {id:503,lk:'seriea',lg:'🇮🇹 Serie A',t1:'AS Roma',t2:'Lazio',f1:'🟡',f2:'🔵',time:'20:45',odds:[2.20,3.30,3.30],mkt:48,live:false},
-  {id:504,lk:'seriea',lg:'🇮🇹 Serie A',t1:'Atalanta',t2:'Torino',f1:'⚫',f2:'🔴',time:'18:00',odds:[1.60,3.70,5.50],mkt:40,live:false},
-  {id:505,lk:'serieb',lg:'🇮🇹 Serie B',t1:'Venezia',t2:'Parme',f1:'🔵',f2:'🟡',time:'20:30',odds:[2.40,3.00,3.00],mkt:18,live:false},
-
-  // ===== PORTUGAL =====
-  {id:601,lk:'primeiralga',lg:'🇵🇹 Primeira Liga',t1:'Benfica',t2:'Porto',f1:'🔴',f2:'🔵',time:'21:30',odds:[2.10,3.30,3.50],mkt:42,live:false},
-  {id:602,lk:'primeiralga',lg:'🇵🇹 Primeira Liga',t1:'Sporting CP',t2:'Braga',f1:'🟢',f2:'🔴',time:'19:30',odds:[1.75,3.50,4.80],mkt:36,live:false},
-  {id:603,lk:'primeiralga',lg:'🇹🇬 Primeira Liga',t1:'Vitória SC',t2:'Famalicão',f1:'🟢',f2:'🔵',time:'17:30',odds:[2.20,3.10,3.30],mkt:22,live:false},
-
-  // ===== PAYS-BAS =====
-  {id:701,lk:'eredivisie',lg:'🇳🇱 Eredivisie',t1:'Ajax',t2:'PSV Eindhoven',f1:'🔴',f2:'🔴',time:'20:00',odds:[2.30,3.20,3.10],mkt:38,live:false},
-  {id:702,lk:'eredivisie',lg:'🇳🇱 Eredivisie',t1:'Feyenoord',t2:'AZ Alkmaar',f1:'🔴',f2:'🔴',time:'18:00',odds:[1.90,3.30,4.20],mkt:32,live:false},
-
-  // ===== BELGIQUE =====
-  {id:801,lk:'jupiler',lg:'🇧🇪 Jupiler Pro',t1:'Club Bruges',t2:'Anderlecht',f1:'🔵',f2:'🟣',time:'20:30',odds:[1.85,3.40,4.30],mkt:34,live:false},
-  {id:802,lk:'jupiler',lg:'🇧🇪 Jupiler Pro',t1:'Gent',t2:'Standard Liège',f1:'🔵',f2:'🔴',time:'18:30',odds:[2.10,3.10,3.60],mkt:28,live:false},
-
-  // ===== TURQUIE =====
-  {id:901,lk:'superlig',lg:'🇹🇷 Süper Lig',t1:'Galatasaray',t2:'Fenerbahçe',f1:'🔴',f2:'🟡',time:'20:00',odds:[2.20,3.10,3.30],mkt:40,live:false},
-  {id:902,lk:'superlig',lg:'🇹🇷 Süper Lig',t1:'Beşiktaş',t2:'Trabzonspor',f1:'⚫',f2:'🔵',time:'17:30',odds:[1.90,3.30,4.20],mkt:32,live:false},
-
-  // ===== GRÈCE =====
-  {id:1001,lk:'superleague',lg:'🇬🇷 Super League',t1:'Olympiakos',t2:'Panathinaïkos',f1:'🔴',f2:'🟢',time:'21:00',odds:[1.95,3.30,4.00],mkt:28,live:false},
-
-  // ===== RUSSIE =====
-  {id:1101,lk:'rpl',lg:'🇷🇺 RPL',t1:'Zenit St-Pétersbourg',t2:'CSKA Moscou',f1:'🔵',f2:'🔴',time:'16:00',odds:[1.80,3.40,4.60],mkt:30,live:false},
-  {id:1102,lk:'rpl',lg:'🇷🇺 RPL',t1:'Spartak Moscou',t2:'Lokomotiv',f1:'🔴',f2:'🔴',time:'14:00',odds:[2.10,3.20,3.50],mkt:26,live:false},
-
-  // ===== COMPÉTITIONS EUROPÉENNES =====
-  {id:1201,lk:'ucl',lg:'🌍 Champions League',t1:'Inter Milan',t2:'Bayern Munich',f1:'🔵',f2:'🔴',time:'21:00',odds:[3.10,3.40,2.20],mkt:72,live:false},
-  {id:1202,lk:'ucl',lg:'🌍 Champions League',t1:'Arsenal',t2:'PSG',f1:'🔴',f2:'🔵',time:'21:00',odds:[2.40,3.20,3.00],mkt:68,live:false},
-  {id:1203,lk:'ucl',lg:'🌍 Champions League',t1:'Atlético Madrid',t2:'Porto',f1:'🔴',f2:'🔵',time:'21:00',odds:[1.80,3.40,4.60],mkt:62,live:false},
-  {id:1204,lk:'europa',lg:'🌍 Europa League',t1:'AS Roma',t2:'Ajax',f1:'🟡',f2:'🔴',time:'21:00',odds:[1.95,3.30,3.90],mkt:55,live:false},
-  {id:1205,lk:'europa',lg:'🌍 Europa League',t1:'Bayer Leverkusen',t2:'Atalanta',f1:'🔴',f2:'⚫',time:'18:45',odds:[2.10,3.20,3.50],mkt:52,live:false},
-  {id:1206,lk:'europa',lg:'🌍 Europa League',t1:'Villarreal',t2:'Feyenoord',f1:'🟡',f2:'🔴',time:'18:45',odds:[2.30,3.10,3.20],mkt:46,live:false},
-  {id:1207,lk:'confleague',lg:'🌍 Conference League',t1:'Fiorentina',t2:'Slavia Prague',f1:'🟣',f2:'🔴',time:'21:00',odds:[1.70,3.50,5.20],mkt:38,live:false},
-
-  // ===== BRÉSIL =====
-  {id:1301,lk:'brasileirao',lg:'🇧🇷 Brasileirão',t1:'Flamengo',t2:'Palmeiras',f1:'🔴',f2:'🟢',time:'00:00',odds:[2.20,3.10,3.30],mkt:42,live:false},
-  {id:1302,lk:'brasileirao',lg:'🇧🇷 Brasileirão',t1:'Corinthians',t2:'Santos',f1:'⚫',f2:'⚪',time:'22:00',odds:[1.90,3.30,4.20],mkt:36,live:false},
-  {id:1303,lk:'brasileirao',lg:'🇧🇷 Brasileirão',t1:'São Paulo FC',t2:'Grêmio',f1:'🔴',f2:'🔵',time:'00:30',odds:[2.00,3.20,3.70],mkt:32,live:false},
-
-  // ===== ARGENTINE =====
-  {id:1401,lk:'primera',lg:'🇦🇷 Primera División',t1:'River Plate',t2:'Boca Juniors',f1:'⚪',f2:'🟡',time:'01:00',odds:[2.40,3.00,3.00],mkt:44,live:false},
-  {id:1402,lk:'primera',lg:'🇦🇷 Primera División',t1:'Independiente',t2:'Racing Club',f1:'🔴',f2:'🔵',time:'23:00',odds:[2.20,3.10,3.30],mkt:32,live:false},
-
-  // ===== COPA LIBERTADORES & SUDAMERICANA =====
-  {id:1501,lk:'libertadores',lg:'🌎 Copa Libertadores',t1:'Flamengo',t2:'Boca Juniors',f1:'🔴',f2:'🟡',time:'02:00',odds:[2.20,3.10,3.30],mkt:50,live:false},
-  {id:1502,lk:'libertadores',lg:'🌎 Copa Libertadores',t1:'River Plate',t2:'Palmeiras',f1:'⚪',f2:'🟢',time:'00:30',odds:[2.40,3.00,3.00],mkt:46,live:false},
-  {id:1503,lk:'libertadores',lg:'🌎 Copa Libertadores',t1:'Nacional',t2:'Peñarol',f1:'🔵',f2:'🟡',time:'01:30',odds:[2.10,3.20,3.60],mkt:38,live:false},
-  {id:1504,lk:'sudamericana',lg:'🌎 Copa Sudamericana',t1:'LDU Quito',t2:'Independiente',f1:'🔵',f2:'🔴',time:'02:30',odds:[2.30,3.10,3.20],mkt:34,live:false},
-
-  // ===== MEXIQUE =====
-  {id:1601,lk:'ligamx',lg:'🇲🇽 Liga MX',t1:'América',t2:'Chivas',f1:'🟡',f2:'🔴',time:'03:00',odds:[1.90,3.30,4.20],mkt:38,live:false},
-  {id:1602,lk:'ligamx',lg:'🇲🇽 Liga MX',t1:'Cruz Azul',t2:'UNAM Pumas',f1:'🔵',f2:'🟡',time:'01:00',odds:[2.00,3.20,3.70],mkt:32,live:false},
-
-  // ===== USA =====
-  {id:1701,lk:'mls',lg:'🇺🇸 MLS',t1:'LA Galaxy',t2:'Inter Miami',f1:'🔵',f2:'🩷',time:'01:30',odds:[2.10,3.20,3.40],mkt:35,live:false},
-  {id:1702,lk:'mls',lg:'🇺🇸 MLS',t1:'NYCFC',t2:'Atlanta United',f1:'🔵',f2:'🔴',time:'23:30',odds:[2.30,3.00,3.20],mkt:30,live:false},
-  {id:1703,lk:'mls',lg:'🇺🇸 MLS',t1:'Seattle Sounders',t2:'Portland Timbers',f1:'🟢',f2:'🟢',time:'02:00',odds:[2.20,3.10,3.40],mkt:28,live:false},
-
-  // ===== AFRIQUE =====
-  {id:1801,lk:'cafcl',lg:'🌍 CAF Champions League',t1:'Al Ahly',t2:'TP Mazembe',f1:'🔴',f2:'🔴',time:'19:00',odds:[1.70,3.50,5.20],mkt:30,live:false},
-  {id:1802,lk:'cafcl',lg:'🌍 CAF Champions League',t1:'Wydad Casablanca',t2:'Espérance Tunis',f1:'🔴',f2:'🔴',time:'21:00',odds:[2.20,3.10,3.30],mkt:28,live:false},
-  {id:1803,lk:'npfl',lg:'🇳🇬 NPFL Nigeria',t1:'Enyimba',t2:'Rivers United',f1:'🔴',f2:'🟢',time:'15:00',odds:[2.30,3.00,3.20],mkt:18,live:false},
-
-  // ===== ASIE =====
-  {id:1901,lk:'jleague',lg:'🇯🇵 J-League',t1:'Vissel Kobe',t2:'Gamba Osaka',f1:'🔴',f2:'🔵',time:'12:00',odds:[1.85,3.40,4.30],mkt:32,live:false},
-  {id:1902,lk:'jleague',lg:'🇯🇵 J-League',t1:'Urawa Reds',t2:'Kashima Antlers',f1:'🔴',f2:'🔴',time:'11:00',odds:[2.10,3.20,3.50],mkt:28,live:false},
-  {id:1903,lk:'kleague',lg:'🇰🇷 K-League',t1:'Jeonbuk',t2:'Ulsan Hyundai',f1:'🟢',f2:'🔵',time:'12:30',odds:[2.30,3.10,3.20],mkt:26,live:false},
-  {id:1904,lk:'csl',lg:'🇨🇳 Super League',t1:'Shanghai Port',t2:'Shandong Taishan',f1:'🔴',f2:'🟡',time:'13:00',odds:[1.90,3.30,4.20],mkt:24,live:false},
-  {id:1905,lk:'acl',lg:'🏆 AFC Champions League',t1:'Al Hilal',t2:'Urawa Reds',f1:'🔵',f2:'🔴',time:'17:00',odds:[1.75,3.50,4.80],mkt:38,live:false},
-
-  // ===== MOYEN-ORIENT =====
-  {id:2001,lk:'splt',lg:'🇸🇦 Saudi Pro League',t1:'Al Hilal',t2:'Al Nassr',f1:'🔵',f2:'🟡',time:'19:00',odds:[1.80,3.40,4.60],mkt:36,live:false},
-  {id:2002,lk:'splt',lg:'🇸🇦 Saudi Pro League',t1:'Al Ittihad',t2:'Al Ahli',f1:'🟡',f2:'🟢',time:'21:00',odds:[2.10,3.20,3.60],mkt:30,live:false},
-
-  // ===== AUSTRALIE =====
-  {id:2101,lk:'aleague',lg:'🇦🇺 A-League',t1:'Melbourne City',t2:'Sydney FC',f1:'🔵',f2:'🔵',time:'09:00',odds:[2.20,3.10,3.40],mkt:24,live:false},
-];
 const EMKTS={'Double Chance':[['1X','1.15'],['12','1.05'],['X2','1.50']],'Buts':[['Moins 1.5','1.80'],['Plus 1.5','1.95'],['Moins 2.5','2.10'],['Plus 2.5','1.75'],['Moins 3.5','1.45'],['Plus 3.5','2.60']],'Mi-temps/Match':[['1/1','3.20'],['X/X','3.80'],['2/2','2.80'],['1/2','9.00'],['2/1','12.0'],['X/2','4.20']],'BTTS':[['Oui','1.80'],['Non','1.95']],'Handicap':[['-1','2.10'],['0','1.90'],['+1','1.75']],'Score exact':[['1-0','6.00'],['2-1','7.50'],['1-1','5.50'],['0-0','7.00']]};
 const H2H={fr1:['W','W','D','W','L'],fr2:['L','D','W','L','W'],h2h:[{dt:'12 Jan 2025',s1:2,s2:1,cp:'Ligue 1',w:1},{dt:'05 Oct 2024',s1:1,s2:1,cp:'Coupe Nat.',w:0},{dt:'18 Mar 2024',s1:3,s2:0,cp:'Ligue 1',w:1},{dt:'22 Nov 2023',s1:0,s2:2,cp:'Ligue 1',w:2},{dt:'08 Apr 2023',s1:2,s2:2,cp:'Coupe Nat.',w:0}],stats:[{n:'Possession',v1:62,v2:38},{n:'Tirs cadrés',v1:6,v2:3},{n:'Corners',v1:7,v2:4},{n:'Fautes',v1:9,v2:14}]};
 
@@ -4658,7 +4671,7 @@ function togglePwdInline(inputId, btn){
 // ============================================================
 // FIX: admCreerDirecteur — use custom code + phone
 // ============================================================
-function admCreerDirecteur(){
+async function admCreerDirecteur(){
   const name = document.getElementById('adm-dir-name')?.value.trim();
   const code = document.getElementById('adm-dir-code')?.value.trim().toUpperCase();
   const zone = document.getElementById('adm-dir-zone')?.value.trim();
@@ -4666,15 +4679,15 @@ function admCreerDirecteur(){
   const pwd  = document.getElementById('adm-dir-pwd')?.value;
   const pct  = parseFloat(document.getElementById('adm-dir-pct')?.value)||0;
   if(!name||!code||!zone||!pwd){ showNotif('Tous les champs obligatoires','err'); return; }
-  const dirs = gDirs();
-  if(dirs[code]){ showNotif('Ce code existe déjà','err'); return; }
-  dirs[code] = {name, code, zone, phone:phone||'', pwd, pct:pct, createdAt:new Date().toLocaleString()};
-  sDirs(dirs);
-  showNotif('✅ Directeur créé: '+name+' ('+code+') — '+pct+'%','ok');
-  ['adm-dir-name','adm-dir-code','adm-dir-zone','adm-dir-phone','adm-dir-pwd','adm-dir-pct'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.value='';
-  });
-  refreshAdmin();
+  try {
+    await apiPost('/api/admin/directors', { name, code, zone, phone, pwd, pct });
+    showNotif('✅ Directeur créé: '+name+' ('+code+') — '+pct+'%','ok');
+    ['adm-dir-name','adm-dir-code','adm-dir-zone','adm-dir-phone','adm-dir-pwd','adm-dir-pct'].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.value='';
+    });
+    await refreshAllCaches();
+    refreshAdmin();
+  } catch(e) { showNotif(e.message,'err'); }
 }
 
 // ============================================================
@@ -5884,21 +5897,10 @@ function fermerInfo(){
 // ============================================================
 // BORLETTE ADMIN — Gestion complète localStorage
 // ============================================================
-const BOR_KEY_RES    = 'tk_bor_resultats';    // résultats publiés
-const BOR_KEY_BLOCK  = 'tk_bor_blocked_nums'; // numéros bloqués
-const BOR_KEY_LIMITS = 'tk_bor_limits';       // limites de mise
-const BOR_KEY_DRAWS  = 'tk_bor_blocked_draws';// tirages bloqués
+// BOR_KEY constants defined in API layer above
 
-const gBorRes    = () => JSON.parse(localStorage.getItem(BOR_KEY_RES))||[];
-const sBorRes    = v  => localStorage.setItem(BOR_KEY_RES, JSON.stringify(v));
-const gBorBlock  = () => JSON.parse(localStorage.getItem(BOR_KEY_BLOCK))||[];
-const sBorBlock  = v  => localStorage.setItem(BOR_KEY_BLOCK, JSON.stringify(v));
-const gBorLimits = () => JSON.parse(localStorage.getItem(BOR_KEY_LIMITS))||[];
-const sBorLimits = v  => localStorage.setItem(BOR_KEY_LIMITS, JSON.stringify(v));
-const gBorDraws  = () => JSON.parse(localStorage.getItem(BOR_KEY_DRAWS))||[];
-const sBorDraws  = v  => localStorage.setItem(BOR_KEY_DRAWS, JSON.stringify(v));
-
-function loadBorletteAdmin(){
+async function loadBorletteAdmin(){
+  await loadBorletteAdminData();
   borRefreshResultats();
   borRefreshBlocked();
   borRefreshLimits();
@@ -5907,7 +5909,7 @@ function loadBorletteAdmin(){
 }
 
 // === PUBLIER RÉSULTAT ===
-function borPublierResultat(){
+async function borPublierResultat(){
   const draw   = document.getElementById('bor-draw-select').value;
   const lotto3 = document.getElementById('bor-lotto3').value.trim();
   const lot2   = document.getElementById('bor-lot2').value.trim();
@@ -5917,31 +5919,18 @@ function borPublierResultat(){
     msg.style.display='block';msg.style.background='rgba(230,57,70,.15)';msg.style.color='var(--red)';
     msg.textContent='❌ Lotto 3 doit avoir exactement 3 chiffres'; return;
   }
-  const lot1 = lotto3.slice(-2); // 2 derniers chiffres
-  const res = gBorRes();
-  const entry = {
-    id: Date.now(),
-    date: new Date().toLocaleString('fr-FR'),
-    draw,
-    lotto3,
-    lot1, lot2: lot2||'—', lot3: lot3||'—',
-    publishedBy: 'Admin'
-  };
-  res.unshift(entry);
-  sBorRes(res);
-  // Notify joueurs via localStorage event
-  localStorage.setItem('tk_bor_last_result', JSON.stringify(entry));
-  msg.style.display='block';msg.style.background='rgba(40,176,78,.15)';msg.style.color='var(--green2)';
-  msg.textContent='✅ Résultat publié: '+draw.toUpperCase()+' — Lot1: '+lot1+' | Lot2: '+(lot2||'—')+' | Lot3: '+(lot3||'—');
-  // Clear fields
-  ['bor-lotto3','bor-lot2','bor-lot3'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.value='';
-  });
-  setTimeout(()=>{msg.style.display='none';},5000);
-  borRefreshResultats();
-  borRefreshStats();
-  // Resolve borlette bets
-  borResolveAllBets(entry);
+  try {
+    const r = await apiPost('/api/borlette/publish', { draw, lotto3, lot2, lot3 });
+    msg.style.display='block';msg.style.background='rgba(40,176,78,.15)';msg.style.color='var(--green2)';
+    msg.textContent='✅ Résultat publié — '+r.resolved+' paris résolus';
+    ['bor-lotto3','bor-lot2','bor-lot3'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    setTimeout(()=>{msg.style.display='none';},5000);
+    await loadBorletteAdminData();
+    borRefreshResultats(); borRefreshStats();
+  } catch(e) {
+    msg.style.display='block';msg.style.background='rgba(230,57,70,.15)';msg.style.color='var(--red)';
+    msg.textContent='❌ '+e.message;
+  }
 }
 
 function borResolveAllBets(res){
@@ -6139,9 +6128,7 @@ function getBorLimit(num, draw){
 // 5% of weekly sales accumulate per directeur
 // Admin decides when to award it
 // ============================================================
-const JK_KEY = 'tk_jackpots'; // {dirCode: {amount, weekMises, lastReset, history}}
-const gJK = () => JSON.parse(localStorage.getItem(JK_KEY))||{};
-const sJK = v  => localStorage.setItem(JK_KEY, JSON.stringify(v));
+// JK_KEY defined in API layer above
 
 // Called when a bet is placed - accumulate 5% to jackpot of that dir
 function jackpotAccumuler(mise, dirCode){
@@ -6201,7 +6188,8 @@ function jackpotSetManuel(dirCode){
 }
 
 // Render admin jackpot panel
-function renderAdminJackpot(){
+async function renderAdminJackpot(){
+  await loadJackpotData();
   const el = document.getElementById('admin-jackpot-list');
   if(!el) return;
   const dirs = gDirs();
@@ -6332,38 +6320,63 @@ function jackpotCheckURLParam(){
   }
 }
 
-// ===== SESSION RESTORE =====
-(function(){
-  const role = localStorage.getItem('tk_session_role');
-  const phone = localStorage.getItem('tk_session_phone');
-  const code = localStorage.getItem('tk_session_code');
-  if(!role){ window.location.href='index.html'; return; }
-  if(role==='joueur'&&phone){
-    const j=gJ();
-    if(j[phone]){ CJ=j[phone]; MODE='compte'; goTo('sc-app'); updateAppBar(); initKeno(); initLucky6(); initCourse(); renderSports(); renderJHist(); setTimeout(renderJackpotWidget,200); if(typeof renderJoueurDraws==='function') renderJoueurDraws(); }
-    else { window.location.href='index.html'; }
-  } else if(role==='admin'){
-    refreshAdmin(); goTo('sc-admin');
-  } else if(role==='directeur'&&code){
-    const dirs=gDirs();
-    const found=Object.values(dirs).find(d=>d.code===code);
-    if(found){ CDir=found; document.getElementById('dir-zone-name').textContent=found.zone; refreshDir(); goTo('sc-dir'); setTimeout(()=>{const jk=gJK();const djk=jk[found.code];const el=document.getElementById('jackpot-display-dir');const amt=document.getElementById('jackpot-amount-dir');if(el&&djk&&djk.amount>0){el.style.display='block';if(amt)amt.textContent=djk.amount.toLocaleString('fr-FR')+' Gd';}},300); }
-    else { window.location.href='index.html'; }
-  } else if(role==='caissier'&&code){
-    const caiss=gCaiss();
-    const found=Object.values(caiss).find(c=>c.code===code);
-    if(found){ CCaiss=found; document.getElementById('caiss-name-display').textContent=found.name; document.getElementById('caiss-jeu-label').textContent=JEU_LABELS[found.jeu]||found.jeu; goTo('sc-sec'); }
-    else { window.location.href='index.html'; }
-  } else { window.location.href='index.html'; }
 
-  // Game init on tab switch
-  document.querySelectorAll('.atab[data-tab]').forEach(tab=>{
-    tab.addEventListener('click',()=>{
+// ===== SESSION RESTORE (API-based) =====
+(async function() {
+  const token = getToken();
+  if (!token) { window.location.href='index.html'; return; }
+  try {
+    const me = await apiGet('/api/auth/me');
+    if (me.role === 'joueur') {
+      CJ = { name:me.name, phone:me.phone, solde:me.solde, dirCode:me.dir_code, pwd:'' };
+      MODE = 'compte';
+      await refreshPlayerCache(me.phone);
+      goTo('sc-app'); updateAppBar(); initKeno(); initLucky6(); initCourse();
+      loadMatches();
+      renderJHist();
+      setTimeout(renderJackpotWidget, 300);
+    } else if (me.role === 'admin') {
+      await refreshAllCaches();
+      refreshAdmin(); goTo('sc-admin');
+    } else if (me.role === 'directeur') {
+      await refreshAllCaches();
+      const dirs = gDirs();
+      CDir = dirs[me.user_code] || { name:me.name, code:me.user_code, zone:me.zone, pct:me.pct };
+      if (document.getElementById('dir-zone-name')) document.getElementById('dir-zone-name').textContent = CDir.zone || '';
+      refreshDir(); goTo('sc-dir');
+      setTimeout(async () => {
+        const jk = await loadJackpotData();
+        const djk = jk[me.user_code];
+        const el = document.getElementById('jackpot-display-dir');
+        const amt = document.getElementById('jackpot-amount-dir');
+        if (el && djk && djk.amount > 0) { el.style.display='block'; if(amt) amt.textContent = djk.amount.toLocaleString('fr-FR')+' Gd'; }
+      }, 400);
+    } else if (me.role === 'caissier') {
+      await refreshAllCaches();
+      const caiss = gCaiss();
+      CCaiss = caiss[me.user_code] || { name:me.name, code:me.user_code, dirCode:me.dir_code, jeu:me.jeu };
+      if (document.getElementById('caiss-name-display')) document.getElementById('caiss-name-display').textContent = CCaiss.name || '';
+      if (document.getElementById('caiss-jeu-label')) document.getElementById('caiss-jeu-label').textContent = JEU_LABELS[CCaiss.jeu]||CCaiss.jeu||'';
+      goTo('sc-sec');
+    } else {
+      clearToken(); window.location.href='index.html';
+    }
+  } catch(e) {
+    console.error('Session restore failed:', e.message);
+    clearToken();
+    window.location.href='index.html';
+  }
+  // Tab click handlers
+  document.querySelectorAll('.atab[data-tab]').forEach(tab => {
+    tab.addEventListener('click', () => {
       if(tab.dataset.tab==='roulette') setTimeout(initRoulette, 100);
       if(tab.dataset.tab==='penalty') { setTimeout(initPenaltyGame, 100); setTimeout(updatePenaltyWallet, 200); }
+      if(tab.dataset.tab==='sports') loadMatches();
     });
   });
 })();
+
+
 
 
 </script>

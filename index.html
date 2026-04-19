@@ -625,6 +625,7 @@ L’OMS est consciente des effets négatifs des jeux d’argent et de hasard sur
 <div class="notif" id="notif-login"></div>
 <button class="secret-btn" onclick="showSecretOv()"></button>
 
+<script src="config.js"></script>
 <script>
 const gJ   =()=>JSON.parse(localStorage.getItem('tk_joueurs'))||{};
 const sJ   =v =>localStorage.setItem('tk_joueurs',JSON.stringify(v));
@@ -781,16 +782,27 @@ function verifSecret(){
 function updateStaffForm(){const r=document.getElementById('staff-role').value;document.getElementById('staff-code-wrap').style.display=(r!=='admin')?'block':'none';}
 
 /* LOGIN */
-function loginJoueurMain(){
+async function loginJoueurMain(){
   const phone=document.getElementById('ml-phone').value.trim();
   const pwd=document.getElementById('ml-pwd').value;
   const err=document.getElementById('ml-err');err.classList.remove('show');
-  const j=gJ();
-  if(!j[phone]||j[phone].pwd!==pwd){err.textContent='Nimewo oswa mot de passe enkòrèk.';err.classList.add('show');return;}
-  localStorage.setItem('tk_session_phone',phone);localStorage.setItem('tk_session_role','joueur');
-  afterLogin();
+  const btn=document.querySelector('#login-modal .m-btn');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Connexion...';}
+  try {
+    const data = await fetch(CONFIG.SERVER_URL+'/api/auth/player',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({phone,pwd})
+    }).then(r=>r.json().then(d=>({ok:r.ok,...d})));
+    if(!data.ok) throw new Error(data.error||'Erreur');
+    localStorage.setItem('tk_token', data.token);
+    localStorage.setItem('tk_session_role','joueur');
+    afterLogin();
+  } catch(e) {
+    err.textContent=e.message;err.classList.add('show');
+    if(btn){btn.disabled=false;btn.textContent='SE CONNECTER';}
+  }
 }
-function registerJoueurMain(){
+async function registerJoueurMain(){
   const name=document.getElementById('mr-name').value.trim();
   const phone=document.getElementById('mr-phone').value.trim();
   const pwd=document.getElementById('mr-pwd').value;
@@ -798,19 +810,37 @@ function registerJoueurMain(){
   const err=document.getElementById('mr-err');err.classList.remove('show');
   if(!name||!phone||!pwd){err.textContent='Tout champ obligatoires.';err.classList.add('show');return;}
   if(pwd!==pwd2){err.textContent='Mot de passe pa menm.';err.classList.add('show');return;}
-  const j=gJ();
-  if(j[phone]){err.textContent='Nimewo sa a deja itilize.';err.classList.add('show');return;}
-  j[phone]={name,phone,pwd,solde:0,dirCode:'',caissCode:'',createdAt:new Date().toLocaleString(),transactions:[]};
-  sJ(j);showN('✅ Kont kree! Konekte ou.','ok');switchModal('login-modal');document.getElementById('ml-phone').value=phone;
+  try {
+    const r = await fetch(CONFIG.SERVER_URL+'/api/auth/register',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,phone,pwd})
+    }).then(r=>r.json().then(d=>({ok:r.ok,...d})));
+    if(!r.ok) throw new Error(r.error||'Erreur');
+    showN('✅ Kont kree! Konekte ou.','ok');
+    switchModal('login-modal');
+    document.getElementById('ml-phone').value=phone;
+  } catch(e) { err.textContent=e.message; err.classList.add('show'); }
 }
-function loginStaffMain(){
+async function loginStaffMain(){
   const role=document.getElementById('staff-role').value;
   const code=document.getElementById('staff-code').value.trim().toUpperCase();
   const pwd=document.getElementById('staff-pwd').value;
   const err=document.getElementById('staff-err');err.classList.remove('show');
-  if(role==='admin'){if(pwd==='admin'){localStorage.setItem('tk_session_role','admin');window.location.href='app.html';}else{err.textContent='Mot de passe incorrect.';err.classList.add('show');}return;}
-  if(role==='directeur'){const dirs=gDirs();const found=Object.values(dirs).find(d=>d.code===code&&d.pwd===pwd);if(!found){err.textContent='Code ou mot de passe incorrect.';err.classList.add('show');return;}localStorage.setItem('tk_session_role','directeur');localStorage.setItem('tk_session_code',found.code);window.location.href='app.html';return;}
-  if(role==='caissier'){const caiss=gCaiss();const found=Object.values(caiss).find(c=>c.code===code&&c.pwd===pwd);if(!found){err.textContent='Code ou mot de passe incorrect.';err.classList.add('show');return;}localStorage.setItem('tk_session_role','caissier');localStorage.setItem('tk_session_code',found.code);window.location.href='app.html';return;}
+  try {
+    let endpoint, body;
+    if(role==='admin')      { endpoint='/api/auth/admin';    body={pwd}; }
+    else if(role==='directeur') { endpoint='/api/auth/director'; body={code,pwd}; }
+    else                    { endpoint='/api/auth/cashier';   body={code,pwd}; }
+    const r = await fetch(CONFIG.SERVER_URL+endpoint,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    }).then(r=>r.json().then(d=>({ok:r.ok,...d})));
+    if(!r.ok) throw new Error(r.error||'Erreur');
+    localStorage.setItem('tk_token', r.token);
+    localStorage.setItem('tk_session_role', role);
+    if(code) localStorage.setItem('tk_session_code', code);
+    window.location.href='app.html';
+  } catch(e) { err.textContent=e.message; err.classList.add('show'); }
 }
 
 /* ADMIN MESSAGES */
