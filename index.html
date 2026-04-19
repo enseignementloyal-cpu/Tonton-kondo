@@ -745,7 +745,7 @@ document.getElementById('ss-wrap').addEventListener('touchend',e=>{const dx=e.ch
 function goPlay(game){pendingGame=game;showGate();}
 function showGate(){document.getElementById('auth-gate').classList.add('on');}
 function closeGate(){document.getElementById('auth-gate').classList.remove('on');}
-function afterLogin(){if(pendingGame)localStorage.setItem('tk_pending_game',pendingGame);window.location.href='tk_app.html';}
+function afterLogin(){if(pendingGame)localStorage.setItem('tk_pending_game',pendingGame);window.location.href='app.html';}
 
 /* MODALS */
 document.querySelectorAll('.modal-overlay').forEach(ov=>{ov.addEventListener('click',e=>{if(e.target===ov)hideModal(ov.id);});});
@@ -808,9 +808,9 @@ function loginStaffMain(){
   const code=document.getElementById('staff-code').value.trim().toUpperCase();
   const pwd=document.getElementById('staff-pwd').value;
   const err=document.getElementById('staff-err');err.classList.remove('show');
-  if(role==='admin'){if(pwd==='admin'){localStorage.setItem('tk_session_role','admin');window.location.href='tk_app.html';}else{err.textContent='Mot de passe incorrect.';err.classList.add('show');}return;}
-  if(role==='directeur'){const dirs=gDirs();const found=Object.values(dirs).find(d=>d.code===code&&d.pwd===pwd);if(!found){err.textContent='Code ou mot de passe incorrect.';err.classList.add('show');return;}localStorage.setItem('tk_session_role','directeur');localStorage.setItem('tk_session_code',found.code);window.location.href='tk_app.html';return;}
-  if(role==='caissier'){const caiss=gCaiss();const found=Object.values(caiss).find(c=>c.code===code&&c.pwd===pwd);if(!found){err.textContent='Code ou mot de passe incorrect.';err.classList.add('show');return;}localStorage.setItem('tk_session_role','caissier');localStorage.setItem('tk_session_code',found.code);window.location.href='tk_app.html';return;}
+  if(role==='admin'){if(pwd==='admin'){localStorage.setItem('tk_session_role','admin');window.location.href='app.html';}else{err.textContent='Mot de passe incorrect.';err.classList.add('show');}return;}
+  if(role==='directeur'){const dirs=gDirs();const found=Object.values(dirs).find(d=>d.code===code&&d.pwd===pwd);if(!found){err.textContent='Code ou mot de passe incorrect.';err.classList.add('show');return;}localStorage.setItem('tk_session_role','directeur');localStorage.setItem('tk_session_code',found.code);window.location.href='app.html';return;}
+  if(role==='caissier'){const caiss=gCaiss();const found=Object.values(caiss).find(c=>c.code===code&&c.pwd===pwd);if(!found){err.textContent='Code ou mot de passe incorrect.';err.classList.add('show');return;}localStorage.setItem('tk_session_role','caissier');localStorage.setItem('tk_session_code',found.code);window.location.href='app.html';return;}
 }
 
 /* ADMIN MESSAGES */
