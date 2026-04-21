@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>ExpediPlus Shipping & Multi Services</title>
+    <!-- Font Awesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f9ff;
+            color: #1e2a3e;
+            scroll-behavior: smooth;
+        }
+
+        /* BANDE PASSANTE (message personnalisable) */
+        .ticker-bar {
+            background: #ff8c00;
+            color: white;
+            padding: 10px 20px;
+            font-weight: 700;
+            text-align: center;
+            font-size: 0.95rem;
+            letter-spacing: 0.3px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 100;
+        }
+        .ticker-text {
+            background: rgba(0,0,0,0.2);
+            padding: 5px 15px;
+            border-radius: 40px;
+            display: inline-block;
+        }
+        .edit-msg-btn {
+            background: rgba(255,255,255,0.25);
+            border: none;
+            color: white;
+            border-radius: 40px;
+            padding: 5px 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .edit-msg-btn:hover {
+            background: white;
+            color: #ff8c00;
+        }
+
+        /* NAVIGATION */
+        .navbar {
+            background: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 99;
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo-icon {
+            font-size: 2.2rem;
+            color: #ff8c00;
+        }
+        .company-title {
+            font-weight: 800;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #003b6f, #ff8c00);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .nav-links {
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+        }
+        .nav-btn {
+            background: none;
+            border: none;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 40px;
+            transition: 0.2s;
+            color: #1e2a3e;
+        }
+        .nav-btn.active, .nav-btn:hover {
+            background: #ff8c00;
+            color: white;
+        }
+        .contact-phone {
+            background: #eef2ff;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        .contact-phone i {
+            color: #ff8c00;
+            margin-right: 6px;
+        }
+
+        /* MAIN CONTAINER */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px 24px 50px;
+        }
+
+        /* PAGES (sections) */
+        .page {
+            display: none;
+            animation: fade 0.3s ease;
+        }
+        .page.active-page {
+            display: block;
+        }
+        @keyframes fade {
+            from { opacity: 0; transform: translateY(8px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+
+        /* CARROUSEL */
+        .carousel-container {
+            position: relative;
+            border-radius: 32px;
+            overflow: hidden;
+            margin-bottom: 40px;
+            box-shadow: 0 20px 30px -12px rgba(0,0,0,0.2);
+        }
+        .carousel-slides {
+            display: flex;
+            transition: transform 0.5s ease;
+        }
+        .carousel-slide {
+            min-width: 100%;
+            position: relative;
+            height: 420px;
+            background-size: cover;
+            background-position: center;
+        }
+        .carousel-caption {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 40px;
+            backdrop-filter: blur(4px);
+            font-weight: bold;
+        }
+        .carousel-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.5);
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            padding: 0 12px;
+            border-radius: 50px;
+            z-index: 2;
+        }
+        .carousel-btn.prev { left: 15px; }
+        .carousel-btn.next { right: 15px; }
+        .dots {
+            text-align: center;
+            position: absolute;
+            bottom: 15px;
+            width: 100%;
+        }
+        .dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: white;
+            border-radius: 50%;
+            margin: 0 5px;
+            cursor: pointer;
+            opacity: 0.6;
+        }
+        .dot.active { opacity: 1; background: #ff8c00; }
+
+        /* CARDS & SERVICES */
+        .section-title {
+            font-size: 2rem;
+            margin: 40px 0 20px;
+            font-weight: 800;
+            position: relative;
+            display: inline-block;
+        }
+        .section-title:after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 60px;
+            height: 4px;
+            background: #ff8c00;
+            border-radius: 4px;
+        }
+        .services-grid, .offices-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+        .service-card, .office-card {
+            background: white;
+            border-radius: 28px;
+            padding: 24px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            transition: 0.25s;
+            text-align: center;
+        }
+        .service-card i, .office-card i {
+            font-size: 2.8rem;
+            color: #ff8c00;
+            margin-bottom: 15px;
+        }
+        .service-card h3, .office-card h3 {
+            margin-bottom: 10px;
+        }
+
+        /* FORMULAIRES */
+        .form-card {
+            background: white;
+            border-radius: 32px;
+            padding: 30px;
+            max-width: 550px;
+            margin: 20px auto;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 6px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d1d9e8;
+            border-radius: 60px;
+            font-size: 0.95rem;
+        }
+        textarea {
+            border-radius: 24px;
+            resize: vertical;
+        }
+        button {
+            background: #003b6f;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 60px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:hover {
+            background: #ff8c00;
+            transform: translateY(-2px);
+        }
+        .btn-outline-light {
+            background: transparent;
+            border: 1px solid #ff8c00;
+            color: #ff8c00;
+        }
+        .btn-outline-light:hover {
+            background: #ff8c00;
+            color: white;
+        }
+
+        /* CLIENT DASHBOARD */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        .wallet-card {
+            background: linear-gradient(135deg, #003b6f, #0057a3);
+            color: white;
+            border-radius: 28px;
+            padding: 20px;
+        }
+        .colis-item {
+            background: #f8fafd;
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 5px solid #ff8c00;
+        }
+        .badge-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        .status-transit { background: #fff3bf; color: #a16200; }
+        .status-arrive { background: #cffafe; color: #0e6f9c; }
+        .status-livre { background: #d1fae5; color: #065f46; }
+
+        .notification-list {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #fef9ef;
+            border-radius: 24px;
+            padding: 12px;
+        }
+
+        footer {
+            margin-top: 60px;
+            background: #0a2540;
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            border-radius: 32px 32px 0 0;
+        }
+
+        @media (max-width: 750px) {
+            .navbar { flex-direction: column; }
+            .carousel-slide { height: 280px; }
+            .main-container { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="ticker-bar" id="tickerBar">
+    <i class="fas fa-bullhorn"></i>
+    <span class="ticker-text" id="bannerMessage">📢 Bienvenue chez Expedip+ Shipping : Livraison rapide, tarifs compétitifs !</span>
+    <button class="edit-msg-btn" id="editBannerBtn"><i class="fas fa-pen"></i> Modifier (propriétaire)</button>
+</div>
+
+<nav class="navbar">
+    <div class="logo-area">
+        <i class="fas fa-shipping-fast logo-icon"></i>
+        <span class="company-title">ExpediPlus Shipping & Multi Services</span>
+    </div>
+    <div class="nav-links">
+        <button class="nav-btn active" data-page="home">🏠 Accueil</button>
+        <button class="nav-btn" data-page="services">📦 Services</button>
+        <button class="nav-btn" data-page="offices">🏢 Bureaux</button>
+        <button class="nav-btn" data-page="contact">📞 Contact</button>
+        <button class="nav-btn" data-page="clientLogin">👤 Espace Client</button>
+        <button class="nav-btn" data-page="register">📝 Inscription</button>
+    </div>
+    <div class="contact-phone">
+        <i class="fas fa-phone-alt"></i> +509 4114-1321
+    </div>
+</nav>
+
+<div class="main-container" id="mainApp">
+    <!-- PAGE ACCUEIL -->
+    <div id="homePage" class="page active-page">
+        <!-- Carrousel -->
+        <div class="carousel-container">
+            <div class="carousel-slides" id="carouselSlides">
+                <div class="carousel-slide" style="background-image: url('https://images.pexels.com/photos/4483610/pexels-photo-4483610.jpeg?auto=compress&cs=tinysrgb&w=1200'); background-size: cover;">
+                    <div class="carousel-caption">Expédition internationale ultra-rapide</div>
+                </div>
+                <div class="carousel-slide" style="background-image: url('https://images.pexels.com/photos/757889/pexels-photo-757889.jpeg?auto=compress&cs=tinysrgb&w=1200'); background-size: cover;">
+                    <div class="carousel-caption">Multi services : paiement de factures, transfert</div>
+                </div>
+                <div class="carousel-slide" style="background-image: url('https://images.pexels.com/photos/6353822/pexels-photo-6353822.jpeg?auto=compress&cs=tinysrgb&w=1200'); background-size: cover;">
+                    <div class="carousel-caption">Suivi colis & livraison porte-à-porte</div>
+                </div>
+            </div>
+            <button class="carousel-btn prev" id="prevSlide"><i class="fas fa-chevron-left"></i></button>
+            <button class="carousel-btn next" id="nextSlide"><i class="fas fa-chevron-right"></i></button>
+            <div class="dots" id="carouselDots"></div>
+        </div>
+
+        <!-- Message promo rapide -->
+        <div style="background: #eef2ff; border-radius: 28px; padding: 20px; margin: 20px 0; text-align: center;">
+            <h3>✈️ Livraison USA – Haïti dès 3 jours ouvrés</h3>
+            <p>Appelez-nous: <strong>+509 4114-1321</strong> | Email: <strong>expediplusshipping@gmail.com</strong></p>
+        </div>
+
+        <!-- Aperçu services -->
+        <h2 class="section-title">Nos prestations phares</h2>
+        <div class="services-grid">
+            <div class="service-card"><i class="fas fa-boxes"></i><h3>Colis & fret</h3><p>Expédition par avion/maritime, dédouanement.</p></div>
+            <div class="service-card"><i class="fas fa-hand-holding-usd"></i><h3>Multi-services</h3><p>Paiement Moncash/Natcash, transfert d'argent.</p></div>
+            <div class="service-card"><i class="fas fa-truck"></i><h3>Livraison dernière minute</h3><p>Porte-à-porte dans toute la région métropolitaine.</p></div>
+        </div>
+        <h2 class="section-title">📍 Nos bureaux</h2>
+        <div class="offices-grid">
+            <div class="office-card"><i class="fas fa-map-marker-alt"></i><h3>Port-au-Prince</h3><p>Rue Louverture, Delmas 31<br>📞 +509 4114-1321</p></div>
+            <div class="office-card"><i class="fas fa-map-marker-alt"></i><h3>Cap-Haïtien</h3><p>Boulevard Carenage, local 5<br>📞 +509 3789 1234</p></div>
+            <div class="office-card"><i class="fas fa-map-marker-alt"></i><h3>Miami (USA)</h3><p>7878 NW 34th St, Doral<br>📞 +1 305 555 1234</p></div>
+        </div>
+    </div>
+
+    <!-- PAGE SERVICES -->
+    <div id="servicesPage" class="page">
+        <h2 class="section-title">Nos services complets</h2>
+        <div class="services-grid" style="margin-top:30px;">
+            <div class="service-card"><i class="fas fa-globe-americas"></i><h3>Expédition Internationale</h3><p>USA, Canada, Europe vers Haïti et vice-versa. Suivi en temps réel.</p></div>
+            <div class="service-card"><i class="fas fa-file-invoice-dollar"></i><h3>Dédouanement</h3><p>Gestion des formalités douanières, transparence totale.</p></div>
+            <div class="service-card"><i class="fas fa-mobile-alt"></i><h3>Recharge de portefeuille</h3><p>Approvisionnez votre wallet client en USD/HTG via Moncash/Natcash.</p></div>
+            <div class="service-card"><i class="fas fa-people-arrows"></i><h3>Service porte-à-porte</h3><p>Livraison à domicile avec photo de confirmation.</p></div>
+        </div>
+    </div>
+
+    <!-- PAGE BUREAUX -->
+    <div id="officesPage" class="page">
+        <h2 class="section-title">Nos agences</h2>
+        <div class="offices-grid">
+            <div class="office-card"><i class="fas fa-building"></i><h3>Bureau Principal (Pétion-Ville)</h3><p>Angle rue Métellus, Immeuble ExpediPlus<br>Lun-Ven 8h-17h, Sam 9h-13h</p></div>
+            <div class="office-card"><i class="fas fa-warehouse"></i><h3>Entrepôt – Croix-des-Bouquets</h3><p>Zone industrielle, Route Nationale #1</p></div>
+            <div class="office-card"><i class="fas fa-ship"></i><h3>Antenne des Gonaïves</h3><p>Rue Charlemagne, près du marché public</p></div>
+        </div>
+    </div>
+
+    <!-- PAGE CONTACT -->
+    <div id="contactPage" class="page">
+        <h2 class="section-title">Nous contacter</h2>
+        <div style="display: flex; flex-wrap: wrap; gap: 30px; margin-top: 20px;">
+            <div class="form-card" style="flex:1;">
+                <h3><i class="fas fa-envelope"></i> Envoyez-nous un message</h3>
+                <form id="contactForm">
+                    <div class="form-group"><label>Nom complet</label><input type="text" id="contactName" required></div>
+                    <div class="form-group"><label>Email</label><input type="email" id="contactEmail" required></div>
+                    <div class="form-group"><label>Message</label><textarea rows="4" id="contactMsg" required></textarea></div>
+                    <button type="submit">Envoyer <i class="fas fa-paper-plane"></i></button>
+                </form>
+                <p class="success-msg" id="contactFeedback" style="margin-top: 12px; color: #2b6e3c;"></p>
+            </div>
+            <div class="form-card" style="flex:1;">
+                <h3><i class="fas fa-address-card"></i> Coordonnées directes</h3>
+                <p><i class="fas fa-phone"></i> Téléphone : <strong>+509 4114-1321</strong></p>
+                <p><i class="fas fa-envelope"></i> Email : <strong>expediplusshipping@gmail.com</strong></p>
+                <p><i class="fab fa-whatsapp"></i> WhatsApp Business : +509 4114-1321</p>
+                <hr>
+                <p><strong>Horaires :</strong> Lun - Ven 8h00 - 18h00 | Sam 9h-14h</p>
+                <p><i class="fas fa-map-pin"></i> Suivez-nous sur Facebook & Instagram</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE INSCRIPTION CLIENT -->
+    <div id="registerPage" class="page">
+        <div class="form-card">
+            <h2><i class="fas fa-user-plus"></i> Créer mon compte client</h2>
+            <form id="clientRegisterForm">
+                <div class="form-group"><label>Nom complet *</label><input type="text" id="regNom" required></div>
+                <div class="form-group"><label>Email *</label><input type="email" id="regEmail" required></div>
+                <div class="form-group"><label>Téléphone * (unique)</label><input type="tel" id="regTel" required placeholder="+509 XXXX XXXX"></div>
+                <div class="form-group"><label>Mot de passe *</label><input type="password" id="regPwd" required></div>
+                <button type="submit">S'inscrire & rejoindre l'espace client</button>
+                <p id="regFeedback" style="margin-top:12px;"></p>
+            </form>
+            <p style="margin-top: 16px; text-align:center;">Déjà inscrit ? <strong><a href="#" id="goToLoginLink" style="color:#ff8c00;">Connectez-vous ici</a></strong></p>
+        </div>
+    </div>
+
+    <!-- PAGE CONNEXION / DASHBOARD CLIENT -->
+    <div id="clientLoginPage" class="page">
+        <div class="form-card" id="loginFormCard">
+            <h2><i class="fas fa-key"></i> Connexion client</h2>
+            <form id="clientLoginForm">
+                <div class="form-group"><label>Téléphone</label><input type="tel" id="loginTel" required placeholder="+509 XXXX XXXX"></div>
+                <div class="form-group"><label>Mot de passe</label><input type="password" id="loginPwd" required></div>
+                <button type="submit">Se connecter</button>
+                <p id="loginFeedback" style="color:red; margin-top:10px;"></p>
+            </form>
+            <p style="margin-top: 15px; text-align:center;">Pas encore client ? <a href="#" id="goToRegisterLink" style="color:#ff8c00;">Inscrivez-vous</a></p>
+        </div>
+
+        <!-- Dashboard client (affiché après connexion) -->
+        <div id="clientDashboard" style="display:none;">
+            <div class="dashboard-grid">
+                <div class="wallet-card">
+                    <h3><i class="fas fa-wallet"></i> Mon portefeuille</h3>
+                    <p style="font-size:2rem; font-weight:800;" id="walletBalanceUSD">0 USD</p>
+                    <p id="walletBalanceHTG">0 HTG</p>
+                    <button id="showRechargeBtn" class="btn-outline-light" style="background:white; color:#003b6f;">➕ Recharger</button>
+                    <div id="rechargePanel" style="display:none; margin-top:15px;">
+                        <input type="number" id="rechargeAmount" placeholder="Montant USD" style="border-radius:40px; margin-bottom:8px;">
+                        <select id="rechargeMethod"><option>Moncash</option><option>Natcash</option></select>
+                        <button id="confirmRechargeBtn">Valider recharge</button>
+                        <button id="cancelRechargeBtn">Annuler</button>
+                    </div>
+                </div>
+                <div class="form-card" style="background:#fff6e8;">
+                    <h3><i class="fas fa-box-open"></i> Mes colis</h3>
+                    <div id="clientColisList">Chargement...</div>
+                </div>
+                <div class="form-card">
+                    <h3><i class="fas fa-bell"></i> Notifications & promotions</h3>
+                    <div id="clientNotifications" class="notification-list"></div>
+                    <button id="clearNotifsBtn" class="btn-outline-light" style="margin-top:12px;">Effacer mes notifs</button>
+                </div>
+            </div>
+            <div style="margin-top: 20px; text-align:right;">
+                <button id="clientLogoutBtn" class="btn-outline-light">🚪 Déconnexion</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <p>© 2025 Expedip+ Shipping & Multi Services – Tous droits réservés – <i class="fas fa-truck-fast"></i> Fiabilité & rapidité</p>
+    <p>📧 expediplusshipping@gmail.com | 📞 +509 4114-1321</p>
+</footer>
+
+<script>
+    // ------------------- STRUCTURE DONNÉES (localStorage compatible avec anciens fichiers) -----------------
+    let appData = {
+        company: { name: "ExpediPlus Shipping", logo: "", tauxUSDToHTG: 130, prixParLivre: 2.5, fraisFixe: 5 },
+        users: [],
+        colis: [],
+        clients: [],
+        notificationsGlobales: []
+    };
+    let currentClient = null;
+
+    function loadData() {
+        const raw = localStorage.getItem('ship_app_data');
+        if(raw) {
+            const data = JSON.parse(raw);
+            appData.company = data.company || { name: "ExpediPlus Shipping", tauxUSDToHTG: 130, prixParLivre: 2.5, fraisFixe: 5 };
+            appData.users = data.users || [];
+            appData.colis = data.colis || [];
+            appData.clients = data.clients || [];
+            appData.notificationsGlobales = data.notificationsGlobales || [];
+            appData.clients.forEach(c => { if(c.balance === undefined) c.balance = 0; if(!c.notifications) c.notifications = []; });
+        } else {
+            // exemples colis démo
+            appData.colis = [
+                { id: "DEMO001", numeroSuivi: "EXP-24101", expediteurNom: "John Doe", destinataire: { nom: "Marie Claire", telephone: "+509 41141321", adresse: "Delmas 75" }, poidsLivre: 2.3, prixUsd: 10.75, statut: "Arrivé", paiement: { effectue: false }, bureauLivreurNom: "Bureau Pétion-Ville" },
+                { id: "DEMO002", numeroSuivi: "EXP-24102", expediteurNom: "Amazon", destinataire: { nom: "Jean Pierre", telephone: "+509 41141321", adresse: "Pétion-Ville" }, poidsLivre: 5, prixUsd: 17.5, statut: "En transit", paiement: { effectue: false } }
+            ];
+            appData.clients = [];
+            saveData();
+        }
+    }
+    function saveData() {
+        localStorage.setItem('ship_app_data', JSON.stringify({
+            company: appData.company,
+            users: appData.users,
+            colis: appData.colis,
+            clients: appData.clients,
+            notificationsGlobales: appData.notificationsGlobales
+        }));
+    }
+
+    function showToast(message, type = 'info') {
+        const toastDiv = document.createElement('div');
+        toastDiv.className = `toast-notif`;
+        toastDiv.style.position = 'fixed'; toastDiv.style.bottom = '20px'; toastDiv.style.right = '20px';
+        toastDiv.style.background = type === 'success' ? '#2b6e3c' : (type === 'error' ? '#b91c1c' : '#003b6f');
+        toastDiv.style.color = 'white'; toastDiv.style.padding = '12px 20px'; toastDiv.style.borderRadius = '60px';
+        toastDiv.style.zIndex = '9999'; toastDiv.style.fontWeight = 'bold'; toastDiv.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+        toastDiv.innerText = message;
+        document.body.appendChild(toastDiv);
+        setTimeout(() => toastDiv.remove(), 4000);
+    }
+
+    // Mise à jour du message propriétaire (bande passante)
+    function updateBannerMessage() {
+        const savedMsg = localStorage.getItem('expediplus_banner_msg');
+        if(savedMsg) document.getElementById('bannerMessage').innerText = savedMsg;
+        else document.getElementById('bannerMessage').innerText = "📢 Expedip+ Shipping : Livraison express & multi-services – Contactez +509 4114-1321";
+    }
+    document.getElementById('editBannerBtn')?.addEventListener('click', () => {
+        const pwd = prompt("🔐 Code propriétaire pour modifier le message :");
+        if(pwd === "admin123" || pwd === "expedi2025") {
+            const newMsg = prompt("Nouveau message publicitaire (bande passante) :", document.getElementById('bannerMessage').innerText);
+            if(newMsg) {
+                localStorage.setItem('expediplus_banner_msg', newMsg);
+                document.getElementById('bannerMessage').innerText = newMsg;
+                showToast("✅ Message modifié avec succès", "success");
+            }
+        } else { showToast("Code incorrect. Propriétaire uniquement.", "error"); }
+    });
+
+    // Gestion des pages (navigation)
+    const pages = ['homePage', 'servicesPage', 'officesPage', 'contactPage', 'registerPage', 'clientLoginPage'];
+    function showPage(pageId) {
+        pages.forEach(p => document.getElementById(p).classList.remove('active-page'));
+        document.getElementById(pageId).classList.add('active-page');
+        document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+        const btn = Array.from(document.querySelectorAll('.nav-btn')).find(b => b.getAttribute('data-page') === pageId.replace('Page','').toLowerCase());
+        if(btn) btn.classList.add('active');
+        if(pageId === 'clientLoginPage' && currentClient) renderClientDashboard();
+        else if(pageId === 'clientLoginPage') document.getElementById('loginFormCard').style.display = 'block', document.getElementById('clientDashboard').style.display = 'none';
+        if(pageId === 'registerPage') document.getElementById('clientRegisterForm')?.reset();
+    }
+
+    // Inscription client
+    function registerClient(nom, email, tel, pwd) {
+        if(appData.clients.find(c => c.telephone === tel)) throw new Error("Ce numéro est déjà utilisé.");
+        const newClient = { id: 'cli_'+Date.now(), nom, email, telephone: tel, password: pwd, balance: 0, notifications: [], colisStatusCache: {} };
+        appData.clients.push(newClient);
+        saveData();
+        return newClient;
+    }
+
+    // Recharge wallet
+    function rechargeWallet(amountUSD, method) {
+        if(!currentClient) return;
+        if(amountUSD<=0) throw new Error("Montant invalide");
+        currentClient.balance += amountUSD;
+        const msg = `💸 Recharge de ${amountUSD} USD via ${method}. Nouveau solde: ${currentClient.balance} USD`;
+        if(!currentClient.notifications) currentClient.notifications = [];
+        currentClient.notifications.unshift({ date: new Date().toISOString(), message: msg, type: "success" });
+        saveData();
+        showToast(msg, "success");
+        renderClientDashboard();
+    }
+
+    // Payer colis depuis wallet
+    function payerColisWallet(colis) {
+        if(colis.paiement?.effectue) { showToast("Colis déjà payé", "error"); return false; }
+        if(currentClient.balance < colis.prixUsd) { showToast("Solde insuffisant", "error"); return false; }
+        currentClient.balance -= colis.prixUsd;
+        colis.paiement = { effectue: true, montantRecu: colis.prixUsd, devise: "USD", moyen: "Portefeuille client", date: new Date().toISOString() };
+        saveData();
+        const notifMsg = `✅ Paiement colis ${colis.numeroSuivi} (${colis.prixUsd} USD) effectué depuis wallet.`;
+        currentClient.notifications.unshift({ date: new Date().toISOString(), message: notifMsg, type: "success" });
+        saveData();
+        showToast(notifMsg, "success");
+        renderClientDashboard();
+        return true;
+    }
+
+    function renderClientDashboard() {
+        if(!currentClient) return;
+        document.getElementById('loginFormCard').style.display = 'none';
+        document.getElementById('clientDashboard').style.display = 'block';
+        const balanceUSD = currentClient.balance || 0;
+        const balanceHTG = (balanceUSD * appData.company.tauxUSDToHTG).toFixed(2);
+        document.getElementById('walletBalanceUSD').innerHTML = `${balanceUSD.toFixed(2)} USD`;
+        document.getElementById('walletBalanceHTG').innerHTML = `${balanceHTG} HTG`;
+
+        const mesColis = appData.colis.filter(c => c.destinataire && c.destinataire.telephone === currentClient.telephone);
+        const colisContainer = document.getElementById('clientColisList');
+        if(mesColis.length === 0) colisContainer.innerHTML = "<p>Aucun colis associé à ce numéro.</p>";
+        else {
+            colisContainer.innerHTML = mesColis.map(colis => {
+                const statutClass = colis.statut === 'En transit' ? 'status-transit' : (colis.statut === 'Arrivé' ? 'status-arrive' : 'status-livre');
+                const isPaid = colis.paiement?.effectue;
+                return `<div class="colis-item"><div><strong>${colis.numeroSuivi}</strong> <span class="badge-status ${statutClass}">${colis.statut}</span></div>
+                <div>Expéditeur: ${colis.expediteurNom} | Poids: ${colis.poidsLivre} lb</div>
+                <div>💰 ${colis.prixUsd} USD / ${(colis.prixUsd * appData.company.tauxUSDToHTG).toFixed(2)} HTG</div>
+                ${!isPaid && colis.statut !== 'Livré' ? `<button class="pay-colis-btn" data-id="${colis.id}" style="margin-top:6px; background:#ff8c00;">💳 Payer avec wallet</button>` : (isPaid ? "<span>✅ Payé</span>" : "")}
+                </div>`;
+            }).join('');
+            document.querySelectorAll('.pay-colis-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = btn.getAttribute('data-id');
+                    const colis = appData.colis.find(c => c.id === id);
+                    if(colis) payerColisWallet(colis);
+                });
+            });
+        }
+        const notifs = (currentClient.notifications || []).slice(0, 15);
+        document.getElementById('clientNotifications').innerHTML = notifs.length ? notifs.map(n => `<div style="border-bottom:1px solid #ddd; padding:8px;"><small>${new Date(n.date).toLocaleString()}</small><br>${n.message}</div>`).join('') : "<div>Aucune notification</div>";
+    }
+
+    // Événements généraux
+    function attachEvents() {
+        // navigation
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const page = btn.getAttribute('data-page');
+                if(page === 'clientLogin') showPage('clientLoginPage');
+                else if(page === 'register') showPage('registerPage');
+                else if(page === 'home') showPage('homePage');
+                else if(page === 'services') showPage('servicesPage');
+                else if(page === 'offices') showPage('officesPage');
+                else if(page === 'contact') showPage('contactPage');
+            });
+        });
+
+        // Inscription client
+        document.getElementById('clientRegisterForm')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const nom = document.getElementById('regNom').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const tel = document.getElementById('regTel').value.trim();
+            const pwd = document.getElementById('regPwd').value;
+            try {
+                const newClient = registerClient(nom, email, tel, pwd);
+                currentClient = newClient;
+                showToast("Inscription réussie ! Bienvenue chez Expedip+", "success");
+                showPage('clientLoginPage');
+                renderClientDashboard();
+            } catch(err) { document.getElementById('regFeedback').innerText = err.message; setTimeout(()=>document.getElementById('regFeedback').innerText='',3000); }
+        });
+
+        // Connexion
+        document.getElementById('clientLoginForm')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const tel = document.getElementById('loginTel').value.trim();
+            const pwd = document.getElementById('loginPwd').value;
+            const client = appData.clients.find(c => c.telephone === tel && c.password === pwd);
+            if(client) { currentClient = client; renderClientDashboard(); showToast(`Bonjour ${client.nom}`, "success"); showPage('clientLoginPage'); }
+            else document.getElementById('loginFeedback').innerText = "Téléphone ou mot de passe incorrect";
+        });
+
+        document.getElementById('goToRegisterLink')?.addEventListener('click', (e) => { e.preventDefault(); showPage('registerPage'); });
+        document.getElementById('goToLoginLink')?.addEventListener('click', (e) => { e.preventDefault(); showPage('clientLoginPage'); });
+        document.getElementById('clientLogoutBtn')?.addEventListener('click', () => { currentClient = null; showPage('clientLoginPage'); document.getElementById('loginFormCard').style.display = 'block'; document.getElementById('clientDashboard').style.display = 'none'; });
+        document.getElementById('showRechargeBtn')?.addEventListener('click', () => { document.getElementById('rechargePanel').style.display = 'block'; });
+        document.getElementById('cancelRechargeBtn')?.addEventListener('click', () => { document.getElementById('rechargePanel').style.display = 'none'; });
+        document.getElementById('confirmRechargeBtn')?.addEventListener('click', () => {
+            const amount = parseFloat(document.getElementById('rechargeAmount').value);
+            const method = document.getElementById('rechargeMethod').value;
+            if(!isNaN(amount) && amount>0) rechargeWallet(amount, method);
+            else showToast("Montant invalide","error");
+            document.getElementById('rechargePanel').style.display = 'none';
+        });
+        document.getElementById('clearNotifsBtn')?.addEventListener('click', () => { if(currentClient) { currentClient.notifications = []; saveData(); renderClientDashboard(); showToast("Notifications effacées","info"); } });
+        // Contact form
+        document.getElementById('contactForm')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('contactName').value;
+            const email = document.getElementById('contactEmail').value;
+            const msg = document.getElementById('contactMsg').value;
+            window.location.href = `mailto:expediplusshipping@gmail.com?subject=Message de ${name}&body=${encodeURIComponent(msg)}%0A---%0ADe: ${email}`;
+            document.getElementById('contactFeedback').innerText = "Merci ! Votre message a été ouvert par email.";
+            setTimeout(()=>document.getElementById('contactFeedback').innerText='',4000);
+            e.target.reset();
+        });
+    }
+
+    // Carrousel
+    let slideIndex = 0;
+    function initCarousel() {
+        const slides = document.querySelectorAll('.carousel-slide');
+        const dotsContainer = document.getElementById('carouselDots');
+        if(!slides.length) return;
+        for(let i=0;i<slides.length;i++){ let dot=document.createElement('span'); dot.classList.add('dot'); dot.dataset.index=i; dotsContainer.appendChild(dot); }
+        function updateCarousel(){
+            const offset = -slideIndex * 100;
+            document.getElementById('carouselSlides').style.transform = `translateX(${offset}%)`;
+            document.querySelectorAll('.dot').forEach((d,i)=> d.classList.toggle('active', i===slideIndex));
+        }
+        document.querySelectorAll('.dot').forEach(dot => dot.addEventListener('click',()=>{ slideIndex=parseInt(dot.dataset.index); updateCarousel(); }));
+        document.getElementById('prevSlide')?.addEventListener('click',()=>{ slideIndex = (slideIndex-1+slides.length)%slides.length; updateCarousel(); });
+        document.getElementById('nextSlide')?.addEventListener('click',()=>{ slideIndex = (slideIndex+1)%slides.length; updateCarousel(); });
+        setInterval(()=>{ slideIndex = (slideIndex+1)%slides.length; updateCarousel(); }, 6000);
+        updateCarousel();
+    }
+
+    // INIT
+    loadData();
+    updateBannerMessage();
+    attachEvents();
+    initCarousel();
+    showPage('homePage');
+</script>
+</body>
+</html>
