@@ -16,20 +16,19 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: #f5f9ff;
+            background: #f0f9ff;  /* bleu ciel très clair */
             color: #1e2a3e;
             scroll-behavior: smooth;
         }
 
         /* BANDE PASSANTE (message personnalisable) */
         .ticker-bar {
-            background: #ff8c00;
+            background: linear-gradient(90deg, #ff8c00, #b45f06); /* orange */
             color: white;
             padding: 10px 20px;
             font-weight: 700;
             text-align: center;
             font-size: 0.95rem;
-            letter-spacing: 0.3px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -39,13 +38,13 @@
             z-index: 100;
         }
         .ticker-text {
-            background: rgba(0,0,0,0.2);
-            padding: 5px 15px;
+            background: rgba(0,0,0,0.25);
+            padding: 5px 18px;
             border-radius: 40px;
             display: inline-block;
         }
         .edit-msg-btn {
-            background: rgba(255,255,255,0.25);
+            background: rgba(255,255,255,0.3);
             border: none;
             color: white;
             border-radius: 40px;
@@ -73,20 +72,22 @@
             position: sticky;
             top: 0;
             z-index: 99;
+            border-bottom: 3px solid #8a2be2; /* violet accent */
         }
         .logo-area {
             display: flex;
             align-items: center;
             gap: 12px;
         }
-        .logo-icon {
-            font-size: 2.2rem;
-            color: #ff8c00;
+        .company-logo {
+            max-height: 55px;
+            width: auto;
+            object-fit: contain;
         }
         .company-title {
             font-weight: 800;
-            font-size: 1.5rem;
-            background: linear-gradient(135deg, #003b6f, #ff8c00);
+            font-size: 1.4rem;
+            background: linear-gradient(135deg, #003b6f, #1e88e5, #8a2be2);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
@@ -108,15 +109,16 @@
             color: #1e2a3e;
         }
         .nav-btn.active, .nav-btn:hover {
-            background: #ff8c00;
+            background: #ff8c00; /* orange */
             color: white;
         }
         .contact-phone {
-            background: #eef2ff;
+            background: #e0f2fe; /* ciel clair */
             padding: 8px 16px;
             border-radius: 50px;
             font-weight: 700;
             font-size: 0.9rem;
+            color: #003b6f;
         }
         .contact-phone i {
             color: #ff8c00;
@@ -143,7 +145,7 @@
             to { opacity: 1; transform: translateY(0);}
         }
 
-        /* CARROUSEL */
+        /* CARROUSEL avec images locales */
         .carousel-container {
             position: relative;
             border-radius: 32px;
@@ -213,6 +215,7 @@
             font-weight: 800;
             position: relative;
             display: inline-block;
+            color: #003b6f;
         }
         .section-title:after {
             content: '';
@@ -221,7 +224,7 @@
             left: 0;
             width: 60px;
             height: 4px;
-            background: #ff8c00;
+            background: #8a2be2; /* violet */
             border-radius: 4px;
         }
         .services-grid, .offices-grid {
@@ -237,14 +240,16 @@
             box-shadow: 0 8px 20px rgba(0,0,0,0.05);
             transition: 0.25s;
             text-align: center;
+            border-top: 4px solid #ff8c00;
         }
         .service-card i, .office-card i {
             font-size: 2.8rem;
-            color: #ff8c00;
+            color: #8a2be2;
             margin-bottom: 15px;
         }
         .service-card h3, .office-card h3 {
             margin-bottom: 10px;
+            color: #003b6f;
         }
 
         /* FORMULAIRES */
@@ -255,6 +260,7 @@
             max-width: 550px;
             margin: 20px auto;
             box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            border: 1px solid #cfe7ff;
         }
         .form-group {
             margin-bottom: 18px;
@@ -263,20 +269,22 @@
             font-weight: 600;
             display: block;
             margin-bottom: 6px;
+            color: #003b6f;
         }
         input, select, textarea {
             width: 100%;
             padding: 12px 16px;
-            border: 1px solid #d1d9e8;
+            border: 1px solid #b2d8ff;
             border-radius: 60px;
             font-size: 0.95rem;
+            background: #fefefe;
         }
         textarea {
             border-radius: 24px;
             resize: vertical;
         }
         button {
-            background: #003b6f;
+            background: #003b6f; /* marine */
             color: white;
             border: none;
             padding: 12px 24px;
@@ -306,7 +314,7 @@
             gap: 25px;
         }
         .wallet-card {
-            background: linear-gradient(135deg, #003b6f, #0057a3);
+            background: linear-gradient(135deg, #003b6f, #1e88e5);
             color: white;
             border-radius: 28px;
             padding: 20px;
@@ -357,13 +365,15 @@
 
 <div class="ticker-bar" id="tickerBar">
     <i class="fas fa-bullhorn"></i>
-    <span class="ticker-text" id="bannerMessage">📢 Bienvenue chez Expedip+ Shipping : Livraison rapide, tarifs compétitifs !</span>
+    <span class="ticker-text" id="bannerMessage">📢 Expedip+ Shipping : Livraison rapide, tarifs compétitifs !</span>
     <button class="edit-msg-btn" id="editBannerBtn"><i class="fas fa-pen"></i> Modifier (propriétaire)</button>
 </div>
 
 <nav class="navbar">
     <div class="logo-area">
-        <i class="fas fa-shipping-fast logo-icon"></i>
+        <!-- LOGO LOCAL : logo.png (vous pouvez remplacer par votre fichier exact) -->
+        <img src="l.jpg" alt="Logo ExpedipPlus" class="company-logo" onerror="this.style.display='none'; this.nextSibling.style.display='inline-block';">
+        <i class="fas fa-shipping-fast logo-icon" style="display:none; font-size:2rem; color:#ff8c00;"></i>
         <span class="company-title">ExpediPlus Shipping & Multi Services</span>
     </div>
     <div class="nav-links">
@@ -382,27 +392,17 @@
 <div class="main-container" id="mainApp">
     <!-- PAGE ACCUEIL -->
     <div id="homePage" class="page active-page">
-        <!-- Carrousel -->
+        <!-- Carrousel avec images locales (ab.png, ac.png, ae.png, etc.) -->
         <div class="carousel-container">
-            <div class="carousel-slides" id="carouselSlides">
-                <div class="carousel-slide" style="background-image: url('https://images.pexels.com/photos/4483610/pexels-photo-4483610.jpeg?auto=compress&cs=tinysrgb&w=1200'); background-size: cover;">
-                    <div class="carousel-caption">Expédition internationale ultra-rapide</div>
-                </div>
-                <div class="carousel-slide" style="background-image: url('https://images.pexels.com/photos/757889/pexels-photo-757889.jpeg?auto=compress&cs=tinysrgb&w=1200'); background-size: cover;">
-                    <div class="carousel-caption">Multi services : paiement de factures, transfert</div>
-                </div>
-                <div class="carousel-slide" style="background-image: url('https://images.pexels.com/photos/6353822/pexels-photo-6353822.jpeg?auto=compress&cs=tinysrgb&w=1200'); background-size: cover;">
-                    <div class="carousel-caption">Suivi colis & livraison porte-à-porte</div>
-                </div>
-            </div>
+            <div class="carousel-slides" id="carouselSlides"></div>
             <button class="carousel-btn prev" id="prevSlide"><i class="fas fa-chevron-left"></i></button>
             <button class="carousel-btn next" id="nextSlide"><i class="fas fa-chevron-right"></i></button>
             <div class="dots" id="carouselDots"></div>
         </div>
 
         <!-- Message promo rapide -->
-        <div style="background: #eef2ff; border-radius: 28px; padding: 20px; margin: 20px 0; text-align: center;">
-            <h3>✈️ Livraison USA – Haïti dès 3 jours ouvrés</h3>
+        <div style="background: linear-gradient(120deg, #e0f2fe, #ede9fe); border-radius: 28px; padding: 20px; margin: 20px 0; text-align: center;">
+            <h3 style="color:#003b6f;">✈️ Livraison USA – Haïti dès 3 jours ouvrés</h3>
             <p>Appelez-nous: <strong>+509 4114-1321</strong> | Email: <strong>expediplusshipping@gmail.com</strong></p>
         </div>
 
@@ -535,7 +535,7 @@
 </footer>
 
 <script>
-    // ------------------- STRUCTURE DONNÉES (localStorage compatible avec anciens fichiers) -----------------
+    // ------------------- STRUCTURE DONNÉES (localStorage) -----------------
     let appData = {
         company: { name: "ExpediPlus Shipping", logo: "", tauxUSDToHTG: 130, prixParLivre: 2.5, fraisFixe: 5 },
         users: [],
@@ -556,7 +556,7 @@
             appData.notificationsGlobales = data.notificationsGlobales || [];
             appData.clients.forEach(c => { if(c.balance === undefined) c.balance = 0; if(!c.notifications) c.notifications = []; });
         } else {
-            // exemples colis démo
+            // Exemples colis avec le numéro de téléphone de démo (+509 41141321)
             appData.colis = [
                 { id: "DEMO001", numeroSuivi: "EXP-24101", expediteurNom: "John Doe", destinataire: { nom: "Marie Claire", telephone: "+509 41141321", adresse: "Delmas 75" }, poidsLivre: 2.3, prixUsd: 10.75, statut: "Arrivé", paiement: { effectue: false }, bureauLivreurNom: "Bureau Pétion-Ville" },
                 { id: "DEMO002", numeroSuivi: "EXP-24102", expediteurNom: "Amazon", destinataire: { nom: "Jean Pierre", telephone: "+509 41141321", adresse: "Pétion-Ville" }, poidsLivre: 5, prixUsd: 17.5, statut: "En transit", paiement: { effectue: false } }
@@ -587,7 +587,7 @@
         setTimeout(() => toastDiv.remove(), 4000);
     }
 
-    // Mise à jour du message propriétaire (bande passante)
+    // Bande passante modifiable par propriétaire
     function updateBannerMessage() {
         const savedMsg = localStorage.getItem('expediplus_banner_msg');
         if(savedMsg) document.getElementById('bannerMessage').innerText = savedMsg;
@@ -605,6 +605,40 @@
         } else { showToast("Code incorrect. Propriétaire uniquement.", "error"); }
     });
 
+    // ----- CARROUSEL avec images locales (ab.png, ac.png, ae.png, ...) -----
+    const carouselImages = ['ab.png', 'ac.png', 'ae.png'];  // Ajoutez d'autres fichiers si besoin (af.png, etc.)
+    let slideIndex = 0;
+    function initCarousel() {
+        const slidesContainer = document.getElementById('carouselSlides');
+        const dotsContainer = document.getElementById('carouselDots');
+        if(!slidesContainer) return;
+        slidesContainer.innerHTML = '';
+        dotsContainer.innerHTML = '';
+        carouselImages.forEach((img, idx) => {
+            const slideDiv = document.createElement('div');
+            slideDiv.className = 'carousel-slide';
+            slideDiv.style.backgroundImage = `url('${img}')`;
+            slideDiv.style.backgroundSize = 'cover';
+            slideDiv.style.backgroundPosition = 'center';
+            slideDiv.innerHTML = `<div class="carousel-caption">ExpediPlus - Solution shipping</div>`;
+            slidesContainer.appendChild(slideDiv);
+            const dot = document.createElement('span');
+            dot.classList.add('dot');
+            dot.dataset.index = idx;
+            dot.addEventListener('click', () => { slideIndex = idx; updateCarousel(); });
+            dotsContainer.appendChild(dot);
+        });
+        function updateCarousel() {
+            const offset = -slideIndex * 100;
+            slidesContainer.style.transform = `translateX(${offset}%)`;
+            document.querySelectorAll('.dot').forEach((d,i) => d.classList.toggle('active', i===slideIndex));
+        }
+        document.getElementById('prevSlide')?.addEventListener('click', () => { slideIndex = (slideIndex - 1 + carouselImages.length) % carouselImages.length; updateCarousel(); });
+        document.getElementById('nextSlide')?.addEventListener('click', () => { slideIndex = (slideIndex + 1) % carouselImages.length; updateCarousel(); });
+        setInterval(() => { slideIndex = (slideIndex + 1) % carouselImages.length; updateCarousel(); }, 5000);
+        updateCarousel();
+    }
+
     // Gestion des pages (navigation)
     const pages = ['homePage', 'servicesPage', 'officesPage', 'contactPage', 'registerPage', 'clientLoginPage'];
     function showPage(pageId) {
@@ -614,7 +648,7 @@
         const btn = Array.from(document.querySelectorAll('.nav-btn')).find(b => b.getAttribute('data-page') === pageId.replace('Page','').toLowerCase());
         if(btn) btn.classList.add('active');
         if(pageId === 'clientLoginPage' && currentClient) renderClientDashboard();
-        else if(pageId === 'clientLoginPage') document.getElementById('loginFormCard').style.display = 'block', document.getElementById('clientDashboard').style.display = 'none';
+        else if(pageId === 'clientLoginPage') { document.getElementById('loginFormCard').style.display = 'block'; document.getElementById('clientDashboard').style.display = 'none'; }
         if(pageId === 'registerPage') document.getElementById('clientRegisterForm')?.reset();
     }
 
@@ -691,7 +725,6 @@
 
     // Événements généraux
     function attachEvents() {
-        // navigation
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const page = btn.getAttribute('data-page');
@@ -704,7 +737,6 @@
             });
         });
 
-        // Inscription client
         document.getElementById('clientRegisterForm')?.addEventListener('submit', (e) => {
             e.preventDefault();
             const nom = document.getElementById('regNom').value.trim();
@@ -720,7 +752,6 @@
             } catch(err) { document.getElementById('regFeedback').innerText = err.message; setTimeout(()=>document.getElementById('regFeedback').innerText='',3000); }
         });
 
-        // Connexion
         document.getElementById('clientLoginForm')?.addEventListener('submit', (e) => {
             e.preventDefault();
             const tel = document.getElementById('loginTel').value.trim();
@@ -743,7 +774,6 @@
             document.getElementById('rechargePanel').style.display = 'none';
         });
         document.getElementById('clearNotifsBtn')?.addEventListener('click', () => { if(currentClient) { currentClient.notifications = []; saveData(); renderClientDashboard(); showToast("Notifications effacées","info"); } });
-        // Contact form
         document.getElementById('contactForm')?.addEventListener('submit', (e) => {
             e.preventDefault();
             const name = document.getElementById('contactName').value;
@@ -756,30 +786,10 @@
         });
     }
 
-    // Carrousel
-    let slideIndex = 0;
-    function initCarousel() {
-        const slides = document.querySelectorAll('.carousel-slide');
-        const dotsContainer = document.getElementById('carouselDots');
-        if(!slides.length) return;
-        for(let i=0;i<slides.length;i++){ let dot=document.createElement('span'); dot.classList.add('dot'); dot.dataset.index=i; dotsContainer.appendChild(dot); }
-        function updateCarousel(){
-            const offset = -slideIndex * 100;
-            document.getElementById('carouselSlides').style.transform = `translateX(${offset}%)`;
-            document.querySelectorAll('.dot').forEach((d,i)=> d.classList.toggle('active', i===slideIndex));
-        }
-        document.querySelectorAll('.dot').forEach(dot => dot.addEventListener('click',()=>{ slideIndex=parseInt(dot.dataset.index); updateCarousel(); }));
-        document.getElementById('prevSlide')?.addEventListener('click',()=>{ slideIndex = (slideIndex-1+slides.length)%slides.length; updateCarousel(); });
-        document.getElementById('nextSlide')?.addEventListener('click',()=>{ slideIndex = (slideIndex+1)%slides.length; updateCarousel(); });
-        setInterval(()=>{ slideIndex = (slideIndex+1)%slides.length; updateCarousel(); }, 6000);
-        updateCarousel();
-    }
-
-    // INIT
     loadData();
     updateBannerMessage();
-    attachEvents();
     initCarousel();
+    attachEvents();
     showPage('homePage');
 </script>
 </body>
