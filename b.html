@@ -16,63 +16,74 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: #f0f9ff;  /* bleu ciel très clair */
-            color: #1e2a3e;
+            background: #eef5ff;  /* bleu ciel très clair */
+            color: #1a2c3e;
             scroll-behavior: smooth;
         }
 
-        /* BANDE PASSANTE (message personnalisable) */
+        /* BANDE PASSANTE (message défilant) - Dégradé bleu ciel / bleu marine */
         .ticker-bar {
-            background: linear-gradient(90deg, #ff8c00, #b45f06); /* orange */
+            background: linear-gradient(90deg, #0a2f5a, #1e6f9f, #0a2f5a);
             color: white;
             padding: 10px 20px;
             font-weight: 700;
-            text-align: center;
-            font-size: 0.95rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
+            overflow: hidden;
+            white-space: nowrap;
             position: relative;
             z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .ticker-content {
+            display: inline-block;
+            animation: tickerScroll 18s linear infinite;
+            padding-left: 100%;
         }
         .ticker-text {
-            background: rgba(0,0,0,0.25);
-            padding: 5px 18px;
-            border-radius: 40px;
             display: inline-block;
+            background: rgba(0,0,0,0.2);
+            padding: 5px 25px;
+            border-radius: 40px;
+            margin-right: 40px;
+            font-size: 0.95rem;
         }
         .edit-msg-btn {
-            background: rgba(255,255,255,0.3);
+            position: absolute;
+            right: 20px;
+            top: 8px;
+            background: rgba(255,255,255,0.25);
             border: none;
             color: white;
             border-radius: 40px;
-            padding: 5px 12px;
-            font-size: 0.75rem;
+            padding: 4px 12px;
+            font-size: 0.7rem;
             font-weight: bold;
             cursor: pointer;
             transition: 0.2s;
+            z-index: 101;
         }
         .edit-msg-btn:hover {
             background: white;
-            color: #ff8c00;
+            color: #0a2f5a;
+        }
+        @keyframes tickerScroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
         }
 
         /* NAVIGATION */
         .navbar {
             background: white;
-            padding: 15px 30px;
+            padding: 12px 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
             position: sticky;
             top: 0;
             z-index: 99;
-            border-bottom: 3px solid #8a2be2; /* violet accent */
+            border-bottom: 3px solid #5f9eff; /* bleu ciel accent */
         }
         .logo-area {
             display: flex;
@@ -86,34 +97,36 @@
         }
         .company-title {
             font-weight: 800;
-            font-size: 1.4rem;
-            background: linear-gradient(135deg, #003b6f, #1e88e5, #8a2be2);
+            font-size: 1.3rem;
+            background: linear-gradient(135deg, #003b6f, #1e6f9f, #6a4c9c);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
         }
         .nav-links {
             display: flex;
-            gap: 18px;
+            gap: 12px;
             flex-wrap: wrap;
         }
         .nav-btn {
             background: none;
             border: none;
             font-weight: 600;
-            font-size: 1rem;
+            font-size: 0.95rem;
             cursor: pointer;
-            padding: 8px 16px;
+            padding: 8px 18px;
             border-radius: 40px;
-            transition: 0.2s;
-            color: #1e2a3e;
+            transition: 0.25s ease;
+            color: #1e3a5f;
         }
         .nav-btn.active, .nav-btn:hover {
-            background: #ff8c00; /* orange */
+            background: #0a2f5a; /* bleu marine */
             color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
         .contact-phone {
-            background: #e0f2fe; /* ciel clair */
+            background: #d4eaff;
             padding: 8px 16px;
             border-radius: 50px;
             font-weight: 700;
@@ -121,7 +134,7 @@
             color: #003b6f;
         }
         .contact-phone i {
-            color: #ff8c00;
+            color: #0a2f5a;
             margin-right: 6px;
         }
 
@@ -135,17 +148,17 @@
         /* PAGES (sections) */
         .page {
             display: none;
-            animation: fade 0.3s ease;
+            animation: fadeUp 0.5s cubic-bezier(0.2, 0.9, 0.4, 1.1);
         }
         .page.active-page {
             display: block;
         }
-        @keyframes fade {
-            from { opacity: 0; transform: translateY(8px);}
-            to { opacity: 1; transform: translateY(0);}
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* CARROUSEL avec images locales */
+        /* CARROUSEL */
         .carousel-container {
             position: relative;
             border-radius: 32px;
@@ -155,7 +168,7 @@
         }
         .carousel-slides {
             display: flex;
-            transition: transform 0.5s ease;
+            transition: transform 0.6s ease-out;
         }
         .carousel-slide {
             min-width: 100%;
@@ -168,7 +181,7 @@
             position: absolute;
             bottom: 20px;
             left: 20px;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0,59,111,0.75);
             color: white;
             padding: 12px 24px;
             border-radius: 40px;
@@ -179,7 +192,7 @@
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(0,0,0,0.5);
+            background: rgba(10,47,90,0.6);
             border: none;
             color: white;
             font-size: 2rem;
@@ -187,7 +200,9 @@
             padding: 0 12px;
             border-radius: 50px;
             z-index: 2;
+            transition: 0.2s;
         }
+        .carousel-btn:hover { background: #0a2f5a; }
         .carousel-btn.prev { left: 15px; }
         .carousel-btn.next { right: 15px; }
         .dots {
@@ -205,8 +220,25 @@
             margin: 0 5px;
             cursor: pointer;
             opacity: 0.6;
+            transition: 0.2s;
         }
-        .dot.active { opacity: 1; background: #ff8c00; }
+        .dot.active { opacity: 1; background: #5f9eff; transform: scale(1.2); }
+
+        /* Arrière-plan avec logo l.jpg sur certaines sections */
+        .bg-logo-section {
+            background-image: url('l.jpg');
+            background-repeat: no-repeat;
+            background-position: right bottom;
+            background-size: 180px;
+            background-attachment: local;
+        }
+        .service-card, .office-card, .form-card {
+            transition: transform 0.3s ease, box-shadow 0.3s;
+        }
+        .service-card:hover, .office-card:hover, .form-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 30px -12px rgba(0,0,0,0.15);
+        }
 
         /* CARDS & SERVICES */
         .section-title {
@@ -222,9 +254,9 @@
             position: absolute;
             bottom: -8px;
             left: 0;
-            width: 60px;
+            width: 70px;
             height: 4px;
-            background: #8a2be2; /* violet */
+            background: #5f9eff;
             border-radius: 4px;
         }
         .services-grid, .offices-grid {
@@ -238,13 +270,12 @@
             border-radius: 28px;
             padding: 24px;
             box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-            transition: 0.25s;
             text-align: center;
-            border-top: 4px solid #ff8c00;
+            border-top: 4px solid #5f9eff;
         }
         .service-card i, .office-card i {
             font-size: 2.8rem;
-            color: #8a2be2;
+            color: #6a4c9c; /* violet */
             margin-bottom: 15px;
         }
         .service-card h3, .office-card h3 {
@@ -260,7 +291,7 @@
             max-width: 550px;
             margin: 20px auto;
             box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            border: 1px solid #cfe7ff;
+            border: 1px solid #cde4ff;
         }
         .form-group {
             margin-bottom: 18px;
@@ -274,36 +305,38 @@
         input, select, textarea {
             width: 100%;
             padding: 12px 16px;
-            border: 1px solid #b2d8ff;
+            border: 1px solid #bdd8ff;
             border-radius: 60px;
             font-size: 0.95rem;
             background: #fefefe;
+            transition: 0.2s;
         }
-        textarea {
-            border-radius: 24px;
-            resize: vertical;
+        input:focus, select:focus, textarea:focus {
+            border-color: #0a2f5a;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(10,47,90,0.2);
         }
         button {
-            background: #003b6f; /* marine */
+            background: #0a2f5a;
             color: white;
             border: none;
-            padding: 12px 24px;
+            padding: 12px 28px;
             border-radius: 60px;
             font-weight: 700;
             cursor: pointer;
             transition: 0.2s;
         }
         button:hover {
-            background: #ff8c00;
+            background: #5f9eff;
             transform: translateY(-2px);
         }
         .btn-outline-light {
             background: transparent;
-            border: 1px solid #ff8c00;
-            color: #ff8c00;
+            border: 1px solid #5f9eff;
+            color: #0a2f5a;
         }
         .btn-outline-light:hover {
-            background: #ff8c00;
+            background: #5f9eff;
             color: white;
         }
 
@@ -314,7 +347,7 @@
             gap: 25px;
         }
         .wallet-card {
-            background: linear-gradient(135deg, #003b6f, #1e88e5);
+            background: linear-gradient(135deg, #003b6f, #1e6f9f);
             color: white;
             border-radius: 28px;
             padding: 20px;
@@ -324,7 +357,7 @@
             border-radius: 20px;
             padding: 16px;
             margin-bottom: 12px;
-            border-left: 5px solid #ff8c00;
+            border-left: 5px solid #5f9eff;
         }
         .badge-status {
             display: inline-block;
@@ -358,22 +391,27 @@
             .navbar { flex-direction: column; }
             .carousel-slide { height: 280px; }
             .main-container { padding: 16px; }
+            .ticker-content { animation-duration: 12s; }
+            .edit-msg-btn { position: relative; right: auto; top: auto; margin-left: 10px; }
         }
     </style>
 </head>
 <body>
 
-<div class="ticker-bar" id="tickerBar">
-    <i class="fas fa-bullhorn"></i>
-    <span class="ticker-text" id="bannerMessage">📢 Expedip+ Shipping : Livraison rapide, tarifs compétitifs !</span>
-    <button class="edit-msg-btn" id="editBannerBtn"><i class="fas fa-pen"></i> Modifier (propriétaire)</button>
+<!-- Bande passante défilante -->
+<div class="ticker-bar">
+    <div class="ticker-content" id="tickerContent">
+        <span class="ticker-text" id="bannerMessage">📢 Expedip+ Shipping : Livraison express & multi-services – Contactez +509 4114-1321</span>
+        <span class="ticker-text" id="bannerMessageDuplicate"></span>
+    </div>
+    <button class="edit-msg-btn" id="editBannerBtn"><i class="fas fa-pen"></i> Modifier</button>
 </div>
 
 <nav class="navbar">
     <div class="logo-area">
-        <!-- LOGO LOCAL : logo.png (vous pouvez remplacer par votre fichier exact) -->
-        <img src="l.jpg" alt="Logo ExpedipPlus" class="company-logo" onerror="this.style.display='none'; this.nextSibling.style.display='inline-block';">
-        <i class="fas fa-shipping-fast logo-icon" style="display:none; font-size:2rem; color:#ff8c00;"></i>
+        <!-- Logo local l.jpg -->
+        <img src="l.jpg" alt="ExpediPlus Logo" class="company-logo" onerror="this.style.display='none'; this.nextSibling.style.display='inline-block';">
+        <i class="fas fa-shipping-fast" style="display:none; font-size:2rem; color:#0a2f5a;"></i>
         <span class="company-title">ExpediPlus Shipping & Multi Services</span>
     </div>
     <div class="nav-links">
@@ -390,9 +428,9 @@
 </nav>
 
 <div class="main-container" id="mainApp">
-    <!-- PAGE ACCUEIL -->
-    <div id="homePage" class="page active-page">
-        <!-- Carrousel avec images locales (ab.png, ac.png, ae.png, etc.) -->
+    <!-- PAGE ACCUEIL (avec background logo) -->
+    <div id="homePage" class="page active-page bg-logo-section">
+        <!-- Carrousel -->
         <div class="carousel-container">
             <div class="carousel-slides" id="carouselSlides"></div>
             <button class="carousel-btn prev" id="prevSlide"><i class="fas fa-chevron-left"></i></button>
@@ -400,13 +438,11 @@
             <div class="dots" id="carouselDots"></div>
         </div>
 
-        <!-- Message promo rapide -->
-        <div style="background: linear-gradient(120deg, #e0f2fe, #ede9fe); border-radius: 28px; padding: 20px; margin: 20px 0; text-align: center;">
+        <div style="background: linear-gradient(120deg, #d9efff, #e6d9ff); border-radius: 28px; padding: 20px; margin: 20px 0; text-align: center;">
             <h3 style="color:#003b6f;">✈️ Livraison USA – Haïti dès 3 jours ouvrés</h3>
             <p>Appelez-nous: <strong>+509 4114-1321</strong> | Email: <strong>expediplusshipping@gmail.com</strong></p>
         </div>
 
-        <!-- Aperçu services -->
         <h2 class="section-title">Nos prestations phares</h2>
         <div class="services-grid">
             <div class="service-card"><i class="fas fa-boxes"></i><h3>Colis & fret</h3><p>Expédition par avion/maritime, dédouanement.</p></div>
@@ -422,7 +458,7 @@
     </div>
 
     <!-- PAGE SERVICES -->
-    <div id="servicesPage" class="page">
+    <div id="servicesPage" class="page bg-logo-section">
         <h2 class="section-title">Nos services complets</h2>
         <div class="services-grid" style="margin-top:30px;">
             <div class="service-card"><i class="fas fa-globe-americas"></i><h3>Expédition Internationale</h3><p>USA, Canada, Europe vers Haïti et vice-versa. Suivi en temps réel.</p></div>
@@ -433,7 +469,7 @@
     </div>
 
     <!-- PAGE BUREAUX -->
-    <div id="officesPage" class="page">
+    <div id="officesPage" class="page bg-logo-section">
         <h2 class="section-title">Nos agences</h2>
         <div class="offices-grid">
             <div class="office-card"><i class="fas fa-building"></i><h3>Bureau Principal (Pétion-Ville)</h3><p>Angle rue Métellus, Immeuble ExpediPlus<br>Lun-Ven 8h-17h, Sam 9h-13h</p></div>
@@ -443,7 +479,7 @@
     </div>
 
     <!-- PAGE CONTACT -->
-    <div id="contactPage" class="page">
+    <div id="contactPage" class="page bg-logo-section">
         <h2 class="section-title">Nous contacter</h2>
         <div style="display: flex; flex-wrap: wrap; gap: 30px; margin-top: 20px;">
             <div class="form-card" style="flex:1;">
@@ -480,7 +516,7 @@
                 <button type="submit">S'inscrire & rejoindre l'espace client</button>
                 <p id="regFeedback" style="margin-top:12px;"></p>
             </form>
-            <p style="margin-top: 16px; text-align:center;">Déjà inscrit ? <strong><a href="#" id="goToLoginLink" style="color:#ff8c00;">Connectez-vous ici</a></strong></p>
+            <p style="margin-top: 16px; text-align:center;">Déjà inscrit ? <strong><a href="#" id="goToLoginLink" style="color:#5f9eff;">Connectez-vous ici</a></strong></p>
         </div>
     </div>
 
@@ -494,17 +530,16 @@
                 <button type="submit">Se connecter</button>
                 <p id="loginFeedback" style="color:red; margin-top:10px;"></p>
             </form>
-            <p style="margin-top: 15px; text-align:center;">Pas encore client ? <a href="#" id="goToRegisterLink" style="color:#ff8c00;">Inscrivez-vous</a></p>
+            <p style="margin-top: 15px; text-align:center;">Pas encore client ? <a href="#" id="goToRegisterLink" style="color:#5f9eff;">Inscrivez-vous</a></p>
         </div>
 
-        <!-- Dashboard client (affiché après connexion) -->
         <div id="clientDashboard" style="display:none;">
             <div class="dashboard-grid">
                 <div class="wallet-card">
                     <h3><i class="fas fa-wallet"></i> Mon portefeuille</h3>
                     <p style="font-size:2rem; font-weight:800;" id="walletBalanceUSD">0 USD</p>
                     <p id="walletBalanceHTG">0 HTG</p>
-                    <button id="showRechargeBtn" class="btn-outline-light" style="background:white; color:#003b6f;">➕ Recharger</button>
+                    <button id="showRechargeBtn" class="btn-outline-light" style="background:white; color:#0a2f5a;">➕ Recharger</button>
                     <div id="rechargePanel" style="display:none; margin-top:15px;">
                         <input type="number" id="rechargeAmount" placeholder="Montant USD" style="border-radius:40px; margin-bottom:8px;">
                         <select id="rechargeMethod"><option>Moncash</option><option>Natcash</option></select>
@@ -535,9 +570,9 @@
 </footer>
 
 <script>
-    // ------------------- STRUCTURE DONNÉES (localStorage) -----------------
+    // ======================== DONNÉES PARTAGÉES ========================
     let appData = {
-        company: { name: "ExpediPlus Shipping", logo: "", tauxUSDToHTG: 130, prixParLivre: 2.5, fraisFixe: 5 },
+        company: { name: "ExpediPlus Shipping", tauxUSDToHTG: 130, prixParLivre: 2.5, fraisFixe: 5 },
         users: [],
         colis: [],
         clients: [],
@@ -549,16 +584,15 @@
         const raw = localStorage.getItem('ship_app_data');
         if(raw) {
             const data = JSON.parse(raw);
-            appData.company = data.company || { name: "ExpediPlus Shipping", tauxUSDToHTG: 130, prixParLivre: 2.5, fraisFixe: 5 };
+            appData.company = data.company || { tauxUSDToHTG: 130, prixParLivre: 2.5, fraisFixe: 5 };
             appData.users = data.users || [];
             appData.colis = data.colis || [];
             appData.clients = data.clients || [];
             appData.notificationsGlobales = data.notificationsGlobales || [];
             appData.clients.forEach(c => { if(c.balance === undefined) c.balance = 0; if(!c.notifications) c.notifications = []; });
         } else {
-            // Exemples colis avec le numéro de téléphone de démo (+509 41141321)
             appData.colis = [
-                { id: "DEMO001", numeroSuivi: "EXP-24101", expediteurNom: "John Doe", destinataire: { nom: "Marie Claire", telephone: "+509 41141321", adresse: "Delmas 75" }, poidsLivre: 2.3, prixUsd: 10.75, statut: "Arrivé", paiement: { effectue: false }, bureauLivreurNom: "Bureau Pétion-Ville" },
+                { id: "DEMO001", numeroSuivi: "EXP-24101", expediteurNom: "John Doe", destinataire: { nom: "Marie Claire", telephone: "+509 41141321", adresse: "Delmas 75" }, poidsLivre: 2.3, prixUsd: 10.75, statut: "Arrivé", paiement: { effectue: false } },
                 { id: "DEMO002", numeroSuivi: "EXP-24102", expediteurNom: "Amazon", destinataire: { nom: "Jean Pierre", telephone: "+509 41141321", adresse: "Pétion-Ville" }, poidsLivre: 5, prixUsd: 17.5, statut: "En transit", paiement: { effectue: false } }
             ];
             appData.clients = [];
@@ -577,9 +611,8 @@
 
     function showToast(message, type = 'info') {
         const toastDiv = document.createElement('div');
-        toastDiv.className = `toast-notif`;
         toastDiv.style.position = 'fixed'; toastDiv.style.bottom = '20px'; toastDiv.style.right = '20px';
-        toastDiv.style.background = type === 'success' ? '#2b6e3c' : (type === 'error' ? '#b91c1c' : '#003b6f');
+        toastDiv.style.background = type === 'success' ? '#2b6e3c' : (type === 'error' ? '#b91c1c' : '#0a2f5a');
         toastDiv.style.color = 'white'; toastDiv.style.padding = '12px 20px'; toastDiv.style.borderRadius = '60px';
         toastDiv.style.zIndex = '9999'; toastDiv.style.fontWeight = 'bold'; toastDiv.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
         toastDiv.innerText = message;
@@ -587,26 +620,29 @@
         setTimeout(() => toastDiv.remove(), 4000);
     }
 
-    // Bande passante modifiable par propriétaire
+    // Bande défilante avec duplication
     function updateBannerMessage() {
-        const savedMsg = localStorage.getItem('expediplus_banner_msg');
-        if(savedMsg) document.getElementById('bannerMessage').innerText = savedMsg;
-        else document.getElementById('bannerMessage').innerText = "📢 Expedip+ Shipping : Livraison express & multi-services – Contactez +509 4114-1321";
+        let savedMsg = localStorage.getItem('expediplus_banner_msg');
+        if(!savedMsg) savedMsg = "📢 Expedip+ Shipping : Livraison express & multi-services – Contactez +509 4114-1321";
+        const bannerSpan = document.getElementById('bannerMessage');
+        const duplicateSpan = document.getElementById('bannerMessageDuplicate');
+        bannerSpan.innerText = savedMsg;
+        duplicateSpan.innerText = savedMsg;
     }
     document.getElementById('editBannerBtn')?.addEventListener('click', () => {
         const pwd = prompt("🔐 Code propriétaire pour modifier le message :");
         if(pwd === "admin123" || pwd === "expedi2025") {
-            const newMsg = prompt("Nouveau message publicitaire (bande passante) :", document.getElementById('bannerMessage').innerText);
+            const newMsg = prompt("Nouveau message (bande défilante) :", document.getElementById('bannerMessage').innerText);
             if(newMsg) {
                 localStorage.setItem('expediplus_banner_msg', newMsg);
-                document.getElementById('bannerMessage').innerText = newMsg;
-                showToast("✅ Message modifié avec succès", "success");
+                updateBannerMessage();
+                showToast("✅ Message modifié", "success");
             }
-        } else { showToast("Code incorrect. Propriétaire uniquement.", "error"); }
+        } else showToast("Code incorrect", "error");
     });
 
-    // ----- CARROUSEL avec images locales (ab.png, ac.png, ae.png, ...) -----
-    const carouselImages = ['ab.png', 'ac.png', 'ae.png'];  // Ajoutez d'autres fichiers si besoin (af.png, etc.)
+    // Carrousel avec images locales (ab.png, ac.png, ae.png...)
+    const carouselImages = ['ab.png', 'ac.png', 'ae.png'];
     let slideIndex = 0;
     function initCarousel() {
         const slidesContainer = document.getElementById('carouselSlides');
@@ -629,66 +665,59 @@
             dotsContainer.appendChild(dot);
         });
         function updateCarousel() {
-            const offset = -slideIndex * 100;
-            slidesContainer.style.transform = `translateX(${offset}%)`;
+            slidesContainer.style.transform = `translateX(-${slideIndex * 100}%)`;
             document.querySelectorAll('.dot').forEach((d,i) => d.classList.toggle('active', i===slideIndex));
         }
         document.getElementById('prevSlide')?.addEventListener('click', () => { slideIndex = (slideIndex - 1 + carouselImages.length) % carouselImages.length; updateCarousel(); });
         document.getElementById('nextSlide')?.addEventListener('click', () => { slideIndex = (slideIndex + 1) % carouselImages.length; updateCarousel(); });
-        setInterval(() => { slideIndex = (slideIndex + 1) % carouselImages.length; updateCarousel(); }, 5000);
+        setInterval(() => { slideIndex = (slideIndex + 1) % carouselImages.length; updateCarousel(); }, 5500);
         updateCarousel();
     }
 
-    // Gestion des pages (navigation)
+    // Navigation pages
     const pages = ['homePage', 'servicesPage', 'officesPage', 'contactPage', 'registerPage', 'clientLoginPage'];
     function showPage(pageId) {
         pages.forEach(p => document.getElementById(p).classList.remove('active-page'));
         document.getElementById(pageId).classList.add('active-page');
         document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-        const btn = Array.from(document.querySelectorAll('.nav-btn')).find(b => b.getAttribute('data-page') === pageId.replace('Page','').toLowerCase());
-        if(btn) btn.classList.add('active');
+        const target = Array.from(document.querySelectorAll('.nav-btn')).find(b => b.getAttribute('data-page') === pageId.replace('Page','').toLowerCase());
+        if(target) target.classList.add('active');
         if(pageId === 'clientLoginPage' && currentClient) renderClientDashboard();
         else if(pageId === 'clientLoginPage') { document.getElementById('loginFormCard').style.display = 'block'; document.getElementById('clientDashboard').style.display = 'none'; }
         if(pageId === 'registerPage') document.getElementById('clientRegisterForm')?.reset();
     }
 
-    // Inscription client
+    // Client functions (inscription, recharge, paiement)
     function registerClient(nom, email, tel, pwd) {
-        if(appData.clients.find(c => c.telephone === tel)) throw new Error("Ce numéro est déjà utilisé.");
-        const newClient = { id: 'cli_'+Date.now(), nom, email, telephone: tel, password: pwd, balance: 0, notifications: [], colisStatusCache: {} };
+        if(appData.clients.find(c => c.telephone === tel)) throw new Error("Numéro déjà utilisé");
+        const newClient = { id: 'cli_'+Date.now(), nom, email, telephone: tel, password: pwd, balance: 0, notifications: [] };
         appData.clients.push(newClient);
         saveData();
         return newClient;
     }
-
-    // Recharge wallet
     function rechargeWallet(amountUSD, method) {
         if(!currentClient) return;
         if(amountUSD<=0) throw new Error("Montant invalide");
         currentClient.balance += amountUSD;
         const msg = `💸 Recharge de ${amountUSD} USD via ${method}. Nouveau solde: ${currentClient.balance} USD`;
-        if(!currentClient.notifications) currentClient.notifications = [];
+        currentClient.notifications = currentClient.notifications || [];
         currentClient.notifications.unshift({ date: new Date().toISOString(), message: msg, type: "success" });
         saveData();
         showToast(msg, "success");
         renderClientDashboard();
     }
-
-    // Payer colis depuis wallet
     function payerColisWallet(colis) {
         if(colis.paiement?.effectue) { showToast("Colis déjà payé", "error"); return false; }
         if(currentClient.balance < colis.prixUsd) { showToast("Solde insuffisant", "error"); return false; }
         currentClient.balance -= colis.prixUsd;
         colis.paiement = { effectue: true, montantRecu: colis.prixUsd, devise: "USD", moyen: "Portefeuille client", date: new Date().toISOString() };
         saveData();
-        const notifMsg = `✅ Paiement colis ${colis.numeroSuivi} (${colis.prixUsd} USD) effectué depuis wallet.`;
-        currentClient.notifications.unshift({ date: new Date().toISOString(), message: notifMsg, type: "success" });
+        currentClient.notifications.unshift({ date: new Date().toISOString(), message: `✅ Paiement colis ${colis.numeroSuivi} (${colis.prixUsd} USD) effectué.`, type: "success" });
         saveData();
-        showToast(notifMsg, "success");
+        showToast(`Paiement de ${colis.numeroSuivi} effectué`, "success");
         renderClientDashboard();
         return true;
     }
-
     function renderClientDashboard() {
         if(!currentClient) return;
         document.getElementById('loginFormCard').style.display = 'none';
@@ -697,10 +726,9 @@
         const balanceHTG = (balanceUSD * appData.company.tauxUSDToHTG).toFixed(2);
         document.getElementById('walletBalanceUSD').innerHTML = `${balanceUSD.toFixed(2)} USD`;
         document.getElementById('walletBalanceHTG').innerHTML = `${balanceHTG} HTG`;
-
         const mesColis = appData.colis.filter(c => c.destinataire && c.destinataire.telephone === currentClient.telephone);
         const colisContainer = document.getElementById('clientColisList');
-        if(mesColis.length === 0) colisContainer.innerHTML = "<p>Aucun colis associé à ce numéro.</p>";
+        if(mesColis.length === 0) colisContainer.innerHTML = "<p>Aucun colis associé.</p>";
         else {
             colisContainer.innerHTML = mesColis.map(colis => {
                 const statutClass = colis.statut === 'En transit' ? 'status-transit' : (colis.statut === 'Arrivé' ? 'status-arrive' : 'status-livre');
@@ -708,7 +736,7 @@
                 return `<div class="colis-item"><div><strong>${colis.numeroSuivi}</strong> <span class="badge-status ${statutClass}">${colis.statut}</span></div>
                 <div>Expéditeur: ${colis.expediteurNom} | Poids: ${colis.poidsLivre} lb</div>
                 <div>💰 ${colis.prixUsd} USD / ${(colis.prixUsd * appData.company.tauxUSDToHTG).toFixed(2)} HTG</div>
-                ${!isPaid && colis.statut !== 'Livré' ? `<button class="pay-colis-btn" data-id="${colis.id}" style="margin-top:6px; background:#ff8c00;">💳 Payer avec wallet</button>` : (isPaid ? "<span>✅ Payé</span>" : "")}
+                ${!isPaid && colis.statut !== 'Livré' ? `<button class="pay-colis-btn" data-id="${colis.id}" style="margin-top:6px; background:#5f9eff;">💳 Payer avec wallet</button>` : (isPaid ? "<span>✅ Payé</span>" : "")}
                 </div>`;
             }).join('');
             document.querySelectorAll('.pay-colis-btn').forEach(btn => {
@@ -723,10 +751,10 @@
         document.getElementById('clientNotifications').innerHTML = notifs.length ? notifs.map(n => `<div style="border-bottom:1px solid #ddd; padding:8px;"><small>${new Date(n.date).toLocaleString()}</small><br>${n.message}</div>`).join('') : "<div>Aucune notification</div>";
     }
 
-    // Événements généraux
+    // Événements UI
     function attachEvents() {
         document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', () => {
                 const page = btn.getAttribute('data-page');
                 if(page === 'clientLogin') showPage('clientLoginPage');
                 else if(page === 'register') showPage('registerPage');
@@ -736,31 +764,24 @@
                 else if(page === 'contact') showPage('contactPage');
             });
         });
-
         document.getElementById('clientRegisterForm')?.addEventListener('submit', (e) => {
             e.preventDefault();
-            const nom = document.getElementById('regNom').value.trim();
-            const email = document.getElementById('regEmail').value.trim();
-            const tel = document.getElementById('regTel').value.trim();
-            const pwd = document.getElementById('regPwd').value;
             try {
-                const newClient = registerClient(nom, email, tel, pwd);
+                const newClient = registerClient(document.getElementById('regNom').value.trim(), document.getElementById('regEmail').value.trim(), document.getElementById('regTel').value.trim(), document.getElementById('regPwd').value);
                 currentClient = newClient;
-                showToast("Inscription réussie ! Bienvenue chez Expedip+", "success");
+                showToast("Inscription réussie !", "success");
                 showPage('clientLoginPage');
                 renderClientDashboard();
             } catch(err) { document.getElementById('regFeedback').innerText = err.message; setTimeout(()=>document.getElementById('regFeedback').innerText='',3000); }
         });
-
         document.getElementById('clientLoginForm')?.addEventListener('submit', (e) => {
             e.preventDefault();
             const tel = document.getElementById('loginTel').value.trim();
             const pwd = document.getElementById('loginPwd').value;
             const client = appData.clients.find(c => c.telephone === tel && c.password === pwd);
             if(client) { currentClient = client; renderClientDashboard(); showToast(`Bonjour ${client.nom}`, "success"); showPage('clientLoginPage'); }
-            else document.getElementById('loginFeedback').innerText = "Téléphone ou mot de passe incorrect";
+            else document.getElementById('loginFeedback').innerText = "Identifiants incorrects";
         });
-
         document.getElementById('goToRegisterLink')?.addEventListener('click', (e) => { e.preventDefault(); showPage('registerPage'); });
         document.getElementById('goToLoginLink')?.addEventListener('click', (e) => { e.preventDefault(); showPage('clientLoginPage'); });
         document.getElementById('clientLogoutBtn')?.addEventListener('click', () => { currentClient = null; showPage('clientLoginPage'); document.getElementById('loginFormCard').style.display = 'block'; document.getElementById('clientDashboard').style.display = 'none'; });
@@ -780,7 +801,7 @@
             const email = document.getElementById('contactEmail').value;
             const msg = document.getElementById('contactMsg').value;
             window.location.href = `mailto:expediplusshipping@gmail.com?subject=Message de ${name}&body=${encodeURIComponent(msg)}%0A---%0ADe: ${email}`;
-            document.getElementById('contactFeedback').innerText = "Merci ! Votre message a été ouvert par email.";
+            document.getElementById('contactFeedback').innerText = "Merci ! Message ouvert par email.";
             setTimeout(()=>document.getElementById('contactFeedback').innerText='',4000);
             e.target.reset();
         });
