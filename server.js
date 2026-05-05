@@ -12,6 +12,7 @@ const fetch    = (...args) => import('node-fetch').then(({default: f}) => f(...a
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
+console.log('🔑 FOOTBALL_API_KEY =', process.env.FOOTBALL_API_KEY);
 
 // ── CORS ───────────────────────────────────────────────────
 app.use(cors({ origin: '*' }));
