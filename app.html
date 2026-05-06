@@ -1626,7 +1626,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
     </div>
   </div>
 </div>
-<!-- ==================== ADMIN APP ==================== -->
+<!-- ==================== ADMIN APP (CORRIGÉE + COMPLÈTE) ==================== -->
 <div id="sc-admin" class="screen">
   <div class="app-header">
     <img src="logo.png" onerror="this.src='logo.jpeg';this.onerror=null" class="app-header-logo" alt="TK">
@@ -1656,7 +1656,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
       <div class="ptab" data-ptab="jackpot" onclick="selAdmTab(this)">🎰 Jackpot</div>
     </div>
 
-    <!-- VUE D'ENSEMBLE -->
+    <!-- 1. VUE D'ENSEMBLE -->
     <div class="psec on" id="atab-overview">
       <div class="card" style="margin-bottom:12px">
         <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="toggleComptes(this)">
@@ -1695,11 +1695,11 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
       <div class="statcards" id="admin-stats"></div>
       <div class="card" style="margin-top:8px">
         <h3>🏢 Performance par Directeur</h3>
-        <div class="twrap"><table><thead><tr><th>Directeur</th><th>Zone</th><th>Caissiers</th><th>Joueurs</th><th>Total Dépôts</th><th>Profit</th></tr></thead><tbody id="adm-dirs-perf"></tbody></table></div>
+        <div class="twrap"><tr><thead><tr><th>Directeur</th><th>Zone</th><th>Caissiers</th><th>Joueurs</th><th>Total Dépôts</th><th>Profit</th></tr></thead><tbody id="adm-dirs-perf"></tbody></table></div>
       </div>
     </div>
 
-    <!-- DIRECTEURS -->
+    <!-- 2. DIRECTEURS -->
     <div class="psec" id="atab-dirs">
       <div class="card">
         <h3>Créer un Directeur</h3>
@@ -1714,35 +1714,35 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
       </div>
       <div class="card">
         <h3>🏢 Tous les Directeurs</h3>
-        <div class="twrap"><table><thead><tr><th>Nom</th><th>Zone</th><th>Code</th><th>Téléphone</th><th>Mot de passe</th><th>Caissiers</th><th>%</th><th>Part profits</th><th>Action</th></tr></thead><tbody id="adm-dirs-body"></tbody></table></div>
+        <div class="twrap"><tr><thead><tr><th>Nom</th><th>Zone</th><th>Code</th><th>Téléphone</th><th>Mot de passe</th><th>Caissiers</th><th>%</th><th>Part profits</th><th>Action</th></tr></thead><tbody id="adm-dirs-body"></tbody></table></div>
       </div>
     </div>
 
-    <!-- CAISSIERS -->
+    <!-- 3. CAISSIERS -->
     <div class="psec" id="atab-caissiers">
       <div class="card">
         <h3>🏧 Tous les Caissiers</h3>
-        <div class="twrap"><table><thead><tr><th>Nom</th><th>Code</th><th>MdP</th><th>Jeu</th><th>Directeur</th><th>Zone</th><th>Action</th></tr></thead><tbody id="adm-caiss-body"></tbody></table></div>
+        <div class="twrap"></td><thead><tr><th>Nom</th><th>Code</th><th>MdP</th><th>Jeu</th><th>Directeur</th><th>Zone</th><th>Action</th><tr></thead><tbody id="adm-caiss-body"></tbody></tr></div>
       </div>
     </div>
 
-    <!-- JOUEURS -->
+    <!-- 4. JOUEURS -->
     <div class="psec" id="atab-joueurs">
-      <div class="card"><h3>👥 Joueurs</h3><div class="twrap"></td><thead><tr><th>Nom</th><th>Téléphone</th><th>Solde</th><th>Inscrit le</th></tr></thead><tbody id="tadm-joueurs-body"></tbody></table></div></div>
+      <div class="card"><h3>👥 Joueurs</h3><div class="twrap"><table><thead><tr><th>Nom</th><th>Téléphone</th><th>Solde</th><th>Inscrit le</th></tr></thead><tbody id="tadm-joueurs-body"></tbody></table></div></div>
     </div>
 
-    <!-- PARIS -->
+    <!-- 5. PARIS SPORTIFS -->
     <div class="psec" id="atab-bets">
       <div class="statcards" id="admin-bets-stats"></div>
       <div class="card"><h3>⚽ Paris sportifs</h3><div class="twrap"><table><thead><tr><th>Date</th><th>Joueur</th><th>Match</th><th>Sél.</th><th>Cote</th><th>Mise</th><th>Gain pot.</th><th>Statut</th></tr></thead><tbody id="tadm-bets-body"></tbody></table></div></div>
     </div>
 
-    <!-- TRANSACTIONS -->
+    <!-- 6. TRANSACTIONS -->
     <div class="psec" id="atab-trans">
-      <div class="card"><h3>💸 Transactions</h3><div class="twrap"></table><thead><tr><th>Date</th><th>Joueur</th><th>Type</th><th>Montant</th><th>Solde après</th><th>Caissier</th></tr></thead><tbody id="tadm-trans-body"></tbody></table></div></div>
+      <div class="card"><h3>💸 Transactions</h3><div class="twrap"><table><thead><tr><th>Date</th><th>Joueur</th><th>Type</th><th>Montant</th><th>Solde après</th><th>Caissier</th></tr></thead><tbody id="tadm-trans-body"></tbody></table></div></div>
     </div>
 
-    <!-- RECHARGES -->
+    <!-- 7. RECHARGES -->
     <div class="psec" id="atab-recharges">
       <div class="card">
         <h3>💳 Toutes les Recharges</h3>
@@ -1752,17 +1752,13 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
       </div>
     </div>
 
-    <!-- PARAMÈTRES -->
+    <!-- 8. PARAMÈTRES -->
     <div class="psec" id="atab-params">
-      <!-- Difficulté par DIRECTEUR -->
       <div class="card">
         <h3>🎮 Difficulté des jeux par Directeur</h3>
         <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Réglez le taux de gain de 0% à 80% pour chaque bureau/directeur. 0% = impossible de gagner, 80% = gain très facile.</p>
-        <div id="dir-diff-list">
-          <div style="color:var(--muted);font-size:13px;padding:10px">Aucun directeur — créez d'abord un directeur.</div>
-        </div>
+        <div id="dir-diff-list"><div style="color:var(--muted);font-size:13px;padding:10px">Aucun directeur — créez d'abord un directeur.</div></div>
       </div>
-      <!-- Difficulté GLOBALE (fallback) -->
       <div class="card">
         <h3>⚙️ Difficulté Globale (par défaut)</h3>
         <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Appliquée si aucune difficulté n'est définie pour le directeur.</p>
@@ -1791,7 +1787,6 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
           <button onclick="saveGameDiff('helico')" style="margin-top:8px;padding:5px 14px;background:var(--green2);color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
         </div>
       </div>
-      <!-- Ticker & Notifications -->
       <div class="card">
         <h3>📢 Bande Passante & Notifications</h3>
         <div class="fg" style="margin-bottom:12px">
@@ -1823,8 +1818,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
       </div>
     </div>
 
-    <!-- BORLETTE ADMIN (version refondue) -->
-    <!-- Assurez-vous que le bloc suivant est présent UNE SEULE FOIS -->
+    <!-- 9. BORLETTE ADMIN (refonte complète) -->
     <div class="psec" id="atab-borlette" data-tab="borlette">
       <div style="margin-bottom: 10px;">
         <div class="ptabs" style="background: transparent; padding: 0 0 10px 0;">
@@ -1870,7 +1864,6 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
           </div>
           <button onclick="borPublierResultat()" class="fbtn" style="background: var(--gold); color: #000; margin-top: 8px;">📢 Publier le résultat</button>
         </div>
-
         <div class="card">
           <h3>📅 Historique des résultats publiés</h3>
           <div style="overflow-x: auto;">
@@ -1893,7 +1886,6 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
           </div>
           <div id="bor-global-limits-list" class="list-container" style="margin-top: 12px; background: var(--bg2); padding: 8px; border-radius: 8px;">Chargement...</div>
         </div>
-
         <div class="card">
           <h3>🚫 Numéros bloqués globalement</h3>
           <div class="form-grid" style="grid-template-columns: 1fr auto auto; gap: 8px;">
@@ -1903,7 +1895,6 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
           </div>
           <div id="bor-blocked-numbers-list" class="list-container" style="margin-top: 12px; background: var(--bg2); padding: 8px; border-radius: 8px;">Chargement...</div>
         </div>
-
         <div class="card">
           <h3>🎯 Blocage par tirage spécifique</h3>
           <div class="form-grid" style="grid-template-columns: 1fr 1fr auto auto; gap: 8px;">
@@ -1913,7 +1904,6 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
             <button onclick="borUnblockNumberDraw()" class="tbtn b">Débloquer</button>
           </div>
         </div>
-
         <div class="card">
           <h3>📊 Limite par numéro pour un tirage spécifique</h3>
           <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr auto; gap: 8px;">
@@ -1938,7 +1928,6 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
           </div>
           <div id="bor-tickets-list" class="list-container" style="max-height: 400px; overflow-y: auto;">Chargement...</div>
         </div>
-
         <div class="card">
           <h3>📈 Statistiques Borlette</h3>
           <div style="display: grid; grid-template-columns: repeat(4,1fr); gap: 10px;">
@@ -1952,7 +1941,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
     </div>
     <!-- end atab-borlette -->
 
-    <!-- JACKPOT ADMIN -->
+    <!-- 10. JACKPOT ADMIN -->
     <div class="psec" id="atab-jackpot" data-tab="jackpot">
       <div class="card">
         <h3>🎰 Gestion des Jackpots</h3>
@@ -1964,175 +1953,16 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
           <strong style="color:var(--gold)">📋 Règles:</strong> 5% de chaque mise → jackpot du directeur concerné · 
           Montant visible pour joueurs et directeurs · Admin attribue à un joueur au hasard
         </div>
-        <div id="admin-jackpot-list">
-          <div style="color:var(--muted);font-size:13px;padding:10px">Chargement...</div>
-        </div>
+        <div id="admin-jackpot-list"><div style="color:var(--muted);font-size:13px;padding:10px">Chargement...</div></div>
       </div>
       <div class="card">
         <h3>🏆 Historique des Jackpots Attribués</h3>
-        <div id="jackpot-history" style="max-height:300px;overflow-y:auto;">
-          <div style="color:var(--muted);font-size:13px">Aucun jackpot attribué</div>
-        </div>
+        <div id="jackpot-history" style="max-height:300px;overflow-y:auto;"><div style="color:var(--muted);font-size:13px">Aucun jackpot attribué</div></div>
       </div>
     </div>
 
   </div> <!-- fin .inner -->
 </div> <!-- fin #sc-admin -->
- <!-- ==================== BORLETTE ADMIN (REFONDU) ==================== -->
-<div class="psec" id="atab-borlette" data-tab="borlette">
-  <div style="margin-bottom: 10px;">
-    <div class="ptabs" style="background: transparent; padding: 0 0 10px 0;">
-      <div class="ptab on" data-bor-tab="draw" onclick="switchBorletteAdminTab('draw')">🎲 Publier résultat</div>
-      <div class="ptab" data-bor-tab="limits" onclick="switchBorletteAdminTab('limits')">🚫 Blocages & limites</div>
-      <div class="ptab" data-bor-tab="tickets" onclick="switchBorletteAdminTab('tickets')">🎫 Tickets & rapports</div>
-    </div>
-  </div>
-
-  <!-- TAB 1 : PUBLIER RÉSULTAT -->
-  <div id="bor-admin-draw" class="bor-admin-tab-content" style="display: block;">
-    <div class="card">
-      <h3>📋 Publier un résultat de tirage</h3>
-      <div id="bor-publish-msg" class="ferr" style="display:none; margin-bottom: 12px;"></div>
-      <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <div class="fg">
-          <label>Tirage</label>
-          <select id="bor-draw-select" class="select">
-            <option value="tn_matin">Tunisia Matin</option>
-            <option value="tn_soir">Tunisia Soir</option>
-            <option value="fl_matin">Florida Matin</option>
-            <option value="fl_soir">Florida Soir</option>
-            <option value="ny_matin">New York Matin</option>
-            <option value="ny_soir">New York Soir</option>
-            <option value="ga_matin">Georgia Matin</option>
-            <option value="ga_soir">Georgia Soir</option>
-            <option value="tx_matin">Texas Matin</option>
-            <option value="tx_soir">Texas Soir</option>
-          </select>
-        </div>
-        <div class="fg">
-          <label>Lotto 3 (3 chiffres) → 1er lot = 2 derniers chiffres</label>
-          <input type="text" id="bor-lotto3" maxlength="3" placeholder="456" class="input">
-        </div>
-        <div class="fg">
-          <label>2ème lot (2 chiffres)</label>
-          <input type="text" id="bor-lot2" maxlength="2" placeholder="23" class="input">
-        </div>
-        <div class="fg">
-          <label>3ème lot (2 chiffres)</label>
-          <input type="text" id="bor-lot3" maxlength="2" placeholder="11" class="input">
-        </div>
-      </div>
-      <button onclick="borPublierResultat()" class="fbtn" style="background: var(--gold); color: #000; margin-top: 8px;">📢 Publier le résultat</button>
-    </div>
-
-    <div class="card">
-      <h3>📅 Historique des résultats publiés</h3>
-      <div style="overflow-x: auto;">
-        <table style="width:100%;">
-          <thead><tr><th>Date</th><th>Tirage</th><th>1er lot</th><th>2e lot</th><th>3e lot</th></tr></thead>
-          <tbody id="bor-resultats-body"><tr><td colspan="5" style="text-align:center;">Chargement...</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB 2 : BLOCAGES & LIMITES -->
-  <div id="bor-admin-limits" class="bor-admin-tab-content" style="display: none;">
-    <div class="card">
-      <h3>💰 Limites globales (tous tirages)</h3>
-      <div class="form-grid" style="grid-template-columns: 1fr 1fr auto; gap: 8px;">
-        <div class="fg"><label>Numéro (00-99)</label><input type="text" id="bor-global-number" maxlength="2" placeholder="48"></div>
-        <div class="fg"><label>Montant maximum (G)</label><input type="number" id="bor-global-amount" placeholder="500"></div>
-        <button onclick="borAddGlobalLimit()" class="tbtn g" style="align-self: flex-end;">✅ Ajouter / Modifier</button>
-      </div>
-      <div id="bor-global-limits-list" class="list-container" style="margin-top: 12px; background: var(--bg2); padding: 8px; border-radius: 8px;">Chargement...</div>
-    </div>
-
-    <div class="card">
-      <h3>🚫 Numéros bloqués globalement</h3>
-      <div class="form-grid" style="grid-template-columns: 1fr auto auto; gap: 8px;">
-        <div class="fg"><label>Numéro à bloquer (00-99)</label><input type="text" id="bor-block-number" maxlength="2" placeholder="82"></div>
-        <button onclick="borBlockNumberGlobal()" class="tbtn r">🔒 Bloquer global</button>
-        <button onclick="borUnblockNumberGlobal()" class="tbtn b">🔓 Débloquer global</button>
-      </div>
-      <div id="bor-blocked-numbers-list" class="list-container" style="margin-top: 12px; background: var(--bg2); padding: 8px; border-radius: 8px;">Chargement...</div>
-    </div>
-
-    <div class="card">
-      <h3>🎯 Blocage par tirage spécifique</h3>
-      <div class="form-grid" style="grid-template-columns: 1fr 1fr auto auto; gap: 8px;">
-        <div class="fg"><label>Tirage</label><select id="bor-block-draw-select"></select></div>
-        <div class="fg"><label>Numéro</label><input type="text" id="bor-block-number-draw" maxlength="2" placeholder="48"></div>
-        <button onclick="borBlockNumberDraw()" class="tbtn r">Bloquer</button>
-        <button onclick="borUnblockNumberDraw()" class="tbtn b">Débloquer</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>📊 Limite par numéro pour un tirage spécifique</h3>
-      <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr auto; gap: 8px;">
-        <div class="fg"><label>Tirage</label><select id="bor-limit-draw-spec"></select></div>
-        <div class="fg"><label>Numéro</label><input type="text" id="bor-limit-number-spec" maxlength="2" placeholder="48"></div>
-        <div class="fg"><label>Montant max</label><input type="number" id="bor-limit-amount-spec" placeholder="500"></div>
-        <button onclick="borSetLimitDraw()" class="tbtn g">Appliquer</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB 3 : TICKETS & RAPPORTS -->
-  <div id="bor-admin-tickets" class="bor-admin-tab-content" style="display: none;">
-    <div class="card">
-      <h3>🎟️ Tickets de la journée</h3>
-      <div class="form-grid" style="grid-template-columns: 1fr 1fr auto; gap: 8px; margin-bottom: 12px;">
-        <div class="fg"><label>Tirage</label><select id="bor-ticket-draw"><option value="">Tous</option></select></div>
-        <div class="fg"><label>Statut gain</label><select id="bor-ticket-gain">
-          <option value="all">Tous</option><option value="win">Gagnant</option><option value="nowin">Perdant</option>
-        </select></div>
-        <button onclick="borLoadTickets()" class="tbtn b">🔍 Filtrer</button>
-      </div>
-      <div id="bor-tickets-list" class="list-container" style="max-height: 400px; overflow-y: auto;">Chargement...</div>
-    </div>
-
-    <div class="card">
-      <h3>📈 Statistiques Borlette</h3>
-      <div style="display: grid; grid-template-columns: repeat(4,1fr); gap: 10px;">
-        <div class="statcard"><div class="sv sgold" id="bor-stat-total">0</div><div class="sl">Total paris</div></div>
-        <div class="statcard"><div class="sv sgreen" id="bor-stat-mise">0 Gd</div><div class="sl">Montant misé</div></div>
-        <div class="statcard"><div class="sv sgreen" id="bor-stat-gains">0 Gd</div><div class="sl">Gains payés</div></div>
-        <div class="statcard"><div class="sv sgold" id="bor-stat-net">0 Gd</div><div class="sl">Bénéfice net</div></div>
-      </div>
-    </div>
-  </div>
-</div>
-<!-- end atab-borlette -->
-    <!-- ===== JACKPOT ADMIN ===== -->
-    <div class="psec" id="atab-jackpot" data-tab="jackpot">
-      <div class="card">
-        <h3>🎰 Gestion des Jackpots</h3>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">
-          Chaque directeur a son propre jackpot. 5% de chaque mise y est accumulé automatiquement. 
-          L'administrateur décide quand attribuer le jackpot à un joueur au hasard.
-        </p>
-        <div style="background:rgba(245,200,0,.08);border:1px solid rgba(245,200,0,.2);border-radius:10px;padding:12px;margin-bottom:14px;font-size:13px;">
-          <strong style="color:var(--gold)">📋 Règles:</strong> 5% de chaque mise → jackpot du directeur concerné · 
-          Montant visible pour joueurs et directeurs · Admin attribue à un joueur au hasard
-        </div>
-        <div id="admin-jackpot-list">
-          <div style="color:var(--muted);font-size:13px;padding:10px">Chargement...</div>
-        </div>
-      </div>
-
-      <!-- Historique jackpots gagnés -->
-      <div class="card">
-        <h3>🏆 Historique des Jackpots Attribués</h3>
-        <div id="jackpot-history" style="max-height:300px;overflow-y:auto;">
-          <div style="color:var(--muted);font-size:13px">Aucun jackpot attribué</div>
-        </div>
-      </div>
-    </div>
-
-
-    </div>
 
       <!-- Difficulté GLOBALE (fallback) -->
       <div class="card">
@@ -4093,20 +3923,24 @@ function printBorTicket(bets,total){
   pw.onload=()=>{pw.focus();pw.print();};
 }
 
-// ==================== RECHARGE (Joueur) ====================
+// ==================== RECHARGE (Joueur) - VERSION PROPRE ====================
 let currentRechargeRef = null;
 let pollingInterval = null;
 
-function resetRechargeButton() {
+function resetRechargeUI() {
   const btn = document.querySelector('#recharge-form button');
   if (btn) {
     btn.disabled = false;
     btn.textContent = '✅ Payer maintenant';
   }
+  sessionStorage.removeItem('recharge_in_progress');
+  sessionStorage.removeItem('last_reference_id');
+  if (pollingInterval) clearInterval(pollingInterval);
+  pollingInterval = null;
 }
 
 function initRecharge(method) {
-  resetRechargeButton();
+  resetRechargeUI();
   document.getElementById('recharge-form').style.display = 'block';
   document.getElementById('rch-method-name').textContent = method === 'moncash' ? 'MonCash' : (method === 'natcash' ? 'NatCash' : 'Kashpaw');
   document.getElementById('rch-ref-label').textContent = 'Méthode';
@@ -4116,8 +3950,8 @@ function initRecharge(method) {
   document.getElementById('rch-amount').focus();
 }
 
-async function verifierRecharge(refId) {
-  if (!refId) return;
+async function checkPaymentStatus(refId) {
+  if (!refId) return false;
   try {
     const res = await apiGet(`/api/recharges/status/${refId}`);
     if (res.status === 'completed') {
@@ -4128,21 +3962,20 @@ async function verifierRecharge(refId) {
       renderJackpotWidget();
       document.getElementById('recharge-form').style.display = 'none';
       document.getElementById('rch-amount').value = '';
-      if (pollingInterval) clearInterval(pollingInterval);
-      sessionStorage.removeItem('recharge_in_progress');
-      sessionStorage.removeItem('last_reference_id');
+      resetRechargeUI();
+      return true;
     } else if (res.status === 'failed') {
       showNotif('❌ Le paiement a échoué', 'err');
-      if (pollingInterval) clearInterval(pollingInterval);
-      sessionStorage.removeItem('recharge_in_progress');
-      sessionStorage.removeItem('last_reference_id');
+      resetRechargeUI();
+      return true;
     }
-  } catch (e) { console.warn(e); }
+    return false;
+  } catch (e) { console.warn(e); return false; }
 }
 
-function lancerPolling(refId) {
+function startPolling(refId) {
   if (pollingInterval) clearInterval(pollingInterval);
-  pollingInterval = setInterval(() => verifierRecharge(refId), 5000);
+  pollingInterval = setInterval(() => checkPaymentStatus(refId), 5000);
 }
 
 async function soumettreRecharge() {
@@ -4167,15 +4000,12 @@ async function soumettreRecharge() {
 
     currentRechargeRef = res.reference_id;
     sessionStorage.setItem('last_reference_id', currentRechargeRef);
-    lancerPolling(currentRechargeRef);
+    startPolling(currentRechargeRef);
 
-    // Redirection vers la page de paiement sécurisée
     window.location.href = res.url;
   } catch (e) {
     showNotif(e.message || 'Erreur lors de la création du paiement', 'err');
-    btn.disabled = false;
-    btn.textContent = '✅ Payer maintenant';
-    sessionStorage.removeItem('recharge_in_progress');
+    resetRechargeUI();
   }
 }
 
