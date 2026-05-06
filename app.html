@@ -1626,7 +1626,6 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
     </div>
   </div>
 </div>
-
 <!-- ==================== ADMIN APP ==================== -->
 <div id="sc-admin" class="screen">
   <div class="app-header">
@@ -1657,42 +1656,42 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
       <div class="ptab" data-ptab="jackpot" onclick="selAdmTab(this)">🎰 Jackpot</div>
     </div>
 
+    <!-- VUE D'ENSEMBLE -->
     <div class="psec on" id="atab-overview">
-      <!-- Comptes de caisse (collapsible) -->
       <div class="card" style="margin-bottom:12px">
         <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="toggleComptes(this)">
           <h3 style="margin-bottom:0">💰 Comptes de Caisse</h3>
           <span id="comptes-toggle-icon" style="font-size:18px;color:var(--gold);transition:.2s;">▼</span>
         </div>
         <div id="comptes-body" style="display:none;margin-top:12px;">
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:10px;">
-          <div style="background:rgba(255,152,0,.1);border:2px solid rgba(255,152,0,.4);border-radius:12px;padding:14px;text-align:center;">
-            <div style="font-size:1.4em;margin-bottom:5px">📱</div>
-            <div style="font-size:12px;font-weight:800;color:#ff9800;margin-bottom:4px">MonCash</div>
-            <div style="font-size:1.3em;font-weight:900;color:#fff" id="adm-moncash-total">0 Gd</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:2px" id="adm-moncash-count">0 recharges</div>
-          </div>
-          <div style="background:rgba(91,142,245,.1);border:2px solid rgba(91,142,245,.4);border-radius:12px;padding:14px;text-align:center;">
-            <div style="font-size:1.4em;margin-bottom:5px">💳</div>
-            <div style="font-size:12px;font-weight:800;color:#5b8ef5;margin-bottom:4px">NatCash</div>
-            <div style="font-size:1.3em;font-weight:900;color:#fff" id="adm-natcash-total">0 Gd</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:2px" id="adm-natcash-count">0 recharges</div>
-          </div>
-          <div style="background:rgba(40,176,78,.1);border:2px solid rgba(40,176,78,.4);border-radius:12px;padding:14px;text-align:center;">
-            <div style="font-size:1.4em;margin-bottom:5px">💵</div>
-            <div style="font-size:12px;font-weight:800;color:var(--green2);margin-bottom:4px">Cash Bureau</div>
-            <div style="font-size:1.3em;font-weight:900;color:#fff" id="adm-cash-total">0 Gd</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:2px" id="adm-cash-count">0 transactions</div>
-          </div>
-          <div style="background:rgba(245,200,0,.1);border:2px solid rgba(245,200,0,.4);border-radius:12px;padding:14px;text-align:center;">
-            <div style="font-size:1.4em;margin-bottom:5px">🏦</div>
-            <div style="font-size:12px;font-weight:800;color:var(--gold);margin-bottom:4px">TOTAL</div>
-            <div style="font-size:1.3em;font-weight:900;color:var(--gold)" id="adm-total-encaisse">0 Gd</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:2px">Tous canaux</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:10px;">
+            <div style="background:rgba(255,152,0,.1);border:2px solid rgba(255,152,0,.4);border-radius:12px;padding:14px;text-align:center;">
+              <div style="font-size:1.4em;margin-bottom:5px">📱</div>
+              <div style="font-size:12px;font-weight:800;color:#ff9800;margin-bottom:4px">MonCash</div>
+              <div style="font-size:1.3em;font-weight:900;color:#fff" id="adm-moncash-total">0 Gd</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px" id="adm-moncash-count">0 recharges</div>
+            </div>
+            <div style="background:rgba(91,142,245,.1);border:2px solid rgba(91,142,245,.4);border-radius:12px;padding:14px;text-align:center;">
+              <div style="font-size:1.4em;margin-bottom:5px">💳</div>
+              <div style="font-size:12px;font-weight:800;color:#5b8ef5;margin-bottom:4px">NatCash</div>
+              <div style="font-size:1.3em;font-weight:900;color:#fff" id="adm-natcash-total">0 Gd</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px" id="adm-natcash-count">0 recharges</div>
+            </div>
+            <div style="background:rgba(40,176,78,.1);border:2px solid rgba(40,176,78,.4);border-radius:12px;padding:14px;text-align:center;">
+              <div style="font-size:1.4em;margin-bottom:5px">💵</div>
+              <div style="font-size:12px;font-weight:800;color:var(--green2);margin-bottom:4px">Cash Bureau</div>
+              <div style="font-size:1.3em;font-weight:900;color:#fff" id="adm-cash-total">0 Gd</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px" id="adm-cash-count">0 transactions</div>
+            </div>
+            <div style="background:rgba(245,200,0,.1);border:2px solid rgba(245,200,0,.4);border-radius:12px;padding:14px;text-align:center;">
+              <div style="font-size:1.4em;margin-bottom:5px">🏦</div>
+              <div style="font-size:12px;font-weight:800;color:var(--gold);margin-bottom:4px">TOTAL</div>
+              <div style="font-size:1.3em;font-weight:900;color:var(--gold)" id="adm-total-encaisse">0 Gd</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px">Tous canaux</div>
+            </div>
           </div>
         </div>
       </div>
-      </div><!-- /comptes-body -->
       <div class="statcards" id="admin-stats"></div>
       <div class="card" style="margin-top:8px">
         <h3>🏢 Performance par Directeur</h3>
@@ -1700,6 +1699,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
       </div>
     </div>
 
+    <!-- DIRECTEURS -->
     <div class="psec" id="atab-dirs">
       <div class="card">
         <h3>Créer un Directeur</h3>
@@ -1718,6 +1718,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
       </div>
     </div>
 
+    <!-- CAISSIERS -->
     <div class="psec" id="atab-caissiers">
       <div class="card">
         <h3>🏧 Tous les Caissiers</h3>
@@ -1725,19 +1726,23 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
       </div>
     </div>
 
+    <!-- JOUEURS -->
     <div class="psec" id="atab-joueurs">
-      <div class="card"><h3>👥 Joueurs</h3><div class="twrap"><table><thead><tr><th>Nom</th><th>Téléphone</th><th>Solde</th><th>Inscrit le</th></tr></thead><tbody id="tadm-joueurs-body"></tbody></table></div></div>
+      <div class="card"><h3>👥 Joueurs</h3><div class="twrap"></td><thead><tr><th>Nom</th><th>Téléphone</th><th>Solde</th><th>Inscrit le</th></tr></thead><tbody id="tadm-joueurs-body"></tbody></table></div></div>
     </div>
 
+    <!-- PARIS -->
     <div class="psec" id="atab-bets">
       <div class="statcards" id="admin-bets-stats"></div>
       <div class="card"><h3>⚽ Paris sportifs</h3><div class="twrap"><table><thead><tr><th>Date</th><th>Joueur</th><th>Match</th><th>Sél.</th><th>Cote</th><th>Mise</th><th>Gain pot.</th><th>Statut</th></tr></thead><tbody id="tadm-bets-body"></tbody></table></div></div>
     </div>
 
+    <!-- TRANSACTIONS -->
     <div class="psec" id="atab-trans">
-      <div class="card"><h3>💸 Transactions</h3><div class="twrap"><table><thead><tr><th>Date</th><th>Joueur</th><th>Type</th><th>Montant</th><th>Solde après</th><th>Caissier</th></tr></thead><tbody id="tadm-trans-body"></tbody></table></div></div>
+      <div class="card"><h3>💸 Transactions</h3><div class="twrap"></table><thead><tr><th>Date</th><th>Joueur</th><th>Type</th><th>Montant</th><th>Solde après</th><th>Caissier</th></tr></thead><tbody id="tadm-trans-body"></tbody></table></div></div>
     </div>
 
+    <!-- RECHARGES -->
     <div class="psec" id="atab-recharges">
       <div class="card">
         <h3>💳 Toutes les Recharges</h3>
@@ -1746,6 +1751,8 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
         <button onclick="admRefreshRecharges()" style="margin-top:10px;padding:7px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;font-size:13px"><i class="fas fa-sync"></i> Actualiser</button>
       </div>
     </div>
+
+    <!-- PARAMÈTRES -->
     <div class="psec" id="atab-params">
       <!-- Difficulté par DIRECTEUR -->
       <div class="card">
@@ -1755,8 +1762,222 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
           <div style="color:var(--muted);font-size:13px;padding:10px">Aucun directeur — créez d'abord un directeur.</div>
         </div>
       </div>
+      <!-- Difficulté GLOBALE (fallback) -->
+      <div class="card">
+        <h3>⚙️ Difficulté Globale (par défaut)</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Appliquée si aucune difficulté n'est définie pour le directeur.</p>
+        <div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #5b8ef5;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>🎱 Keno Lucky</b><span style="color:#5b8ef5;font-weight:900" id="keno-pct-lbl">45%</span></div>
+          <input type="range" id="keno-diff-range" min="0" max="80" step="5" value="45" style="width:100%;accent-color:#5b8ef5" oninput="updateDiffLabel('keno',this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span></div>
+          <button onclick="saveGameDiff('keno')" style="margin-top:8px;padding:5px 14px;background:var(--blue);color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
+        </div>
+        <div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid var(--gold);">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>🍀 Lucky 6</b><span style="color:var(--gold);font-weight:900" id="lucky6-pct-lbl">45%</span></div>
+          <input type="range" id="lucky6-diff-range" min="0" max="80" step="5" value="45" style="width:100%;accent-color:var(--gold)" oninput="updateDiffLabel('lucky6',this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span></div>
+          <button onclick="saveGameDiff('lucky6')" style="margin-top:8px;padding:5px 14px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
+        </div>
+        <div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid var(--red);">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>🏎️ Course Auto</b><span style="color:var(--red);font-weight:900" id="course-pct-lbl">45%</span></div>
+          <input type="range" id="course-diff-range" min="0" max="80" step="5" value="45" style="width:100%;accent-color:var(--red)" oninput="updateDiffLabel('course',this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span></div>
+          <button onclick="saveGameDiff('course')" style="margin-top:8px;padding:5px 14px;background:var(--red);color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
+        </div>
+        <div style="background:var(--bg2);border-radius:10px;padding:14px;border-left:4px solid var(--green2);">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>🚁 Hélicoptère</b><span style="color:var(--green2);font-weight:900" id="helico-pct-lbl">45%</span></div>
+          <input type="range" id="helico-diff-range" min="0" max="80" step="5" value="45" style="width:100%;accent-color:var(--green2)" oninput="updateDiffLabel('helico',this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span></div>
+          <button onclick="saveGameDiff('helico')" style="margin-top:8px;padding:5px 14px;background:var(--green2);color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
+        </div>
+      </div>
+      <!-- Ticker & Notifications -->
+      <div class="card">
+        <h3>📢 Bande Passante & Notifications</h3>
+        <div class="fg" style="margin-bottom:12px">
+          <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Message bande passante (ticker)</label>
+          <textarea id="admin-ticker-msg" rows="2" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;resize:none;" placeholder="Ex: Nouvo jwe Penalty disponib ! Jackpot Keno — 10,000 Gd !"></textarea>
+        </div>
+        <div class="fg" style="margin-bottom:12px">
+          <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Notification admin (s'affiche pour tous)</label>
+          <input type="text" id="admin-notif-text-input" placeholder="Ex: Maintenance prévue ce soir à 22h" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;margin-bottom:6px">
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="text" id="admin-notif-icon-input" placeholder="🔔" style="width:60px;padding:8px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:16px;outline:none;text-align:center">
+            <select id="admin-notif-bg" style="flex:1;padding:8px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;outline:none">
+              <option value="rgba(26,58,143,.3)">🔵 Bleu (info)</option>
+              <option value="rgba(245,200,0,.15)">🟡 Or (important)</option>
+              <option value="rgba(40,176,78,.2)">🟢 Vert (succès)</option>
+              <option value="rgba(230,57,70,.2)">🔴 Rouge (alerte)</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="saveAdminMessages()" style="padding:9px 16px;background:linear-gradient(135deg,var(--gold),#d4a800);color:#000;border:none;border-radius:7px;font-weight:700;cursor:pointer">💾 Enregistrer</button>
+          <button onclick="clearAdminMessages()" style="padding:9px 16px;background:var(--red);color:#fff;border:none;border-radius:7px;font-weight:700;cursor:pointer">🗑 Effacer</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>🔐 Identifiants Admin</h3>
+        <p style="font-size:13px;color:var(--muted)">Admin: <strong style="color:var(--gold)">mot de passe: admin</strong></p>
+        <p style="font-size:12px;color:var(--muted);margin-top:5px">Code secret accès staff: <strong style="color:var(--gold)">TONTONKONDO12</strong></p>
+      </div>
+    </div>
 
-    <!-- ===== BORLETTE ADMIN ===== -->
+    <!-- BORLETTE ADMIN (version refondue) -->
+    <!-- Assurez-vous que le bloc suivant est présent UNE SEULE FOIS -->
+    <div class="psec" id="atab-borlette" data-tab="borlette">
+      <div style="margin-bottom: 10px;">
+        <div class="ptabs" style="background: transparent; padding: 0 0 10px 0;">
+          <div class="ptab on" data-bor-tab="draw" onclick="switchBorletteAdminTab('draw')">🎲 Publier résultat</div>
+          <div class="ptab" data-bor-tab="limits" onclick="switchBorletteAdminTab('limits')">🚫 Blocages & limites</div>
+          <div class="ptab" data-bor-tab="tickets" onclick="switchBorletteAdminTab('tickets')">🎫 Tickets & rapports</div>
+        </div>
+      </div>
+
+      <!-- TAB 1 : PUBLIER RÉSULTAT -->
+      <div id="bor-admin-draw" class="bor-admin-tab-content" style="display: block;">
+        <div class="card">
+          <h3>📋 Publier un résultat de tirage</h3>
+          <div id="bor-publish-msg" class="ferr" style="display:none; margin-bottom: 12px;"></div>
+          <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="fg">
+              <label>Tirage</label>
+              <select id="bor-draw-select" class="select">
+                <option value="tn_matin">Tunisia Matin</option>
+                <option value="tn_soir">Tunisia Soir</option>
+                <option value="fl_matin">Florida Matin</option>
+                <option value="fl_soir">Florida Soir</option>
+                <option value="ny_matin">New York Matin</option>
+                <option value="ny_soir">New York Soir</option>
+                <option value="ga_matin">Georgia Matin</option>
+                <option value="ga_soir">Georgia Soir</option>
+                <option value="tx_matin">Texas Matin</option>
+                <option value="tx_soir">Texas Soir</option>
+              </select>
+            </div>
+            <div class="fg">
+              <label>Lotto 3 (3 chiffres) → 1er lot = 2 derniers chiffres</label>
+              <input type="text" id="bor-lotto3" maxlength="3" placeholder="456" class="input">
+            </div>
+            <div class="fg">
+              <label>2ème lot (2 chiffres)</label>
+              <input type="text" id="bor-lot2" maxlength="2" placeholder="23" class="input">
+            </div>
+            <div class="fg">
+              <label>3ème lot (2 chiffres)</label>
+              <input type="text" id="bor-lot3" maxlength="2" placeholder="11" class="input">
+            </div>
+          </div>
+          <button onclick="borPublierResultat()" class="fbtn" style="background: var(--gold); color: #000; margin-top: 8px;">📢 Publier le résultat</button>
+        </div>
+
+        <div class="card">
+          <h3>📅 Historique des résultats publiés</h3>
+          <div style="overflow-x: auto;">
+            <table style="width:100%;">
+              <thead><tr><th>Date</th><th>Tirage</th><th>1er lot</th><th>2e lot</th><th>3e lot</th></tr></thead>
+              <tbody id="bor-resultats-body"><tr><td colspan="5" style="text-align:center;">Chargement...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2 : BLOCAGES & LIMITES -->
+      <div id="bor-admin-limits" class="bor-admin-tab-content" style="display: none;">
+        <div class="card">
+          <h3>💰 Limites globales (tous tirages)</h3>
+          <div class="form-grid" style="grid-template-columns: 1fr 1fr auto; gap: 8px;">
+            <div class="fg"><label>Numéro (00-99)</label><input type="text" id="bor-global-number" maxlength="2" placeholder="48"></div>
+            <div class="fg"><label>Montant maximum (G)</label><input type="number" id="bor-global-amount" placeholder="500"></div>
+            <button onclick="borAddGlobalLimit()" class="tbtn g" style="align-self: flex-end;">✅ Ajouter / Modifier</button>
+          </div>
+          <div id="bor-global-limits-list" class="list-container" style="margin-top: 12px; background: var(--bg2); padding: 8px; border-radius: 8px;">Chargement...</div>
+        </div>
+
+        <div class="card">
+          <h3>🚫 Numéros bloqués globalement</h3>
+          <div class="form-grid" style="grid-template-columns: 1fr auto auto; gap: 8px;">
+            <div class="fg"><label>Numéro à bloquer (00-99)</label><input type="text" id="bor-block-number" maxlength="2" placeholder="82"></div>
+            <button onclick="borBlockNumberGlobal()" class="tbtn r">🔒 Bloquer global</button>
+            <button onclick="borUnblockNumberGlobal()" class="tbtn b">🔓 Débloquer global</button>
+          </div>
+          <div id="bor-blocked-numbers-list" class="list-container" style="margin-top: 12px; background: var(--bg2); padding: 8px; border-radius: 8px;">Chargement...</div>
+        </div>
+
+        <div class="card">
+          <h3>🎯 Blocage par tirage spécifique</h3>
+          <div class="form-grid" style="grid-template-columns: 1fr 1fr auto auto; gap: 8px;">
+            <div class="fg"><label>Tirage</label><select id="bor-block-draw-select"></select></div>
+            <div class="fg"><label>Numéro</label><input type="text" id="bor-block-number-draw" maxlength="2" placeholder="48"></div>
+            <button onclick="borBlockNumberDraw()" class="tbtn r">Bloquer</button>
+            <button onclick="borUnblockNumberDraw()" class="tbtn b">Débloquer</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>📊 Limite par numéro pour un tirage spécifique</h3>
+          <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr auto; gap: 8px;">
+            <div class="fg"><label>Tirage</label><select id="bor-limit-draw-spec"></select></div>
+            <div class="fg"><label>Numéro</label><input type="text" id="bor-limit-number-spec" maxlength="2" placeholder="48"></div>
+            <div class="fg"><label>Montant max</label><input type="number" id="bor-limit-amount-spec" placeholder="500"></div>
+            <button onclick="borSetLimitDraw()" class="tbtn g">Appliquer</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3 : TICKETS & RAPPORTS -->
+      <div id="bor-admin-tickets" class="bor-admin-tab-content" style="display: none;">
+        <div class="card">
+          <h3>🎟️ Tickets de la journée</h3>
+          <div class="form-grid" style="grid-template-columns: 1fr 1fr auto; gap: 8px; margin-bottom: 12px;">
+            <div class="fg"><label>Tirage</label><select id="bor-ticket-draw"><option value="">Tous</option></select></div>
+            <div class="fg"><label>Statut gain</label><select id="bor-ticket-gain">
+              <option value="all">Tous</option><option value="win">Gagnant</option><option value="nowin">Perdant</option>
+            </select></div>
+            <button onclick="borLoadTickets()" class="tbtn b">🔍 Filtrer</button>
+          </div>
+          <div id="bor-tickets-list" class="list-container" style="max-height: 400px; overflow-y: auto;">Chargement...</div>
+        </div>
+
+        <div class="card">
+          <h3>📈 Statistiques Borlette</h3>
+          <div style="display: grid; grid-template-columns: repeat(4,1fr); gap: 10px;">
+            <div class="statcard"><div class="sv sgold" id="bor-stat-total">0</div><div class="sl">Total paris</div></div>
+            <div class="statcard"><div class="sv sgreen" id="bor-stat-mise">0 Gd</div><div class="sl">Montant misé</div></div>
+            <div class="statcard"><div class="sv sgreen" id="bor-stat-gains">0 Gd</div><div class="sl">Gains payés</div></div>
+            <div class="statcard"><div class="sv sgold" id="bor-stat-net">0 Gd</div><div class="sl">Bénéfice net</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- end atab-borlette -->
+
+    <!-- JACKPOT ADMIN -->
+    <div class="psec" id="atab-jackpot" data-tab="jackpot">
+      <div class="card">
+        <h3>🎰 Gestion des Jackpots</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">
+          Chaque directeur a son propre jackpot. 5% de chaque mise y est accumulé automatiquement. 
+          L'administrateur décide quand attribuer le jackpot à un joueur au hasard.
+        </p>
+        <div style="background:rgba(245,200,0,.08);border:1px solid rgba(245,200,0,.2);border-radius:10px;padding:12px;margin-bottom:14px;font-size:13px;">
+          <strong style="color:var(--gold)">📋 Règles:</strong> 5% de chaque mise → jackpot du directeur concerné · 
+          Montant visible pour joueurs et directeurs · Admin attribue à un joueur au hasard
+        </div>
+        <div id="admin-jackpot-list">
+          <div style="color:var(--muted);font-size:13px;padding:10px">Chargement...</div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>🏆 Historique des Jackpots Attribués</h3>
+        <div id="jackpot-history" style="max-height:300px;overflow-y:auto;">
+          <div style="color:var(--muted);font-size:13px">Aucun jackpot attribué</div>
+        </div>
+      </div>
+    </div>
+
+  </div> <!-- fin .inner -->
+</div> <!-- fin #sc-admin -->
  <!-- ==================== BORLETTE ADMIN (REFONDU) ==================== -->
 <div class="psec" id="atab-borlette" data-tab="borlette">
   <div style="margin-bottom: 10px;">
@@ -3874,8 +4095,18 @@ function printBorTicket(bets,total){
 
 // ==================== RECHARGE (Joueur) ====================
 let currentRechargeRef = null;
+let pollingInterval = null;
+
+function resetRechargeButton() {
+  const btn = document.querySelector('#recharge-form button');
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = '✅ Payer maintenant';
+  }
+}
 
 function initRecharge(method) {
+  resetRechargeButton();
   document.getElementById('recharge-form').style.display = 'block';
   document.getElementById('rch-method-name').textContent = method === 'moncash' ? 'MonCash' : (method === 'natcash' ? 'NatCash' : 'Kashpaw');
   document.getElementById('rch-ref-label').textContent = 'Méthode';
@@ -3885,8 +4116,42 @@ function initRecharge(method) {
   document.getElementById('rch-amount').focus();
 }
 
+async function verifierRecharge(refId) {
+  if (!refId) return;
+  try {
+    const res = await apiGet(`/api/recharges/status/${refId}`);
+    if (res.status === 'completed') {
+      showNotif(`✅ Recharge de ${res.montant} Gd confirmée !`, 'ok');
+      await refreshPlayerCache(CJ.phone);
+      CJ = gJ()[CJ.phone];
+      updateAppBar();
+      renderJackpotWidget();
+      document.getElementById('recharge-form').style.display = 'none';
+      document.getElementById('rch-amount').value = '';
+      if (pollingInterval) clearInterval(pollingInterval);
+      sessionStorage.removeItem('recharge_in_progress');
+      sessionStorage.removeItem('last_reference_id');
+    } else if (res.status === 'failed') {
+      showNotif('❌ Le paiement a échoué', 'err');
+      if (pollingInterval) clearInterval(pollingInterval);
+      sessionStorage.removeItem('recharge_in_progress');
+      sessionStorage.removeItem('last_reference_id');
+    }
+  } catch (e) { console.warn(e); }
+}
+
+function lancerPolling(refId) {
+  if (pollingInterval) clearInterval(pollingInterval);
+  pollingInterval = setInterval(() => verifierRecharge(refId), 5000);
+}
+
 async function soumettreRecharge() {
   if (!CJ) { showNotif("Connectez-vous d'abord", 'err'); return; }
+  if (sessionStorage.getItem('recharge_in_progress') === 'true') {
+    showNotif('Une recharge est déjà en cours', 'info');
+    return;
+  }
+
   const amt = parseInt(document.getElementById('rch-amount').value) || 0;
   const method = document.getElementById('rch-ref').dataset.method;
   if (amt < 20) { showNotif('Minimum 20 Gourdes', 'err'); return; }
@@ -3895,11 +4160,14 @@ async function soumettreRecharge() {
   try {
     btn.disabled = true;
     btn.textContent = '⏳ Création...';
+    sessionStorage.setItem('recharge_in_progress', 'true');
 
     const res = await apiPost('/api/recharges/initiate', { montant: amt, methode: method });
     if (!res.success) throw new Error(res.error || 'Erreur API');
 
     currentRechargeRef = res.reference_id;
+    sessionStorage.setItem('last_reference_id', currentRechargeRef);
+    lancerPolling(currentRechargeRef);
 
     // Redirection vers la page de paiement sécurisée
     window.location.href = res.url;
@@ -3907,6 +4175,16 @@ async function soumettreRecharge() {
     showNotif(e.message || 'Erreur lors de la création du paiement', 'err');
     btn.disabled = false;
     btn.textContent = '✅ Payer maintenant';
+    sessionStorage.removeItem('recharge_in_progress');
+  }
+}
+
+// Au démarrage de l'application (dans la fonction de restauration de session)
+// Après avoir restauré CJ, ajouter :
+if (sessionStorage.getItem('recharge_in_progress') === 'true') {
+  const refId = sessionStorage.getItem('last_reference_id');
+  if (refId) {
+    lancerPolling(refId);
   }
 }
 // ==================== ADMIN: Recharges + full refresh ====================

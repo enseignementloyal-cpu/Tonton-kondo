@@ -116,15 +116,14 @@ function formatMatch(match, compCode) {
     mkt:   12,
   };
 }
-// ── HELPER PAIEMENT PLOP PLOP ─────────────────────────────────
+// ── HELPER PAIEMENT PLOP PLOP (Basic Auth) ────────────────────
 async function callPlopPlop(endpoint, body) {
+  const auth = Buffer.from(`${MERCHANT_CLIENT_ID}:${MERCHANT_SECRET_KEY}`).toString('base64');
   const response = await fetch(`${PLOPPLOP_BASE}${endpoint}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      // Authentification par clé API (à ajuster si l'API attend autre chose)
-      'X-API-Key': MERCHANT_SECRET_KEY,
-      // Alternative possible : Authorization: `Bearer ${MERCHANT_SECRET_KEY}`
+      'Authorization': `Basic ${auth}`
     },
     body: JSON.stringify(body)
   });
