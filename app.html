@@ -1757,146 +1757,133 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
       </div>
 
     <!-- ===== BORLETTE ADMIN ===== -->
-    <div class="psec" id="atab-borlette" data-tab="borlette">
+ <!-- ==================== BORLETTE ADMIN (REFONDU) ==================== -->
+<div class="psec" id="atab-borlette" data-tab="borlette">
+  <div style="margin-bottom: 10px;">
+    <div class="ptabs" style="background: transparent; padding: 0 0 10px 0;">
+      <div class="ptab on" data-bor-tab="draw" onclick="switchBorletteAdminTab('draw')">🎲 Publier résultat</div>
+      <div class="ptab" data-bor-tab="limits" onclick="switchBorletteAdminTab('limits')">🚫 Blocages & limites</div>
+      <div class="ptab" data-bor-tab="tickets" onclick="switchBorletteAdminTab('tickets')">🎫 Tickets & rapports</div>
+    </div>
+  </div>
 
-      <!-- PUBLIER RÉSULTATS -->
-      <div class="card">
-        <h3>📋 Publier un Résultat de Tirage</h3>
-        <div id="bor-publish-msg" style="display:none;padding:9px;border-radius:7px;margin-bottom:10px;font-size:13px;font-weight:700;"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-          <div class="fg">
-            <label>Tirage</label>
-            <select id="bor-draw-select" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;outline:none;">
-              <option value="tunisia">Tunisia</option>
-              <option value="florida">Florida</option>
-              <option value="newyork">New York</option>
-              <option value="georgia">Georgia</option>
-              <option value="texas">Texas</option>
-            </select>
-          </div>
-          <div class="fg">
-            <label>Lotto 3 (3 chiffres) <small style="color:var(--muted)">→ 2 derniers = Lot1</small></label>
-            <input type="text" id="bor-lotto3" maxlength="3" placeholder="456" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;outline:none;font-size:16px;font-weight:700;letter-spacing:3px;">
-          </div>
-          <div class="fg">
-            <label>2ème Lot (2 chiffres)</label>
-            <input type="text" id="bor-lot2" maxlength="2" placeholder="23" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;outline:none;font-size:16px;font-weight:700;letter-spacing:3px;">
-          </div>
-          <div class="fg">
-            <label>3ème Lot (2 chiffres)</label>
-            <input type="text" id="bor-lot3" maxlength="2" placeholder="11" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;outline:none;font-size:16px;font-weight:700;letter-spacing:3px;">
-          </div>
-        </div>
-        <button onclick="borPublierResultat()" style="background:linear-gradient(135deg,var(--gold),#d4a800);color:#000;border:none;padding:11px 24px;border-radius:8px;font-weight:900;font-size:14px;cursor:pointer;">📢 Publier le Résultat</button>
-      </div><!-- /card publier -->
-
-      <!-- HISTORIQUE TIRAGES -->
-      <div class="card">
-        <h3>📅 Historique des Résultats</h3>
-        <div style="overflow-x:auto;">
-          <table style="width:100%;border-collapse:collapse;font-size:13px;">
-            <thead>
-              <tr style="background:var(--blue);">
-                <th style="padding:8px;text-align:left;">Date</th>
-                <th style="padding:8px;">Tirage</th>
-                <th style="padding:8px;">Lot1</th>
-                <th style="padding:8px;">Lot2</th>
-                <th style="padding:8px;">Lot3</th>
-                <th style="padding:8px;">Action</th>
-              </tr>
-            </thead>
-            <tbody id="bor-resultats-body">
-              <tr><td colspan="6" style="text-align:center;padding:16px;color:var(--muted)">Aucun résultat</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- BLOQUER UN NUMÉRO -->
-      <div class="card">
-        <h3>🚫 Bloquer un Numéro</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;margin-bottom:10px;">
-          <div class="fg" style="margin-bottom:0">
-            <label>Tirage (laisser vide = tous)</label>
-            <select id="bor-block-draw" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;outline:none;">
-              <option value="">Tous les tirages</option>
-              <option value="tunisia">Tunisia</option>
-              <option value="florida">Florida</option>
-              <option value="newyork">New York</option>
-              <option value="georgia">Georgia</option>
-              <option value="texas">Texas</option>
-            </select>
-          </div>
-          <div class="fg" style="margin-bottom:0">
-            <label>Numéro (00–99)</label>
-            <input type="text" id="bor-block-num" maxlength="2" placeholder="82" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;outline:none;font-size:15px;font-weight:700;letter-spacing:3px;">
-          </div>
-          <button onclick="borBloquerNumero()" style="background:var(--red);color:#fff;border:none;padding:10px 16px;border-radius:8px;font-weight:700;cursor:pointer;white-space:nowrap;">🚫 Bloquer</button>
-        </div>
-        <div id="bor-blocked-list" style="background:var(--bg2);border-radius:8px;padding:10px;min-height:40px;font-size:12px;">
-          <span style="color:var(--muted)">Aucun numéro bloqué</span>
-        </div>
-      </div>
-
-      <!-- LIMITE DE MISE PAR NUMÉRO -->
-      <div class="card">
-        <h3>💰 Limite de Mise par Numéro</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;margin-bottom:10px;">
-          <div class="fg" style="margin-bottom:0">
-            <label>Tirage</label>
-            <select id="bor-limit-draw" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;outline:none;">
-              <option value="">Tous</option>
-              <option value="tunisia">Tunisia</option>
-              <option value="florida">Florida</option>
-              <option value="newyork">New York</option>
-              <option value="georgia">Georgia</option>
-              <option value="texas">Texas</option>
-            </select>
-          </div>
-          <div class="fg" style="margin-bottom:0">
-            <label>Numéro</label>
-            <input type="text" id="bor-limit-num" maxlength="2" placeholder="48" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;outline:none;font-size:15px;font-weight:700;letter-spacing:3px;">
-          </div>
-          <div class="fg" style="margin-bottom:0">
-            <label>Montant max (Gd)</label>
-            <input type="number" id="bor-limit-amt" placeholder="500" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;outline:none;">
-          </div>
-          <button onclick="borSetLimite()" style="background:var(--blue);color:#fff;border:none;padding:10px 14px;border-radius:8px;font-weight:700;cursor:pointer;white-space:nowrap;">✅ Appliquer</button>
-        </div>
-        <div id="bor-limits-list" style="background:var(--bg2);border-radius:8px;padding:10px;min-height:40px;font-size:12px;">
-          <span style="color:var(--muted)">Aucune limite définie</span>
-        </div>
-      </div>
-
-      <!-- BLOQUER UN TIRAGE COMPLET -->
-      <div class="card">
-        <h3>🔒 Bloquer / Débloquer un Tirage</h3>
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-          <select id="bor-toggle-draw" style="flex:1;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;outline:none;min-width:140px;">
-            <option value="tunisia">Tunisia</option>
-            <option value="florida">Florida</option>
-            <option value="newyork">New York</option>
-            <option value="georgia">Georgia</option>
-            <option value="texas">Texas</option>
+  <!-- TAB 1 : PUBLIER RÉSULTAT -->
+  <div id="bor-admin-draw" class="bor-admin-tab-content" style="display: block;">
+    <div class="card">
+      <h3>📋 Publier un résultat de tirage</h3>
+      <div id="bor-publish-msg" class="ferr" style="display:none; margin-bottom: 12px;"></div>
+      <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="fg">
+          <label>Tirage</label>
+          <select id="bor-draw-select" class="select">
+            <option value="tn_matin">Tunisia Matin</option>
+            <option value="tn_soir">Tunisia Soir</option>
+            <option value="fl_matin">Florida Matin</option>
+            <option value="fl_soir">Florida Soir</option>
+            <option value="ny_matin">New York Matin</option>
+            <option value="ny_soir">New York Soir</option>
+            <option value="ga_matin">Georgia Matin</option>
+            <option value="ga_soir">Georgia Soir</option>
+            <option value="tx_matin">Texas Matin</option>
+            <option value="tx_soir">Texas Soir</option>
           </select>
-          <button onclick="borBloquerTirage()" style="background:var(--red);color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:700;cursor:pointer;">🔒 Bloquer</button>
-          <button onclick="borDebloquerTirage()" style="background:var(--green2);color:#fff;border:none;padding:10px 18px;border-radius:8px;font-weight:700;cursor:pointer;">🔓 Débloquer</button>
         </div>
-        <div id="bor-blocked-draws" style="margin-top:10px;font-size:12px;color:var(--muted);"></div>
-      </div>
-
-      <!-- STATISTIQUES BORLETTE -->
-      <div class="card">
-        <h3>📊 Statistiques Borlette</h3>
-        <div id="bor-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;">
-          <div class="statcard"><div class="sv sgold" id="bor-stat-total">0</div><div class="sl">Total Paris</div></div>
-          <div class="statcard"><div class="sv sgreen" id="bor-stat-mise">0 Gd</div><div class="sl">Total Misé</div></div>
-          <div class="statcard"><div class="sv sred" id="bor-stat-pay">0 Gd</div><div class="sl">Gains Payés</div></div>
-          <div class="statcard"><div class="sv spurp" id="bor-stat-net">0 Gd</div><div class="sl">Bénéfice NET</div></div>
+        <div class="fg">
+          <label>Lotto 3 (3 chiffres) → 1er lot = 2 derniers chiffres</label>
+          <input type="text" id="bor-lotto3" maxlength="3" placeholder="456" class="input">
+        </div>
+        <div class="fg">
+          <label>2ème lot (2 chiffres)</label>
+          <input type="text" id="bor-lot2" maxlength="2" placeholder="23" class="input">
+        </div>
+        <div class="fg">
+          <label>3ème lot (2 chiffres)</label>
+          <input type="text" id="bor-lot3" maxlength="2" placeholder="11" class="input">
         </div>
       </div>
-    <!-- end atab-borlette -->
+      <button onclick="borPublierResultat()" class="fbtn" style="background: var(--gold); color: #000; margin-top: 8px;">📢 Publier le résultat</button>
+    </div>
 
+    <div class="card">
+      <h3>📅 Historique des résultats publiés</h3>
+      <div style="overflow-x: auto;">
+        <table style="width:100%;">
+          <thead><tr><th>Date</th><th>Tirage</th><th>1er lot</th><th>2e lot</th><th>3e lot</th></tr></thead>
+          <tbody id="bor-resultats-body"><tr><td colspan="5" style="text-align:center;">Chargement...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2 : BLOCAGES & LIMITES -->
+  <div id="bor-admin-limits" class="bor-admin-tab-content" style="display: none;">
+    <div class="card">
+      <h3>💰 Limites globales (tous tirages)</h3>
+      <div class="form-grid" style="grid-template-columns: 1fr 1fr auto; gap: 8px;">
+        <div class="fg"><label>Numéro (00-99)</label><input type="text" id="bor-global-number" maxlength="2" placeholder="48"></div>
+        <div class="fg"><label>Montant maximum (G)</label><input type="number" id="bor-global-amount" placeholder="500"></div>
+        <button onclick="borAddGlobalLimit()" class="tbtn g" style="align-self: flex-end;">✅ Ajouter / Modifier</button>
+      </div>
+      <div id="bor-global-limits-list" class="list-container" style="margin-top: 12px; background: var(--bg2); padding: 8px; border-radius: 8px;">Chargement...</div>
+    </div>
+
+    <div class="card">
+      <h3>🚫 Numéros bloqués globalement</h3>
+      <div class="form-grid" style="grid-template-columns: 1fr auto auto; gap: 8px;">
+        <div class="fg"><label>Numéro à bloquer (00-99)</label><input type="text" id="bor-block-number" maxlength="2" placeholder="82"></div>
+        <button onclick="borBlockNumberGlobal()" class="tbtn r">🔒 Bloquer global</button>
+        <button onclick="borUnblockNumberGlobal()" class="tbtn b">🔓 Débloquer global</button>
+      </div>
+      <div id="bor-blocked-numbers-list" class="list-container" style="margin-top: 12px; background: var(--bg2); padding: 8px; border-radius: 8px;">Chargement...</div>
+    </div>
+
+    <div class="card">
+      <h3>🎯 Blocage par tirage spécifique</h3>
+      <div class="form-grid" style="grid-template-columns: 1fr 1fr auto auto; gap: 8px;">
+        <div class="fg"><label>Tirage</label><select id="bor-block-draw-select"></select></div>
+        <div class="fg"><label>Numéro</label><input type="text" id="bor-block-number-draw" maxlength="2" placeholder="48"></div>
+        <button onclick="borBlockNumberDraw()" class="tbtn r">Bloquer</button>
+        <button onclick="borUnblockNumberDraw()" class="tbtn b">Débloquer</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>📊 Limite par numéro pour un tirage spécifique</h3>
+      <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr auto; gap: 8px;">
+        <div class="fg"><label>Tirage</label><select id="bor-limit-draw-spec"></select></div>
+        <div class="fg"><label>Numéro</label><input type="text" id="bor-limit-number-spec" maxlength="2" placeholder="48"></div>
+        <div class="fg"><label>Montant max</label><input type="number" id="bor-limit-amount-spec" placeholder="500"></div>
+        <button onclick="borSetLimitDraw()" class="tbtn g">Appliquer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3 : TICKETS & RAPPORTS -->
+  <div id="bor-admin-tickets" class="bor-admin-tab-content" style="display: none;">
+    <div class="card">
+      <h3>🎟️ Tickets de la journée</h3>
+      <div class="form-grid" style="grid-template-columns: 1fr 1fr auto; gap: 8px; margin-bottom: 12px;">
+        <div class="fg"><label>Tirage</label><select id="bor-ticket-draw"><option value="">Tous</option></select></div>
+        <div class="fg"><label>Statut gain</label><select id="bor-ticket-gain">
+          <option value="all">Tous</option><option value="win">Gagnant</option><option value="nowin">Perdant</option>
+        </select></div>
+        <button onclick="borLoadTickets()" class="tbtn b">🔍 Filtrer</button>
+      </div>
+      <div id="bor-tickets-list" class="list-container" style="max-height: 400px; overflow-y: auto;">Chargement...</div>
+    </div>
+
+    <div class="card">
+      <h3>📈 Statistiques Borlette</h3>
+      <div style="display: grid; grid-template-columns: repeat(4,1fr); gap: 10px;">
+        <div class="statcard"><div class="sv sgold" id="bor-stat-total">0</div><div class="sl">Total paris</div></div>
+        <div class="statcard"><div class="sv sgreen" id="bor-stat-mise">0 Gd</div><div class="sl">Montant misé</div></div>
+        <div class="statcard"><div class="sv sgreen" id="bor-stat-gains">0 Gd</div><div class="sl">Gains payés</div></div>
+        <div class="statcard"><div class="sv sgold" id="bor-stat-net">0 Gd</div><div class="sl">Bénéfice net</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- end atab-borlette -->
     <!-- ===== JACKPOT ADMIN ===== -->
     <div class="psec" id="atab-jackpot" data-tab="jackpot">
       <div class="card">
@@ -2260,6 +2247,154 @@ async function loadBorletteAdminData() {
     sBorBlock((blocked.blocked||[]).map(b => (b.draw ? b.draw+':'+b.number : 'all:'+b.number)));
     sBorLimits((limits.limits||[]).map(l => ({ key:(l.draw?l.draw+':'+l.number:'all:'+l.number), num:l.number, draw:l.draw, amt:parseFloat(l.max_amount), id:l.id })));
   } catch(e) { console.warn('loadBorletteAdminData:', e.message); }
+}
+// ==================== BORLETTE ADMIN COMPLETE (refonte) ====================
+let currentBorAdminTab = 'draw';
+function switchBorletteAdminTab(tab) {
+  currentBorAdminTab = tab;
+  document.querySelectorAll('#atab-borlette .bor-admin-tab-content').forEach(div => div.style.display = 'none');
+  document.getElementById(`bor-admin-${tab}`).style.display = 'block';
+  document.querySelectorAll('#atab-borlette .ptab').forEach(btn => btn.classList.remove('on'));
+  document.querySelector(`#atab-borlette .ptab[data-bor-tab="${tab}"]`).classList.add('on');
+  if (tab === 'limits') { loadBorGlobalLimits(); loadBorBlockedNumbers(); loadDrawSelects(); }
+  if (tab === 'tickets') { borLoadTickets(); }
+}
+
+async function loadBorGlobalLimits() {
+  try { const data = await apiGet('/api/borlette/limits'); displayGlobalLimits(data.limits.filter(l => !l.draw)); }
+  catch(e) { document.getElementById('bor-global-limits-list').innerHTML = '<span class="loss">Erreur chargement</span>'; }
+}
+function displayGlobalLimits(limits) {
+  const container = document.getElementById('bor-global-limits-list');
+  if (!limits.length) { container.innerHTML = '<span class="muted">Aucune limite globale</span>'; return; }
+  container.innerHTML = '<div style="display:flex; flex-wrap:wrap; gap:6px;">' +
+    limits.map(l => `<span style="background:var(--bg3); padding:4px 10px; border-radius:14px;">🔢 ${l.number} : ${parseFloat(l.max_amount).toLocaleString()} G
+      <button onclick="borRemoveGlobalLimit('${l.number}')" style="margin-left:6px; background:none; border:none; color:var(--red); cursor:pointer;">✕</button></span>`).join('') + '</div>';
+}
+async function borAddGlobalLimit() {
+  const num = document.getElementById('bor-global-number').value.padStart(2,'0');
+  const amt = parseFloat(document.getElementById('bor-global-amount').value);
+  if (!num || !amt) return alert('Numéro et montant requis');
+  await apiPost('/api/borlette/limit', { number: num, draw: '', max_amount: amt });
+  loadBorGlobalLimits();
+  alert('Limite globale ajoutée');
+}
+async function borRemoveGlobalLimit(number) {
+  const limits = (await apiGet('/api/borlette/limits')).limits;
+  const lim = limits.find(l => l.number === number && !l.draw);
+  if (lim) await apiDel(`/api/borlette/limit/${lim.id}`);
+  loadBorGlobalLimits();
+}
+async function loadBorBlockedNumbers() {
+  try { const data = await apiGet('/api/borlette/blocked'); displayBlockedNumbers(data.blocked.filter(b => !b.draw)); }
+  catch(e) { document.getElementById('bor-blocked-numbers-list').innerHTML = '<span class="loss">Erreur</span>'; }
+}
+function displayBlockedNumbers(blocks) {
+  const container = document.getElementById('bor-blocked-numbers-list');
+  if (!blocks.length) { container.innerHTML = '<span class="muted">Aucun numéro bloqué globalement</span>'; return; }
+  container.innerHTML = '<div style="display:flex; flex-wrap:wrap; gap:6px;">' +
+    blocks.map(b => `<span style="background:rgba(230,57,70,.2); padding:4px 10px; border-radius:14px;">🚫 ${b.number}
+      <button onclick="borUnblockNumberGlobalValue('${b.number}')" style="margin-left:6px; background:none; border:none; color:#fff; cursor:pointer;">✕</button></span>`).join('') + '</div>';
+}
+async function borBlockNumberGlobal() {
+  const num = document.getElementById('bor-block-number').value.padStart(2,'0');
+  if (!num) return;
+  await apiPost('/api/borlette/block', { number: num, draw: '' });
+  loadBorBlockedNumbers();
+}
+async function borUnblockNumberGlobal() {
+  const num = document.getElementById('bor-block-number').value.padStart(2,'0');
+  if (!num) return;
+  const blocks = (await apiGet('/api/borlette/blocked')).blocked;
+  const block = blocks.find(b => b.number === num && !b.draw);
+  if (block) await apiDel(`/api/borlette/block/${block.id}`);
+  loadBorBlockedNumbers();
+}
+async function borUnblockNumberGlobalValue(num) {
+  const blocks = (await apiGet('/api/borlette/blocked')).blocked;
+  const block = blocks.find(b => b.number === num && !b.draw);
+  if (block) await apiDel(`/api/borlette/block/${block.id}`);
+  loadBorBlockedNumbers();
+}
+async function loadDrawSelects() {
+  try { const draws = await apiGet('/api/borlette/results'); const opts = draws.results.map(r => `<option value="${r.draw}">${r.draw}</option>`);
+    document.getElementById('bor-block-draw-select').innerHTML = '<option value="">Sélectionnez</option>' + opts.join('');
+    document.getElementById('bor-limit-draw-spec').innerHTML = '<option value="">Choisir tirage</option>' + opts.join('');
+  } catch(e) {}
+}
+async function borBlockNumberDraw() {
+  const drawId = document.getElementById('bor-block-draw-select').value;
+  const num = document.getElementById('bor-block-number-draw').value.padStart(2,'0');
+  if (!drawId || !num) return alert('Choisissez un tirage et un numéro');
+  await apiPost('/api/borlette/block', { number: num, draw: drawId });
+  alert('Numéro bloqué pour ce tirage');
+}
+async function borUnblockNumberDraw() {
+  const drawId = document.getElementById('bor-block-draw-select').value;
+  const num = document.getElementById('bor-block-number-draw').value.padStart(2,'0');
+  if (!drawId || !num) return;
+  const blocks = (await apiGet('/api/borlette/blocked')).blocked;
+  const block = blocks.find(b => b.number === num && b.draw === drawId);
+  if (block) await apiDel(`/api/borlette/block/${block.id}`);
+  alert('Débloqué');
+}
+async function borSetLimitDraw() {
+  const drawId = document.getElementById('bor-limit-draw-spec').value;
+  const num = document.getElementById('bor-limit-number-spec').value.padStart(2,'0');
+  const amt = parseFloat(document.getElementById('bor-limit-amount-spec').value);
+  if (!drawId || !num || !amt) return alert('Tous les champs requis');
+  await apiPost('/api/borlette/limit', { number: num, draw: drawId, max_amount: amt });
+  alert('Limite appliquée');
+}
+async function borLoadTickets() {
+  const draw = document.getElementById('bor-ticket-draw').value;
+  const gain = document.getElementById('bor-ticket-gain').value;
+  let url = '/api/admin/bets?type=borlette&limit=100';
+  if (draw) url += `&draw=${draw}`;
+  try {
+    const data = await apiGet(url);
+    let tickets = data.bets || [];
+    if (gain === 'win') tickets = tickets.filter(t => t.statut === 'gagne');
+    if (gain === 'nowin') tickets = tickets.filter(t => t.statut !== 'gagne');
+    const container = document.getElementById('bor-tickets-list');
+    if (!tickets.length) { container.innerHTML = '<div class="empty-msg">Aucun ticket</div>'; return; }
+    container.innerHTML = `<div style="overflow-x:auto;"><table style="width:100%; font-size:12px;"><thead><tr><th>Date</th><th>Joueur</th><th>Numéro</th><th>Type</th><th>Mise</th><th>Gain</th><th>Statut</th></tr></thead><tbody>
+      ${tickets.map(t => `<tr>
+        <td>${new Date(t.created_at).toLocaleString()}</td>
+        <td>${t.player_name || t.player_phone}</td>
+        <td><strong>${t.selection}</strong></td>
+        <td>${t.sub_type || 'borlette'}</td>
+        <td>${parseFloat(t.mise).toLocaleString()} G</td>
+        <td>${t.gain_potentiel>0 ? t.gain_potentiel.toLocaleString()+' G' : '-'}</td>
+        <td><span class="sbadge ${t.statut==='gagne'?'sbw':'sbl'}">${t.statut}</span></td>
+      </tr>`).join('')}
+    </tbody></table></div>`;
+  } catch(e) { console.error(e); }
+}
+function initBorletteAdmin() {
+  loadBorGlobalLimits();
+  loadBorBlockedNumbers();
+  loadDrawSelects();
+  borRefreshResultats();   // déjà définie plus haut
+  borRefreshStats();       // déjà définie plus haut
+  const drawSelect = document.getElementById('bor-ticket-draw');
+  if (drawSelect) { apiGet('/api/borlette/results').then(data => {
+    drawSelect.innerHTML = '<option value="">Tous</option>' + (data.results.map(r=>`<option value="${r.draw}">${r.draw}</option>`).join(''));
+  }).catch(()=>{}); }
+}
+// Surcharge de selAdmTab pour initialiser l'onglet Borlette
+if (typeof window.selAdmTab === 'function') {
+  const originalSelAdm = window.selAdmTab;
+  window.selAdmTab = function(el) {
+    originalSelAdm(el);
+    if (el.dataset.ptab === 'borlette') setTimeout(initBorletteAdmin, 150);
+  };
+} else {
+  document.querySelectorAll('#sc-admin .ptab').forEach(btn => {
+    if (btn.innerText.includes('Borlette')) {
+      btn.addEventListener('click', () => setTimeout(initBorletteAdmin, 200));
+    }
+  });
 }
 
 async function loadJackpotData() {
@@ -3738,33 +3873,42 @@ function printBorTicket(bets,total){
 }
 
 // ==================== RECHARGE (Joueur) ====================
-function initRecharge(method){
-  document.getElementById('recharge-form').style.display='block';
-  const instructions={
-    moncash:"1. Ouvrez <b>MonCash</b><br>2. Envoyez au: <b style='color:var(--gold)'>+509 XX XX XXXX</b><br>3. Notez le numéro de transaction<br>4. Entrez le montant et le numéro ci-dessous",
-    natcash:"1. Ouvrez <b>NatCash</b><br>2. Transfert vers: <b style='color:var(--gold)'>+509 YY YY YYYY</b><br>3. Notez la référence<br>4. Entrez le montant et la référence ci-dessous"
-  };
-  document.getElementById('rch-method-name').textContent=method==='moncash'?'MonCash':'NatCash';
-  document.getElementById('rch-instructions').innerHTML=instructions[method];
-  document.getElementById('rch-ref-label').textContent=method==='moncash'?'MonCash':'NatCash';
-  document.getElementById('rch-ref').dataset.method=method;
+let currentRechargeRef = null;
+
+function initRecharge(method) {
+  document.getElementById('recharge-form').style.display = 'block';
+  document.getElementById('rch-method-name').textContent = method === 'moncash' ? 'MonCash' : (method === 'natcash' ? 'NatCash' : 'Kashpaw');
+  document.getElementById('rch-ref-label').textContent = 'Méthode';
+  document.getElementById('rch-ref').dataset.method = method;
+  document.getElementById('rch-ref').placeholder = 'Cliquez sur "Payer maintenant"';
+  document.getElementById('rch-ref').readOnly = true;
+  document.getElementById('rch-amount').focus();
 }
 
-function soumettreRecharge(){
-  if(!CJ){showNotif("Connectez-vous d'abord",'err');return;}
-  const amt=parseInt(document.getElementById('rch-amount').value)||0;
-  const ref=document.getElementById('rch-ref').value.trim();
-  const method=document.getElementById('rch-ref').dataset.method||'moncash';
-  if(amt<50){showNotif('Minimum 50 Gourdes','err');return;}
-  if(!ref){showNotif('Entrez la référence de transaction','err');return;}
-  const rch=gRch();
-  rch.unshift({id:Date.now(),phone:CJ.phone,name:CJ.name,method,amount:amt,ref,date:new Date().toLocaleString(),statut:'En attente'});
-  sRch(rch);
-  showNotif('✅ Demande envoyée ! Un caissier validera sous peu.','ok');
-  document.getElementById('rch-ref').value='';
-  document.getElementById('recharge-form').style.display='none';
-}
+async function soumettreRecharge() {
+  if (!CJ) { showNotif("Connectez-vous d'abord", 'err'); return; }
+  const amt = parseInt(document.getElementById('rch-amount').value) || 0;
+  const method = document.getElementById('rch-ref').dataset.method;
+  if (amt < 20) { showNotif('Minimum 20 Gourdes', 'err'); return; }
 
+  const btn = document.querySelector('#recharge-form button');
+  try {
+    btn.disabled = true;
+    btn.textContent = '⏳ Création...';
+
+    const res = await apiPost('/api/recharges/initiate', { montant: amt, methode: method });
+    if (!res.success) throw new Error(res.error || 'Erreur API');
+
+    currentRechargeRef = res.reference_id;
+
+    // Redirection vers la page de paiement sécurisée
+    window.location.href = res.url;
+  } catch (e) {
+    showNotif(e.message || 'Erreur lors de la création du paiement', 'err');
+    btn.disabled = false;
+    btn.textContent = '✅ Payer maintenant';
+  }
+}
 // ==================== ADMIN: Recharges + full refresh ====================
 function admRefreshRecharges(){
   const rch=gRch();

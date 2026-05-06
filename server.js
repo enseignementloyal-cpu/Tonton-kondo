@@ -9,6 +9,13 @@ const { Pool } = require('pg');
 const bcrypt   = require('bcryptjs');
 const crypto   = require('crypto');
 const fetch    = (...args) => import('node-fetch').then(({default: f}) => f(...args));
+// Après les autres require, vers le début du fichier
+const CONFIG = require('./config.js');
+
+// ── CONFIG PAIEMENT PLOP PLOP ─────────────────────────────────
+const MERCHANT_CLIENT_ID = process.env.MERCHANT_CLIENT_ID || CONFIG.MERCHANT_CLIENT_ID;
+const MERCHANT_SECRET_KEY = process.env.MERCHANT_SECRET_KEY || CONFIG.MERCHANT_SECRET_KEY;
+const PLOPPLOP_BASE = process.env.PLOPPLOP_BASE_URL || CONFIG.PLOPPLOP_BASE_URL;
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -108,6 +115,22 @@ function formatMatch(match, compCode) {
     odds:  [2.00, 3.20, 3.50], // Default odds - real odds need premium API
     mkt:   12,
   };
+}
+// ── HELPER PAIEMENT PLOP PLOP ─────────────────────────────────
+async function callPlopPlop(endpoint, body) {
+  const response = await fetch(`${PLOPPLOP_BASE}${endpoint}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      // Authentification par clé API (à ajuster si l'API attend autre chose)
+      'X-API-Key': MERCHANT_SECRET_KEY,
+      // Alternative possible : Authorization: `Bearer ${MERCHANT_SECRET_KEY}`
+    },
+    body: JSON.stringify(body)
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || `HTTP ${response.status}`);
+  return data;
 }
 
 // ── HEALTH CHECK ───────────────────────────────────────────
@@ -965,6 +988,141 @@ app.post('/api/cashier/players', requireAuth, async (req, res) => {
     res.json({ success: true, player: r.rows[0] });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
+// ── RECHARGE RÉELLE AVEC PLOP PLOP ─────────────────────────────
+app.post('/api/recharges/initiate', requireAuth, async (req, res) => {
+  try {
+    const { montant, methode } = req.body;
+    if (!montant || montant < 20) return res.status(400).json({ error: 'Montant minimum 20 Gourdes' });
+    if (!['moncash','natcash','kashpaw'].includes(methode)) return res.status(400).json({ error: 'Méthode invalide' });
+
+    let phone;
+    if (req.session.role === 'joueur') {
+      phone = req.session.user_phone;
+    } else if (req.session.role === 'caissier') {
+      phone = req.body.player_phone;
+      if (!phone) return res.status(400).json({ error: 'Numéro joueur requis' });
+    } else {
+      return res.status(403).json({ error: 'Non autorisé' });
+    }
+
+    const player = await pool.query("SELECT phone, name FROM players WHERE phone=$1", [phone]);
+    if (!player.rows.length) return res.status(404).json({ error: 'Joueur introuvable' });
+
+    const reference_id = `TK_${phone}_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+
+    const plopData = await callPlopPlop('/api/paiement-marchand', {
+      client_id: MERCHANT_CLIENT_ID,
+      refference_id: reference_id,
+      montant: montant,
+      payment_method: methode
+    });
+
+    if (!plopData.status) throw new Error(plopData.message || 'Erreur paiement');
+
+    await pool.query(
+      `INSERT INTO recharges 
+       (player_phone, montant, methode, reference_id, transaction_id, statut, created_at) 
+       VALUES ($1, $2, $3, $4, $5, 'pending', NOW())`,
+      [phone, montant, methode, reference_id, plopData.transaction_id]
+    );
+
+    res.json({
+      success: true,
+      url: plopData.url,
+      reference_id: reference_id,
+      transaction_id: plopData.transaction_id
+    });
+  } catch (e) {
+    console.error('Initiate recharge error:', e);
+    res.status(502).json({ error: e.message });
+  }
+});
+app.get('/api/recharges/status/:referenceId', requireAuth, async (req, res) => {
+  try {
+    const { referenceId } = req.params;
+    const recharge = await pool.query("SELECT * FROM recharges WHERE reference_id=$1", [referenceId]);
+    if (!recharge.rows.length) return res.status(404).json({ error: 'Recharge non trouvée' });
+
+    const r = recharge.rows[0];
+    if (req.session.role === 'joueur' && r.player_phone !== req.session.user_phone) {
+      return res.status(403).json({ error: 'Non autorisé' });
+    }
+
+    if (r.statut === 'completed') return res.json({ status: 'completed', montant: r.montant });
+    if (r.statut === 'failed') return res.json({ status: 'failed' });
+
+    const verifyData = await callPlopPlop('/api/paiement-verify', {
+      client_id: MERCHANT_CLIENT_ID,
+      refference_id: referenceId
+    });
+
+    if (verifyData.trans_status === 'ok') {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        await client.query("UPDATE players SET solde = solde + $1 WHERE phone = $2", [r.montant, r.player_phone]);
+        await client.query("UPDATE recharges SET statut='completed', updated_at=NOW() WHERE id=$1", [r.id]);
+        await client.query(
+          `INSERT INTO transactions (player_phone, type, montant, note, created_at)
+           VALUES ($1, 'depot', $2, $3, NOW())`,
+          [r.player_phone, r.montant, `Recharge ${r.methode} via Plop Plop`]
+        );
+        await client.query('COMMIT');
+        res.json({ status: 'completed', montant: r.montant });
+      } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+      } finally {
+        client.release();
+      }
+    } else {
+      res.json({ status: 'pending' });
+    }
+  } catch (e) {
+    console.error('Verify error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+// ── CRON DE VÉRIFICATION AUTOMATIQUE DES RECHARGES ──────────────
+setInterval(async () => {
+  try {
+    const pending = await pool.query(
+      "SELECT * FROM recharges WHERE statut='pending' AND created_at > NOW() - INTERVAL '1 day'"
+    );
+    for (const r of pending.rows) {
+      try {
+        const verifyData = await callPlopPlop('/api/paiement-verify', {
+          client_id: MERCHANT_CLIENT_ID,
+          refference_id: r.reference_id
+        });
+        if (verifyData.trans_status === 'ok') {
+          const client = await pool.connect();
+          try {
+            await client.query('BEGIN');
+            await client.query("UPDATE players SET solde = solde + $1 WHERE phone = $2", [r.montant, r.player_phone]);
+            await client.query("UPDATE recharges SET statut='completed', updated_at=NOW() WHERE id=$1", [r.id]);
+            await client.query(
+              `INSERT INTO transactions (player_phone, type, montant, note, created_at)
+               VALUES ($1, 'depot', $2, $3, NOW())`,
+              [r.player_phone, r.montant, `Recharge auto ${r.methode} via Plop Plop`]
+            );
+            await client.query('COMMIT');
+            console.log(`Recharge ${r.reference_id} autocomplétée`);
+          } catch (err) {
+            await client.query('ROLLBACK');
+            console.error(err);
+          } finally {
+            client.release();
+          }
+        }
+      } catch (e) {
+        // ignore temporaire
+      }
+    }
+  } catch (e) {
+    console.error('Cron error:', e);
+  }
+}, 30000); // toutes les 30 secondes
 
 // ============================================================
 // START SERVER
