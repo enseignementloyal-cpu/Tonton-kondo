@@ -73,7 +73,7 @@ body{background:#061520;color:#fff;font-family:'Barlow',sans-serif;min-height:10
 #sc-landing.active{align-items:center;justify-content:flex-start;padding:0;}
 #sc-login.active{align-items:center;justify-content:center;min-height:100vh;padding:20px;background:linear-gradient(180deg,#071830 0%,#0d2151 40%,#061520 100%);}
 #sc-jauth.active,#sc-sauth.active,#sc-dauth.active,#sc-aauth.active{align-items:center;justify-content:center;min-height:100vh;padding:20px;}
-#sc-sec.active,#sc-dir.active,#sc-admin.active{display:flex!important;flex-direction:column;min-height:100vh;}
+#sc-admin.active{display:flex!important;flex-direction:column;min-height:100vh;}
 #sc-app.active{display:flex!important;flex-direction:column;min-height:100vh;}
 
 /* ===== LANDING ===== */
@@ -848,7 +848,7 @@ th{background:var(--blue);color:#fff;font-size:12px;font-weight:700;}
           <div style="color:var(--muted);font-size:13px;text-align:center">Pa gen rezilta disponib.</div>
         </div>
         <div style="text-align:center;margin-top:10px">
-          <button onclick="simulerTirage()" style="padding:8px 18px;background:rgba(26,58,143,.3);border:1px solid var(--blue);border-radius:8px;color:var(--text);font-size:12px;font-weight:700;cursor:pointer">🎲 Simuler un tirage (test)</button>
+          
         </div>
       </div>
       </div>
@@ -2303,7 +2303,7 @@ async function loadBorletteAdminData() {
 let currentBorAdminTab = 'draw';
 function switchBorletteAdminTab(tab) {
   currentBorAdminTab = tab;
-  document.querySelectorAll('#atab-borlette .bor-admin-tab-content').forEach(div => div.style.display = 'none');
+  document.querySelectorAll('.bor-admin-tab-content, .admin-parameter, .admin-content').forEach(div => div.style.display = 'none');
   document.getElementById(`bor-admin-${tab}`).style.display = 'block';
   document.querySelectorAll('#atab-borlette .ptab').forEach(btn => btn.classList.remove('on'));
   document.querySelector(`#atab-borlette .ptab[data-bor-tab="${tab}"]`).classList.add('on');
@@ -6452,6 +6452,12 @@ async function renderAdminJackpot(){
     const djk = jk[d.code]||{amount:0,weekMises:0};
     const bgColor = djk.amount > 50000 ? 'rgba(245,200,0,.15)' : 'var(--bg2)';
     const borderColor = djk.amount > 50000 ? 'rgba(245,200,0,.5)' : 'var(--border)';
+    
+    // Calculate Max, Gold, Silver amounts
+    const maxAmount = Math.round((djk.weekMises || 0) * 0.01); // 1% for Max
+    const goldAmount = Math.round((djk.weekMises || 0) * 0.02); // 2% for Gold
+    const silverAmount = Math.round((djk.weekMises || 0) * 0.03); // 3% for Silver
+    
     return `<div style="background:${bgColor};border:1px solid ${borderColor};border-radius:12px;padding:14px;margin-bottom:10px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
         <div>
@@ -6459,19 +6465,32 @@ async function renderAdminJackpot(){
           <div style="font-size:11px;color:var(--muted)">${d.zone} · Code: ${d.code}</div>
         </div>
         <div style="text-align:right;">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:2em;font-weight:900;color:#f5c800;text-shadow:0 0 10px rgba(245,200,0,.5);">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.5em;font-weight:900;color:#f5c800;text-shadow:0 0 10px rgba(245,200,0,.5);">
             ${djk.amount.toLocaleString('fr-FR')} Gd
           </div>
-          <div style="font-size:10px;color:var(--muted)">JACKPOT</div>
         </div>
       </div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">
-        Ventes cette semaine: <strong style="color:var(--text)">${(djk.weekMises||0).toLocaleString('fr-FR')} Gd</strong>
-        · 5% accumulé: <strong style="color:var(--gold)">${Math.round((djk.weekMises||0)*0.05).toLocaleString('fr-FR')} Gd</strong>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:12px;color:var(--muted);">
+          Ventes cette semaine: <strong style="color:var(--text)">${(djk.weekMises||0).toLocaleString('fr-FR')} Gd</strong>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:5px;">
+          <div style="background:var(--bg2);padding:5px 10px;border-radius:6px;">
+            <div style="font-size:11px;color:var(--gold);">Max (1%)</div>
+            <div style="font-weight:800;color:var(--text);">${maxAmount.toLocaleString('fr-FR')} Gd</div>
+          </div>
+          <div style="background:var(--bg2);padding:5px 10px;border-radius:6px;">
+            <div style="font-size:11px;color:#ffd700;">Gold (2%)</div>
+            <div style="font-weight:800;color:var(--text);">${goldAmount.toLocaleString('fr-FR')} Gd</div>
+          </div>
+          <div style="background:var(--bg2);padding:5px 10px;border-radius:6px;">
+            <div style="font-size:11px;color:#c0c0c0;">Silver (3%)</div>
+            <div style="font-weight:800;color:var(--text);">${silverAmount.toLocaleString('fr-FR')} Gd</div>
+          </div>
+        </div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-        <button onclick="jackpotAttribuer('${d.code}')" style="background:linear-gradient(135deg,var(--gold),#d4a800);color:#000;border:none;padding:8px 14px;border-radius:7px;font-weight:800;font-size:12px;cursor:pointer;${djk.amount<=0?'opacity:.4;cursor:not-allowed':''}"
-          ${djk.amount<=0?'disabled':''}>🎉 Attribuer à un joueur</button>
+        <button onclick="jackpotAttribuer('${d.code}')" style="background:linear-gradient(135deg,var(--gold),#d4a800);color:#000;border:none;padding:8px 14px;border-radius:7px;font-weight:800;font-size:12px;cursor:pointer;${djk.amount<=0?'opacity:.4;cursor:not-allowed':''}" ${djk.amount<=0?'disabled':''}>🎉 Attribuer à un joueur</button>
         <input type="number" id="jk-manual-${d.code}" placeholder="Montant manuel" style="width:130px;padding:7px 10px;background:var(--bg);color:#fff;border:1px solid var(--border);border-radius:7px;font-size:12px;outline:none;">
         <button onclick="jackpotSetManuel('${d.code}')" style="background:var(--blue);color:#fff;border:none;padding:8px 12px;border-radius:7px;font-weight:700;font-size:12px;cursor:pointer;">Définir</button>
         <button onclick="jackpotReset('${d.code}')" style="background:var(--red);color:#fff;border:none;padding:8px 12px;border-radius:7px;font-weight:700;font-size:12px;cursor:pointer;">🔄 Réinitialiser</button>
