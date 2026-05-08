@@ -1,7 +1,7 @@
 // ============================================================
 // server.js — Tonton Kondo Paryaj Backend
+// Compatible avec app.html (toutes les fonctionnalités)
 // Node.js + Express + PostgreSQL (Neon)
-// Version complète avec tous les endpoints pour app.html
 // ============================================================
 
 const express = require('express');
@@ -12,16 +12,11 @@ const crypto = require('crypto');
 const fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args));
 const path = require('path');
 
-// Fichier de configuration optionnel (si vous utilisez des variables d'environnement via dotenv)
-try {
-  require('dotenv').config();
-} catch(e) {}
+try { require('dotenv').config(); } catch(e) {}
 let CONFIG = {};
-try {
-  CONFIG = require('./config.js');
-} catch(e) {}
+try { CONFIG = require('./config.js'); } catch(e) {}
 
-// ── CONFIG PAIEMENT PLOP PLOP ─────────────────────────────────
+// ── CONFIG ─────────────────────────────────────────────────
 const MERCHANT_CLIENT_ID = process.env.MERCHANT_CLIENT_ID || CONFIG.MERCHANT_CLIENT_ID;
 const MERCHANT_SECRET_KEY = process.env.MERCHANT_SECRET_KEY || CONFIG.MERCHANT_SECRET_KEY;
 const PLOPPLOP_BASE = process.env.PLOPPLOP_BASE_URL || CONFIG.PLOPPLOP_BASE_URL;
@@ -29,10 +24,9 @@ const PLOPPLOP_BASE = process.env.PLOPPLOP_BASE_URL || CONFIG.PLOPPLOP_BASE_URL;
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ── CORS & MIDDLEWARES ──────────────────────────────────────
 app.use(cors({ origin: '*' }));
 app.use(express.json());
-app.use(express.static(__dirname));  // sert les fichiers statiques (HTML, CSS, JS)
+app.use(express.static(__dirname));
 
 // ── DATABASE ───────────────────────────────────────────────
 const pool = new Pool({
@@ -40,12 +34,11 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-// ── CONFIG ─────────────────────────────────────────────────
 const ADMIN_PASSWORD    = process.env.ADMIN_PASSWORD    || 'admin';
 const FOOTBALL_API_KEY  = process.env.FOOTBALL_API_KEY  || '';
 const JACKPOT_PCT       = 5; // 5%
 
-// ── TABLE INIT (création automatique des tables) ───────────
+// ── INIT TABLES ───────────────────────────────────────────
 (async () => {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS sessions (
@@ -183,17 +176,12 @@ const JACKPOT_PCT       = 5; // 5%
 })();
 
 // ── HELPERS ────────────────────────────────────────────────
-function genToken() {
-  return crypto.randomBytes(32).toString('hex');
-}
+function genToken() { return crypto.randomBytes(32).toString('hex'); }
 
 async function getSession(req) {
   const token = req.headers['x-session-token'];
   if (!token) return null;
-  const r = await pool.query(
-    "SELECT * FROM sessions WHERE id=$1 AND expires_at > NOW()",
-    [token]
-  );
+  const r = await pool.query("SELECT * FROM sessions WHERE id=$1 AND expires_at > NOW()", [token]);
   return r.rows[0] || null;
 }
 
@@ -206,48 +194,33 @@ async function requireAuth(req, res, next) {
 
 async function requireAdmin(req, res, next) {
   const sess = await getSession(req);
-  if (!sess || sess.role !== 'admin')
-    return res.status(403).json({ error: 'Accès administrateur requis' });
+  if (!sess || sess.role !== 'admin') return res.status(403).json({ error: 'Accès administrateur requis' });
   req.session = sess;
   next();
 }
 
 async function requireDirector(req, res, next) {
   const sess = await getSession(req);
-  if (!sess || (sess.role !== 'admin' && sess.role !== 'directeur'))
-    return res.status(403).json({ error: 'Accès directeur requis' });
+  if (!sess || (sess.role !== 'admin' && sess.role !== 'directeur')) return res.status(403).json({ error: 'Accès directeur requis' });
   req.session = sess;
   next();
 }
 
-// Récupérer la probabilité de gain pour un jeu et un directeur
 async function getWinProbability(dirCode, gameName) {
-  const r = await pool.query(
-    "SELECT win_probability FROM game_difficulty WHERE dir_code=$1 AND game_name=$2",
-    [dirCode, gameName]
-  );
+  const r = await pool.query("SELECT win_probability FROM game_difficulty WHERE dir_code=$1 AND game_name=$2", [dirCode, gameName]);
   if (r.rows.length) return r.rows[0].win_probability;
   const def = await pool.query("SELECT value FROM settings WHERE key=$1", [`${gameName}_default_diff`]);
   if (def.rows.length) return parseInt(def.rows[0].value) || 45;
   return 45;
 }
 
-function isWin(probability) {
-  const rand = Math.random() * 100;
-  return rand <= probability;
-}
+function isWin(probability) { return Math.random() * 100 <= probability; }
 
 function getKenoMultiplier(hits, selectedCount) {
   const table = {
-    1: {1: 3},
-    2: {2: 5},
-    3: {3: 8},
-    4: {4: 12},
-    5: {5: 18},
-    6: {6: 25, 5: 5, 4: 2},
-    7: {7: 40, 6: 10, 5: 3},
-    8: {8: 60, 7: 15, 6: 5},
-    9: {9: 100, 8: 20, 7: 8},
+    1: {1: 3}, 2: {2: 5}, 3: {3: 8}, 4: {4: 12}, 5: {5: 18},
+    6: {6: 25, 5: 5, 4: 2}, 7: {7: 40, 6: 10, 5: 3},
+    8: {8: 60, 7: 15, 6: 5}, 9: {9: 100, 8: 20, 7: 8},
     10: {10: 150, 9: 30, 8: 12}
   };
   return table[selectedCount]?.[hits] || 0;
@@ -257,10 +230,7 @@ async function callPlopPlop(endpoint, body) {
   const auth = Buffer.from(`${MERCHANT_CLIENT_ID}:${MERCHANT_SECRET_KEY}`).toString('base64');
   const response = await fetch(`${PLOPPLOP_BASE}${endpoint}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Basic ${auth}`
-    },
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Basic ${auth}` },
     body: JSON.stringify(body)
   });
   const data = await response.json();
@@ -268,21 +238,15 @@ async function callPlopPlop(endpoint, body) {
   return data;
 }
 
-// ============================================================
-// ROUTES API (toutes commençant par /api)
-// ============================================================
+// ── API ROUTES ────────────────────────────────────────────
 
-// ── SANTÉ ─────────────────────────────────────────────────
+// Santé
 app.get('/health', async (req, res) => {
-  try {
-    await pool.query('SELECT 1');
-    res.json({ status: 'ok', db: 'connected' });
-  } catch (e) {
-    res.status(500).json({ status: 'error', db: e.message });
-  }
+  try { await pool.query('SELECT 1'); res.json({ status: 'ok', db: 'connected' }); }
+  catch (e) { res.status(500).json({ status: 'error', db: e.message }); }
 });
 
-// ── AUTHENTIFICATION ──────────────────────────────────────
+// Authentification
 app.post('/api/auth/admin', async (req, res) => {
   try {
     const { pwd } = req.body;
@@ -290,9 +254,7 @@ app.post('/api/auth/admin', async (req, res) => {
     const token = genToken();
     await pool.query("INSERT INTO sessions (id, role) VALUES ($1, 'admin')", [token]);
     res.json({ token, role: 'admin', name: 'Administrateur' });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/auth/director', async (req, res) => {
@@ -306,18 +268,13 @@ app.post('/api/auth/director', async (req, res) => {
     const token = genToken();
     await pool.query("INSERT INTO sessions (id, role, user_code) VALUES ($1, 'directeur', $2)", [token, dir.code]);
     res.json({ token, role: 'directeur', code: dir.code, name: dir.name, zone: dir.zone, pct: dir.pct });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/auth/cashier', async (req, res) => {
   try {
     const { code, pwd } = req.body;
-    const r = await pool.query(
-      "SELECT c.*, d.name AS dir_name FROM cashiers c LEFT JOIN directors d ON c.dir_code=d.code WHERE c.code=$1 AND c.active=TRUE",
-      [code.toUpperCase()]
-    );
+    const r = await pool.query("SELECT c.*, d.name AS dir_name FROM cashiers c LEFT JOIN directors d ON c.dir_code=d.code WHERE c.code=$1 AND c.active=TRUE", [code.toUpperCase()]);
     const caiss = r.rows[0];
     if (!caiss) return res.status(401).json({ error: 'Code introuvable' });
     const ok = await bcrypt.compare(pwd, caiss.pwd_hash);
@@ -325,9 +282,7 @@ app.post('/api/auth/cashier', async (req, res) => {
     const token = genToken();
     await pool.query("INSERT INTO sessions (id, role, user_code) VALUES ($1, 'caissier', $2)", [token, caiss.code]);
     res.json({ token, role: 'caissier', code: caiss.code, name: caiss.name, dirCode: caiss.dir_code, jeu: caiss.jeu });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/auth/player', async (req, res) => {
@@ -341,9 +296,7 @@ app.post('/api/auth/player', async (req, res) => {
     const token = genToken();
     await pool.query("INSERT INTO sessions (id, role, user_phone) VALUES ($1, 'joueur', $2)", [token, player.phone]);
     res.json({ token, role: 'joueur', phone: player.phone, name: player.name, solde: parseFloat(player.solde), dirCode: player.dir_code });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/auth/register', async (req, res) => {
@@ -358,9 +311,7 @@ app.post('/api/auth/register', async (req, res) => {
       [name, phone, hash, dirCode||null, caissCode||null]
     );
     res.json({ success: true, player: r.rows[0] });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/auth/logout', async (req, res) => {
@@ -386,22 +337,16 @@ app.get('/api/auth/me', async (req, res) => {
       return res.json({ ...sess, ...r.rows[0] });
     }
     res.json(sess);
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ── FOOTBALL / MATCHS ─────────────────────────────────────
+// ── MATCHS FOOTBALL ───────────────────────────────────────
 let matchCache = { data: [], updatedAt: 0 };
 const CACHE_TTL = 60 * 1000;
 const COMPETITIONS = ['PL','PD','BL1','SA','FL1','CL'];
 const COMP_LABELS = {
-  PL: '🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League',
-  PD: '🇪🇸 La Liga',
-  BL1: '🇩🇪 Bundesliga',
-  SA: '🇮🇹 Serie A',
-  FL1: '🇫🇷 Ligue 1',
-  CL: '🏆 Champions League',
+  PL: '🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League', PD: '🇪🇸 La Liga', BL1: '🇩🇪 Bundesliga',
+  SA: '🇮🇹 Serie A', FL1: '🇫🇷 Ligue 1', CL: '🏆 Champions League',
 };
 
 function formatMatch(match, compCode) {
@@ -411,28 +356,18 @@ function formatMatch(match, compCode) {
   const isLive = ['IN_PLAY','PAUSED'].includes(status);
   const score = match.score?.fullTime || match.score?.halfTime || {home:0,away:0};
   return {
-    id: match.id,
-    lk: compCode.toLowerCase(),
-    lg: COMP_LABELS[compCode] || compCode,
-    t1: home,
-    t2: away,
-    s1: score.home || 0,
-    s2: score.away || 0,
+    id: match.id, lk: compCode.toLowerCase(), lg: COMP_LABELS[compCode] || compCode,
+    t1: home, t2: away, s1: score.home || 0, s2: score.away || 0,
     time: isLive ? 'LIVE' : (match.utcDate ? new Date(match.utcDate).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : ''),
-    live: isLive,
-    status: status,
-    utcDate: match.utcDate,
-    odds: [2.00, 3.20, 3.50],
-    mkt: 12
+    live: isLive, status: status, utcDate: match.utcDate, odds: [2.00, 3.20, 3.50], mkt: 12
   };
 }
 
 app.get('/api/matches', async (req, res) => {
   try {
     const now = Date.now();
-    if (now - matchCache.updatedAt < CACHE_TTL && matchCache.data.length) {
+    if (now - matchCache.updatedAt < CACHE_TTL && matchCache.data.length)
       return res.json({ matches: matchCache.data, cached: true });
-    }
     const allMatches = [];
     const today = new Date().toISOString().split('T')[0];
     const tomorrow = new Date(Date.now()+86400000).toISOString().split('T')[0];
@@ -442,22 +377,13 @@ app.get('/api/matches', async (req, res) => {
         const r = await fetch(url, { headers: { 'X-Auth-Token': FOOTBALL_API_KEY }, timeout: 5000 });
         if (!r.ok) continue;
         const data = await r.json();
-        if (data.matches) {
-          const formatted = data.matches.map(m => formatMatch(m, comp));
-          allMatches.push(...formatted);
-        }
+        if (data.matches) allMatches.push(...data.matches.map(m => formatMatch(m, comp)));
       } catch (e) { console.error(`Failed ${comp}:`, e.message); }
     }
-    allMatches.sort((a,b) => {
-      if (a.live && !b.live) return -1;
-      if (!a.live && b.live) return 1;
-      return new Date(a.utcDate||0) - new Date(b.utcDate||0);
-    });
+    allMatches.sort((a,b) => (a.live && !b.live) ? -1 : (!a.live && b.live) ? 1 : new Date(a.utcDate||0) - new Date(b.utcDate||0));
     matchCache = { data: allMatches, updatedAt: now };
     res.json({ matches: allMatches, count: allMatches.length });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // ── JOUEUR ────────────────────────────────────────────────
@@ -480,15 +406,36 @@ app.get('/api/player/transactions', requireAuth, async (req, res) => {
   res.json({ transactions: r.rows });
 });
 
+app.post('/api/player/transactions', requireAuth, async (req, res) => {
+  // Ajout manuel de transaction (utilisé par le frontend)
+  try {
+    const { phone, type, montant, details, solde_apres } = req.body;
+    if (!phone || !type || montant === undefined) return res.status(400).json({ error: 'Données manquantes' });
+    // Vérifier que le joueur existe
+    const player = await pool.query("SELECT id, dir_code FROM players WHERE phone=$1", [phone]);
+    if (!player.rows.length) return res.status(404).json({ error: 'Joueur inconnu' });
+    let caiss_code = null;
+    if (req.session.role === 'caissier') caiss_code = req.session.user_code;
+    await pool.query(
+      "INSERT INTO transactions (player_phone, dir_code, caiss_code, type, montant, note) VALUES ($1,$2,$3,$4,$5,$6)",
+      [phone, player.rows[0].dir_code, caiss_code, type, montant, details || '']
+    );
+    if (solde_apres !== undefined) {
+      await pool.query("UPDATE players SET solde=$1 WHERE phone=$2", [solde_apres, phone]);
+    }
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── PARIS SPORTIFS & GÉNÉRIQUE ────────────────────────────
 app.post('/api/bets/place', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
     const { type, sub_type, selection, mise, cote, draw, match_id, match_name, player_phone } = req.body;
     if (!type || !selection || !mise) return res.status(400).json({ error: 'Données manquantes' });
     let phone, dir_code, caiss_code;
-    if (req.session.role === 'joueur') {
-      phone = req.session.user_phone;
-    } else if (req.session.role === 'caissier') {
+    if (req.session.role === 'joueur') phone = req.session.user_phone;
+    else if (req.session.role === 'caissier') {
       phone = player_phone;
       const c = await pool.query("SELECT dir_code FROM cashiers WHERE code=$1", [req.session.user_code]);
       caiss_code = req.session.user_code;
@@ -500,7 +447,7 @@ app.post('/api/bets/place', requireAuth, async (req, res) => {
     if (!player) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'Joueur introuvable' }); }
     if (parseFloat(player.solde) < parseFloat(mise)) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'Solde insuffisant' }); }
     if (!dir_code) dir_code = player.dir_code;
-    // Vérifications borlette si besoin
+    // Vérifications Borlette
     if (type === 'borlette') {
       const num = String(selection).padStart(2,'0');
       const drawKey = draw ? draw.toLowerCase().replace(/\s/g,'') : '';
@@ -525,13 +472,24 @@ app.post('/api/bets/place', requireAuth, async (req, res) => {
     await client.query('COMMIT');
     const updated = await pool.query("SELECT solde FROM players WHERE phone=$1", [phone]);
     res.json({ success: true, bet: betResult.rows[0], newSolde: parseFloat(updated.rows[0].solde) });
-  } catch (e) {
-    await client.query('ROLLBACK');
-    res.status(500).json({ error: e.message });
-  } finally { client.release(); }
+  } catch (e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
 });
 
-// ── RECHARGES ─────────────────────────────────────────────
+app.get('/api/bets', requireAuth, async (req, res) => {
+  let query = `SELECT b.*, p.name AS player_name FROM bets b LEFT JOIN players p ON b.player_phone = p.phone`;
+  let params = [];
+  if (req.session.role === 'joueur') { query += ` WHERE b.player_phone = $1`; params.push(req.session.user_phone); }
+  query += ` ORDER BY b.created_at DESC LIMIT 200`;
+  const r = await pool.query(query, params);
+  res.json({ bets: r.rows });
+});
+
+app.get('/api/transactions', requireAdmin, async (req, res) => {
+  const r = await pool.query(`SELECT t.*, p.name AS player_name FROM transactions t LEFT JOIN players p ON t.player_phone = p.phone ORDER BY t.created_at DESC LIMIT 300`);
+  res.json({ transactions: r.rows });
+});
+
+// ── RECHARGES & CAISSE ────────────────────────────────────
 app.post('/api/recharges/initiate', requireAuth, async (req, res) => {
   try {
     const { montant, methode, player_phone } = req.body;
@@ -545,10 +503,7 @@ app.post('/api/recharges/initiate', requireAuth, async (req, res) => {
     if (!player.rows.length) return res.status(404).json({ error: 'Joueur introuvable' });
     const reference_id = `TK_${phone}_${Date.now()}_${Math.random().toString(36).substr(2,6)}`;
     const plopData = await callPlopPlop('/api/paiement-marchand', {
-      client_id: MERCHANT_CLIENT_ID,
-      refference_id: reference_id,
-      montant: montant,
-      payment_method: methode
+      client_id: MERCHANT_CLIENT_ID, refference_id: reference_id, montant: montant, payment_method: methode
     });
     if (!plopData.status) throw new Error(plopData.message || 'Erreur paiement');
     await pool.query(
@@ -556,10 +511,7 @@ app.post('/api/recharges/initiate', requireAuth, async (req, res) => {
       [phone, montant, methode, reference_id, plopData.transaction_id]
     );
     res.json({ success: true, url: plopData.url, reference_id, transaction_id: plopData.transaction_id });
-  } catch(e) {
-    console.error(e);
-    res.status(502).json({ error: e.message });
-  }
+  } catch(e) { res.status(502).json({ error: e.message }); }
 });
 
 app.get('/api/recharges/status/:referenceId', requireAuth, async (req, res) => {
@@ -629,7 +581,74 @@ app.post('/api/recharges/:id/reject', requireAuth, async (req, res) => {
   } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
 });
 
-// ── BORLETTE ──────────────────────────────────────────────
+// ── CAISSIER : RECHARGE/RETRAIT MANUEL (LIQUIDE) ──────────
+app.post('/api/players/:phone/recharge', requireAuth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { phone } = req.params;
+    const { montant, caissier_code, method } = req.body;
+    if (!montant || montant <= 0) return res.status(400).json({ error: 'Montant invalide' });
+    if (req.session.role !== 'caissier' && req.session.role !== 'admin') return res.status(403).json({ error: 'Non autorisé' });
+    await client.query('BEGIN');
+    const player = await client.query("SELECT solde, dir_code FROM players WHERE phone=$1 FOR UPDATE", [phone]);
+    if (!player.rows.length) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'Joueur introuvable' }); }
+    const newSolde = parseFloat(player.rows[0].solde) + montant;
+    await client.query("UPDATE players SET solde=$1 WHERE phone=$2", [newSolde, phone]);
+    await client.query(
+      "INSERT INTO transactions (player_phone, dir_code, caiss_code, type, montant, note) VALUES ($1,$2,$3,'depot',$4,$5)",
+      [phone, player.rows[0].dir_code, caissier_code, montant, `Recharge liquide par caissier (${method||'cash'})`]
+    );
+    await client.query('COMMIT');
+    res.json({ success: true, newSolde });
+  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
+});
+
+app.post('/api/players/:phone/withdraw', requireAuth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const { phone } = req.params;
+    const { montant, caissier_code } = req.body;
+    if (!montant || montant <= 0) return res.status(400).json({ error: 'Montant invalide' });
+    if (req.session.role !== 'caissier' && req.session.role !== 'admin') return res.status(403).json({ error: 'Non autorisé' });
+    await client.query('BEGIN');
+    const player = await client.query("SELECT solde, dir_code FROM players WHERE phone=$1 FOR UPDATE", [phone]);
+    if (!player.rows.length) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'Joueur introuvable' }); }
+    if (parseFloat(player.rows[0].solde) < montant) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'Solde insuffisant' }); }
+    const newSolde = parseFloat(player.rows[0].solde) - montant;
+    await client.query("UPDATE players SET solde=$1 WHERE phone=$2", [newSolde, phone]);
+    await client.query(
+      "INSERT INTO transactions (player_phone, dir_code, caiss_code, type, montant, note) VALUES ($1,$2,$3,'retrait',-$4,$5)",
+      [phone, player.rows[0].dir_code, caissier_code, montant, `Retrait liquide par caissier`]
+    );
+    await client.query('COMMIT');
+    res.json({ success: true, newSolde });
+  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
+});
+
+// ── CRÉATION JOUEUR PAR CAISSIER / ADMIN ──────────────────
+app.post('/api/players', requireAuth, async (req, res) => {
+  try {
+    const { name, phone, pwd, solde_initial, dir_code, caiss_code } = req.body;
+    if (!name || !phone || !pwd) return res.status(400).json({ error: 'Nom, téléphone et mot de passe requis' });
+    const exists = await pool.query("SELECT id FROM players WHERE phone=$1", [phone]);
+    if (exists.rows.length) return res.status(409).json({ error: 'Numéro déjà utilisé' });
+    const hash = await bcrypt.hash(pwd, 10);
+    let finalDir = dir_code;
+    let finalCaiss = caiss_code;
+    if (req.session.role === 'caissier') {
+      const c = await pool.query("SELECT dir_code FROM cashiers WHERE code=$1", [req.session.user_code]);
+      finalDir = c.rows[0]?.dir_code;
+      finalCaiss = req.session.user_code;
+    }
+    const r = await pool.query(
+      "INSERT INTO players (name, phone, pwd_hash, dir_code, caiss_code, solde) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, phone, solde",
+      [name, phone, hash, finalDir, finalCaiss, solde_initial || 0]
+    );
+    res.json({ success: true, player: r.rows[0] });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── BORLETTE (blocages, limites, résultats) ───────────────
 app.get('/api/borlette/results', requireAuth, async (req, res) => {
   const limit = parseInt(req.query.limit) || 30;
   const draw = req.query.draw;
@@ -670,6 +689,49 @@ app.post('/api/borlette/publish', requireAdmin, async (req, res) => {
     await client.query('COMMIT');
     res.json({ success: true, result: r.rows[0], resolved: pending.rows.length });
   } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
+});
+
+// Blocked numbers
+app.get('/api/borlette/blocked', requireAuth, async (req, res) => {
+  const r = await pool.query("SELECT * FROM borlette_blocked ORDER BY created_at DESC");
+  res.json({ blocked: r.rows });
+});
+
+app.post('/api/borlette/block', requireAdmin, async (req, res) => {
+  const { number, draw } = req.body;
+  if (!number) return res.status(400).json({ error: 'Numéro requis' });
+  const drawValue = draw || '';
+  await pool.query("INSERT INTO borlette_blocked (number, draw) VALUES ($1, $2) ON CONFLICT DO NOTHING", [number.padStart(2,'0'), drawValue]);
+  res.json({ success: true });
+});
+
+app.delete('/api/borlette/block/:id', requireAdmin, async (req, res) => {
+  const id = parseInt(req.params.id);
+  await pool.query("DELETE FROM borlette_blocked WHERE id=$1", [id]);
+  res.json({ success: true });
+});
+
+// Limits
+app.get('/api/borlette/limits', requireAuth, async (req, res) => {
+  const r = await pool.query("SELECT * FROM borlette_limits ORDER BY updated_at DESC");
+  res.json({ limits: r.rows });
+});
+
+app.post('/api/borlette/limit', requireAdmin, async (req, res) => {
+  const { number, draw, max_amount } = req.body;
+  if (!number || max_amount === undefined) return res.status(400).json({ error: 'Données manquantes' });
+  const drawValue = draw || '';
+  await pool.query(
+    "INSERT INTO borlette_limits (number, draw, max_amount) VALUES ($1, $2, $3) ON CONFLICT (number, draw) DO UPDATE SET max_amount=$3, updated_at=NOW()",
+    [number.padStart(2,'0'), drawValue, parseFloat(max_amount)]
+  );
+  res.json({ success: true });
+});
+
+app.delete('/api/borlette/limit/:id', requireAdmin, async (req, res) => {
+  const id = parseInt(req.params.id);
+  await pool.query("DELETE FROM borlette_limits WHERE id=$1", [id]);
+  res.json({ success: true });
 });
 
 // ── JACKPOT ───────────────────────────────────────────────
@@ -723,14 +785,10 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
     pool.query("SELECT COUNT(*) as cnt FROM recharges WHERE statut='pending'"),
   ]);
   res.json({
-    players: parseInt(players.rows[0].cnt),
-    totalSolde: parseFloat(players.rows[0].total_solde)||0,
-    directors: parseInt(directors.rows[0].cnt),
-    cashiers: parseInt(cashiers.rows[0].cnt),
-    totalBets: parseInt(bets.rows[0].cnt),
-    totalMise: parseFloat(bets.rows[0].total_mise)||0,
-    entrees: parseFloat(trans.rows[0].entrees)||0,
-    sorties: parseFloat(trans.rows[0].sorties)||0,
+    players: parseInt(players.rows[0].cnt), totalSolde: parseFloat(players.rows[0].total_solde)||0,
+    directors: parseInt(directors.rows[0].cnt), cashiers: parseInt(cashiers.rows[0].cnt),
+    totalBets: parseInt(bets.rows[0].cnt), totalMise: parseFloat(bets.rows[0].total_mise)||0,
+    entrees: parseFloat(trans.rows[0].entrees)||0, sorties: parseFloat(trans.rows[0].sorties)||0,
     benefice: (parseFloat(trans.rows[0].entrees)||0) - (parseFloat(trans.rows[0].sorties)||0),
     pendingRecharges: parseInt(recharges.rows[0].cnt),
   });
@@ -746,9 +804,7 @@ app.get('/api/admin/directors', requireAdmin, async (req, res) => {
     SELECT d.*, j.amount as jackpot,
       COALESCE((SELECT SUM(ABS(t.montant)) FROM transactions t WHERE t.dir_code=d.code AND t.type='perte'),0) as total_mise,
       COALESCE((SELECT SUM(t.montant) FROM transactions t WHERE t.dir_code=d.code AND t.type='gain'),0) as total_gains
-    FROM directors d
-    LEFT JOIN jackpots j ON j.dir_code = d.code
-    ORDER BY d.created_at
+    FROM directors d LEFT JOIN jackpots j ON j.dir_code = d.code ORDER BY d.created_at
   `);
   res.json({ directors: r.rows });
 });
@@ -793,8 +849,7 @@ app.get('/api/admin/bets', requireAdmin, async (req, res) => {
   const params = [];
   if (type)   { params.push(type);   q += ` AND b.type=$${params.length}`; }
   if (statut) { params.push(statut); q += ` AND b.statut=$${params.length}`; }
-  params.push(limit);
-  q += ` ORDER BY b.created_at DESC LIMIT $${params.length}`;
+  params.push(limit); q += ` ORDER BY b.created_at DESC LIMIT $${params.length}`;
   const r = await pool.query(q, params);
   res.json({ bets: r.rows });
 });
@@ -858,15 +913,10 @@ app.get('/api/director/stats', requireAuth, async (req, res) => {
   const totalMise  = parseFloat(bets.rows[0].total_mise)||0;
   const totalGains = parseFloat(bets.rows[0].total_gains)||0;
   res.json({
-    players:    parseInt(players.rows[0].cnt),
-    totalSolde: parseFloat(players.rows[0].total)||0,
-    cashiers:   parseInt(cashiers.rows[0].cnt),
-    totalBets:  parseInt(bets.rows[0].cnt),
-    totalMise,
-    totalGains,
-    benefice:   totalMise - totalGains,
-    jackpot:    parseFloat(jk.rows[0]?.amount||0),
-    weekSales:  parseFloat(jk.rows[0]?.week_sales||0),
+    players:    parseInt(players.rows[0].cnt), totalSolde: parseFloat(players.rows[0].total)||0,
+    cashiers:   parseInt(cashiers.rows[0].cnt), totalBets:  parseInt(bets.rows[0].cnt),
+    totalMise, totalGains, benefice: totalMise - totalGains,
+    jackpot:    parseFloat(jk.rows[0]?.amount||0), weekSales:  parseFloat(jk.rows[0]?.week_sales||0),
   });
 });
 
@@ -881,20 +931,6 @@ app.get('/api/cashier/players', requireAuth, async (req, res) => {
   if (req.session.role !== 'caissier') return res.status(403).json({error:'Non autorisé'});
   const r = await pool.query("SELECT id,name,phone,solde,created_at FROM players WHERE caiss_code=$1 AND active=TRUE ORDER BY name", [req.session.user_code]);
   res.json({ players: r.rows });
-});
-
-app.post('/api/cashier/players', requireAuth, async (req, res) => {
-  if (!['caissier','directeur','admin'].includes(req.session.role)) return res.status(403).json({ error: 'Non autorisé' });
-  const { name, phone, pwd } = req.body;
-  const hash = await bcrypt.hash(pwd || 'test123', 10);
-  let dir_code, caiss_code;
-  if (req.session.role === 'caissier') {
-    const c = await pool.query("SELECT dir_code FROM cashiers WHERE code=$1", [req.session.user_code]);
-    dir_code = c.rows[0]?.dir_code;
-    caiss_code = req.session.user_code;
-  }
-  const r = await pool.query("INSERT INTO players (name,phone,pwd_hash,dir_code,caiss_code) VALUES ($1,$2,$3,$4,$5) RETURNING id,name,phone,solde", [name, phone, hash, dir_code, caiss_code]);
-  res.json({ success: true, player: r.rows[0] });
 });
 
 // ── JEUX DE CASINO ───────────────────────────────────────
@@ -912,9 +948,8 @@ app.post('/api/games/keno/play', requireAuth, async (req, res) => {
     const proba = await getWinProbability(dirCode, 'keno');
     const gainPossible = isWin(proba);
     const allNumbers = Array.from({length: 80}, (_,i) => i+1);
-    const shuffled = [...allNumbers];
-    for (let i = shuffled.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; }
-    const winningNumbers = shuffled.slice(0, 20);
+    for (let i = allNumbers.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [allNumbers[i], allNumbers[j]] = [allNumbers[j], allNumbers[i]]; }
+    const winningNumbers = allNumbers.slice(0, 20);
     const hits = numbers.filter(n => winningNumbers.includes(parseInt(n))).length;
     const multiplier = getKenoMultiplier(hits, numbers.length);
     const gain = gainPossible ? mise * multiplier : 0;
@@ -1005,7 +1040,7 @@ app.post('/api/games/course/play', requireAuth, async (req, res) => {
   } catch (e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
 });
 
-// Hélicoptère – sessions en mémoire
+// Hélicoptère
 let helicoSessions = new Map();
 app.post('/api/games/helico/start', requireAuth, async (req, res) => {
   const client = await pool.connect();
@@ -1063,24 +1098,7 @@ app.post('/api/games/helico/update', requireAuth, async (req, res) => {
   res.json({ crashed: false, altitude: session.altitude });
 });
 
-// ── AUTRES ROUTES API (bets, transactions, etc.) ──────────
-app.get('/api/bets', requireAuth, async (req, res) => {
-  let query = `SELECT b.*, p.name AS player_name FROM bets b LEFT JOIN players p ON b.player_phone = p.phone`;
-  let params = [];
-  if (req.session.role === 'joueur') { query += ` WHERE b.player_phone = $1`; params.push(req.session.user_phone); }
-  query += ` ORDER BY b.created_at DESC LIMIT 200`;
-  const r = await pool.query(query, params);
-  res.json({ bets: r.rows });
-});
-
-app.get('/api/transactions', requireAdmin, async (req, res) => {
-  const r = await pool.query(`SELECT t.*, p.name AS player_name FROM transactions t LEFT JOIN players p ON t.player_phone = p.phone ORDER BY t.created_at DESC LIMIT 300`);
-  res.json({ transactions: r.rows });
-});
-
-// ============================================================
-// ROUTE CATCH-ALL POUR LE FRONTEND (SPA) – À PLACER À LA FIN
-// ============================================================
+// ── ROUTE CATCH-ALL POUR LE SPA ───────────────────────────
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
