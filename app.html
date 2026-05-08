@@ -641,6 +641,7 @@ th{background:var(--blue);color:#fff;font-size:12px;font-weight:700;}
     <div class="atab" data-tab="borlette" onclick="switchToTab(this)">🎯 Borlette</div>
     <div class="atab" data-tab="sports" id="tab-sports-btn" onclick="switchToTab(this)">⚽ Sports</div>
     <div class="atab" data-tab="recharge" id="tab-recharge-btn" onclick="switchToTab(this)">💳 Recharge</div>
+    <div class="atab" data-tab="retrait" onclick="switchToTab(this)">💸 Retrait</div>
     <div class="atab" data-tab="historique" id="tab-hist-btn" onclick="switchToTab(this)">📋 Historique</div>
   </div>
   <div class="app-content">
@@ -1261,6 +1262,52 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
         <h3>🏪 Recharge en caisse physique</h3>
         <p style="font-size:13px;color:var(--muted)">Vous pouvez aussi recharger votre compte directement auprès d'un caissier Tonton Kondo dans notre espace de jeu. Donnez votre numéro de téléphone au caissier.</p>
       </div>
+    </div>
+  </div>
+
+  <!-- RETRAIT JOUEUR -->
+  <div class="asec" id="tab-retrait">
+    <div class="card" style="margin-top:10px">
+      <h3>💸 Demander un Retrait</h3>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Retirez vos gains via MonCash, NatCash ou en espèces au bureau.</p>
+      <div id="retrait-solde-info" style="background:rgba(245,200,0,.08);border:1px solid rgba(245,200,0,.3);border-radius:10px;padding:13px;margin-bottom:16px;text-align:center;">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Solde disponible</div>
+        <div style="font-size:2em;font-weight:900;color:var(--gold)" id="retrait-solde-display">0 Gd</div>
+      </div>
+      <div class="fg">
+        <label>Méthode de retrait</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+          <div class="rm-card" id="ret-mc" onclick="selRetraitMethod('moncash')" style="border:2px solid var(--border);cursor:pointer;padding:12px;border-radius:10px;text-align:center;transition:.2s;">
+            <div style="font-size:1.5em;margin-bottom:4px">📱</div>
+            <div style="font-size:11px;font-weight:700;color:#ff9800">MonCash</div>
+          </div>
+          <div class="rm-card" id="ret-nc" onclick="selRetraitMethod('natcash')" style="border:2px solid var(--border);cursor:pointer;padding:12px;border-radius:10px;text-align:center;transition:.2s;">
+            <div style="font-size:1.5em;margin-bottom:4px">💳</div>
+            <div style="font-size:11px;font-weight:700;color:#5b8ef5">NatCash</div>
+          </div>
+          <div class="rm-card" id="ret-cash" onclick="selRetraitMethod('cash')" style="border:2px solid var(--border);cursor:pointer;padding:12px;border-radius:10px;text-align:center;transition:.2s;">
+            <div style="font-size:1.5em;margin-bottom:4px">💵</div>
+            <div style="font-size:11px;font-weight:700;color:var(--green2)">Cash</div>
+          </div>
+        </div>
+      </div>
+      <div id="retrait-form" style="display:none">
+        <div class="fg">
+          <label>Montant à retirer (Gourdes)</label>
+          <input type="number" id="ret-montant" min="50" placeholder="Ex: 500" style="width:100%;padding:11px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:15px;font-weight:700;outline:none;">
+        </div>
+        <div class="fg" id="ret-num-row">
+          <label id="ret-num-label">Numéro MonCash / NatCash</label>
+          <input type="tel" id="ret-numero" placeholder="Ex: 50912345678" style="width:100%;padding:11px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none;">
+        </div>
+        <button onclick="soumettreRetrait()" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--gold),#d4a800);color:#000;border:none;border-radius:8px;font-weight:900;font-size:15px;cursor:pointer;margin-top:4px;letter-spacing:1px;">💸 ENVOYER LA DEMANDE</button>
+        <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px">Le retrait sera traité dans les 24h par notre équipe.</p>
+      </div>
+    </div>
+    <div class="card">
+      <h3>📋 Mes Demandes de Retrait</h3>
+      <div id="mes-retraits-list"><div class="empty-msg">Aucune demande.</div></div>
+      <button onclick="chargerMesRetraits()" style="margin-top:8px;padding:7px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;font-size:13px"><i class="fas fa-sync"></i> Actualiser</button>
     </div>
   </div>
 
@@ -2131,69 +2178,8 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
       </div>
     </div>
 
-
-    </div>
-
-      <!-- Difficulté GLOBALE (fallback) -->
-      <div class="card">
-        <h3>⚙️ Difficulté Globale (par défaut)</h3>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Appliquée si aucune difficulté n'est définie pour le directeur.</p>
-        <div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #5b8ef5;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>🎱 Keno Lucky</b><span style="color:#5b8ef5;font-weight:900" id="keno-pct-lbl">45%</span></div>
-          <input type="range" id="keno-diff-range" min="0" max="80" step="5" value="45" style="width:100%;accent-color:#5b8ef5" oninput="updateDiffLabel('keno',this.value)">
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span></div>
-          <button onclick="saveGameDiff('keno')" style="margin-top:8px;padding:5px 14px;background:var(--blue);color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
-        </div>
-        <div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid var(--gold);">
-          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>🍀 Lucky 6</b><span style="color:var(--gold);font-weight:900" id="lucky6-pct-lbl">45%</span></div>
-          <input type="range" id="lucky6-diff-range" min="0" max="80" step="5" value="45" style="width:100%;accent-color:var(--gold)" oninput="updateDiffLabel('lucky6',this.value)">
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span></div>
-          <button onclick="saveGameDiff('lucky6')" style="margin-top:8px;padding:5px 14px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
-        </div>
-        <div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid var(--red);">
-          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>🏎️ Course Auto</b><span style="color:var(--red);font-weight:900" id="course-pct-lbl">45%</span></div>
-          <input type="range" id="course-diff-range" min="0" max="80" step="5" value="45" style="width:100%;accent-color:var(--red)" oninput="updateDiffLabel('course',this.value)">
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span></div>
-          <button onclick="saveGameDiff('course')" style="margin-top:8px;padding:5px 14px;background:var(--red);color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
-        </div>
-        <div style="background:var(--bg2);border-radius:10px;padding:14px;border-left:4px solid var(--green2);">
-          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>🚁 Hélicoptère</b><span style="color:var(--green2);font-weight:900" id="helico-pct-lbl">45%</span></div>
-          <input type="range" id="helico-diff-range" min="0" max="80" step="5" value="45" style="width:100%;accent-color:var(--green2)" oninput="updateDiffLabel('helico',this.value)">
-          <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span></div>
-          <button onclick="saveGameDiff('helico')" style="margin-top:8px;padding:5px 14px;background:var(--green2);color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
-        </div>
-      </div>
-      <!-- Ticker & Notifications -->
-      <div class="card">
-        <h3>📢 Bande Passante & Notifications</h3>
-        <div class="fg" style="margin-bottom:12px">
-          <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Message bande passante (ticker)</label>
-          <textarea id="admin-ticker-msg" rows="2" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;resize:none;" placeholder="Ex: Nouvo jwe Penalty disponib ! Jackpot Keno — 10,000 Gd !"></textarea>
-        </div>
-        <div class="fg" style="margin-bottom:12px">
-          <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Notification admin (s'affiche pour tous)</label>
-          <input type="text" id="admin-notif-text-input" placeholder="Ex: Maintenance prévue ce soir à 22h" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;margin-bottom:6px">
-          <div style="display:flex;gap:8px;align-items:center">
-            <input type="text" id="admin-notif-icon-input" placeholder="🔔" style="width:60px;padding:8px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:16px;outline:none;text-align:center">
-            <select id="admin-notif-bg" style="flex:1;padding:8px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;outline:none">
-              <option value="rgba(26,58,143,.3)">🔵 Bleu (info)</option>
-              <option value="rgba(245,200,0,.15)">🟡 Or (important)</option>
-              <option value="rgba(40,176,78,.2)">🟢 Vert (succès)</option>
-              <option value="rgba(230,57,70,.2)">🔴 Rouge (alerte)</option>
-            </select>
-          </div>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button onclick="saveAdminMessages()" style="padding:9px 16px;background:linear-gradient(135deg,var(--gold),#d4a800);color:#000;border:none;border-radius:7px;font-weight:700;cursor:pointer">💾 Enregistrer</button>
-          <button onclick="clearAdminMessages()" style="padding:9px 16px;background:var(--red);color:#fff;border:none;border-radius:7px;font-weight:700;cursor:pointer">🗑 Effacer</button>
-        </div>
-      </div>
-      <div class="card">
-        <h3>🔐 Identifiants Admin</h3>
-        <p style="font-size:13px;color:var(--muted)">Admin: <strong style="color:var(--gold)">mot de passe: admin</strong></p>
-        <p style="font-size:12px;color:var(--muted);margin-top:5px">Code secret accès staff: <strong style="color:var(--gold)">TONTONKONDO12</strong></p>
-      </div>
-</div>
+  </div><!-- fin .inner admin -->
+</div><!-- fin sc-admin -->
 
 <!-- OVERLAY TICKETS GAGNANTS -->
 <div class="ticket-win-overlay" id="tickets-win-overlay">
@@ -2763,25 +2749,36 @@ function updateAppBar(){
   document.getElementById('abSolde').textContent=(j.solde||0)+' Gd';
 }
 
-function getSolde(){if(CJ){return gJ()[CJ.phone]?.solde||0;}return 0;}
+function getSolde(){if(CJ){return parseFloat(gJ()[CJ.phone]?.solde||CJ.solde||0);}return 0;}
+
+// Mise à jour solde depuis l'API (utilisé après chaque jeu)
+async function syncSolde(){
+  if(!CJ) return;
+  try {
+    const r = await apiGet('/api/player/solde');
+    const j = gJ();
+    if(j[CJ.phone]) j[CJ.phone].solde = r.solde;
+    localStorage.setItem('tk_player_cache', JSON.stringify(j));
+    CJ.solde = r.solde;
+    updateAppBar();
+  } catch(e) {}
+}
 
 function addTx(phone,type,montant,details,soldeApres){
   const j=gJ();if(!j[phone])return;
   if(!j[phone].transactions)j[phone].transactions=[];
   const tx={date:new Date().toLocaleString(),type,montant,soldeApres:soldeApres||j[phone].solde,details};
-  j[phone].transactions.unshift(tx);sJ(j);
-  const at=gAT();
-  at.unshift({...tx,joueurName:j[phone].name,phone,
-    dirCode:j[phone].dirCode||'',caissCode:CCaiss?.code||'',caissName:CCaiss?.name||''});
-  sAT(at);
+  j[phone].transactions.unshift(tx);
+  localStorage.setItem('tk_player_cache', JSON.stringify(j));
 }
 
+// deduireJ et crediterJ mettent à jour le cache local immédiatement
+// La vraie transaction se passe via l'API lors du jeu
 function deduireJ(montant,type,details){
   if(CJ){
     const j=gJ();
-    j[CJ.phone].solde=(j[CJ.phone].solde||0)-montant;
-    sJ(j);addTx(CJ.phone,type,-montant,details,j[CJ.phone].solde);
-    CJ=j[CJ.phone];
+    if(j[CJ.phone]) { j[CJ.phone].solde=(parseFloat(j[CJ.phone].solde)||0)-montant; localStorage.setItem('tk_player_cache',JSON.stringify(j)); }
+    CJ.solde = (parseFloat(CJ.solde)||0)-montant;
   }
   updateAppBar();
 }
@@ -2789,11 +2786,76 @@ function deduireJ(montant,type,details){
 function crediterJ(montant,type,details){
   if(CJ){
     const j=gJ();
-    j[CJ.phone].solde=(j[CJ.phone].solde||0)+montant;
-    sJ(j);addTx(CJ.phone,type,montant,details,j[CJ.phone].solde);
-    CJ=j[CJ.phone];
+    if(j[CJ.phone]) { j[CJ.phone].solde=(parseFloat(j[CJ.phone].solde)||0)+montant; localStorage.setItem('tk_player_cache',JSON.stringify(j)); }
+    CJ.solde = (parseFloat(CJ.solde)||0)+montant;
   }
   updateAppBar();
+}
+
+// ===== RETRAIT JOUEUR =====
+let retraitMethod = null;
+function selRetraitMethod(m){
+  retraitMethod = m;
+  ['moncash','natcash','cash'].forEach(mt=>{
+    const el = document.getElementById('ret-'+mt.replace('cash','mc').replace('natcash','nc').replace('moncash','mc'));
+    if(mt==='moncash') document.getElementById('ret-mc').style.borderColor = m===mt?'#ff9800':'var(--border)';
+    if(mt==='natcash') document.getElementById('ret-nc').style.borderColor = m===mt?'#5b8ef5':'var(--border)';
+    if(mt==='cash')    document.getElementById('ret-cash').style.borderColor = m===mt?'var(--green2)':'var(--border)';
+  });
+  document.getElementById('retrait-form').style.display='block';
+  const numRow = document.getElementById('ret-num-row');
+  const numLabel = document.getElementById('ret-num-label');
+  if(m==='cash'){ numRow.style.display='none'; }
+  else { numRow.style.display='block'; numLabel.textContent=m==='moncash'?'Numéro MonCash':'Numéro NatCash'; }
+}
+
+async function soumettreRetrait(){
+  if(!CJ){showNotif('Connectez-vous','err');return;}
+  if(!retraitMethod){showNotif('Choisissez une méthode','err');return;}
+  const montant = parseFloat(document.getElementById('ret-montant').value)||0;
+  const numero = document.getElementById('ret-numero').value.trim();
+  if(montant < 50){showNotif('Minimum 50 Gourdes','err');return;}
+  if(montant > getSolde()){showNotif('Solde insuffisant','err');return;}
+  if(retraitMethod !== 'cash' && !numero){showNotif('Entrez votre numéro mobile','err');return;}
+  try {
+    const r = await apiPost('/api/retraits/demande', { montant, methode: retraitMethod, numero_mobile: numero||CJ.phone });
+    // Mettre à jour le solde local
+    const j=gJ();
+    if(j[CJ.phone]) j[CJ.phone].solde = r.newSolde;
+    localStorage.setItem('tk_player_cache', JSON.stringify(j));
+    CJ.solde = r.newSolde;
+    updateAppBar();
+    document.getElementById('retrait-solde-display').textContent = r.newSolde.toLocaleString('fr-FR')+' Gd';
+    showNotif('✅ Demande envoyée ! Traitement sous 24h.','ok');
+    document.getElementById('ret-montant').value='';
+    chargerMesRetraits();
+  } catch(e){ showNotif(e.message||'Erreur','err'); }
+}
+
+async function chargerMesRetraits(){
+  if(!CJ) return;
+  try {
+    const data = await apiGet('/api/retraits');
+    const el = document.getElementById('mes-retraits-list');
+    if(!el) return;
+    const list = data.retraits||[];
+    if(!list.length){el.innerHTML='<div class="empty-msg">Aucune demande de retrait.</div>';return;}
+    el.innerHTML = list.map(r=>`
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 13px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-weight:700;color:var(--text)">${parseFloat(r.montant).toLocaleString('fr-FR')} Gd</div>
+          <div style="font-size:11px;color:var(--muted)">${r.methode.toUpperCase()} · ${r.numero_mobile||'Bureau'} · ${new Date(r.created_at).toLocaleDateString('fr-FR')}</div>
+        </div>
+        <span class="sbadge ${r.statut==='approved'?'sbw':r.statut==='rejected'?'sbl':'sbp'}">${r.statut==='approved'?'✅ Approuvé':r.statut==='rejected'?'❌ Rejeté':'⏳ En attente'}</span>
+      </div>`).join('');
+  } catch(e){ console.warn(e); }
+}
+
+// Mettre à jour le solde dans la section retrait quand on ouvre l'onglet
+function initRetraitTab(){
+  const el = document.getElementById('retrait-solde-display');
+  if(el) el.textContent = getSolde().toLocaleString('fr-FR')+' Gd';
+  chargerMesRetraits();
 }
 
 
@@ -3166,22 +3228,26 @@ async function jouerKeno(){
   const mise=parseInt(document.getElementById('keno-mise').value)||0;
   const sol=getSolde();
   if(mise<=0||mise>sol){showNotif('Mise invalide ou solde insuffisant','err');return;}
-  deduireJ(mise,'Mise Casino',`Keno (${kenoSel.length} numéros)`);
-  let st=gSt();st.dep+=mise;sSt(st);
+  document.getElementById('keno-play').disabled=true;
   document.querySelectorAll('.kbtn').forEach(b=>b.classList.remove('win'));
-  const tirage=[];
-  for(let i=0;i<20;i++){
-    await new Promise(r=>setTimeout(r,1500));
-    let r;do{r=Math.floor(Math.random()*80)+1;}while(tirage.includes(r));
-    tirage.push(r);
-    const b=document.getElementById('kn'+r);if(b)b.classList.add('win');
-  }
-  let hits=kenoSel.filter(n=>tirage.includes(n)).length;
-  const df={easy:1.5,medium:1.0,hard:0.5,veryhard:0.2}[getGameDiff('keno')]||1.0;
-  hits=Math.min(kenoSel.length,Math.round(hits*df));
-  const gain=mise*hits*2;
-  if(gain>0){crediterJ(gain,'Gain Casino',`Keno: ${hits}/${kenoSel.length} trouvés`);st=gSt();st.pay+=gain;sSt(st);}
-  document.getElementById('keno-status').textContent=gain>0?`${hits} trouvé(s) — Gain: ${gain} Gourdes`:`${hits} trouvé(s) — Perte: ${mise} Gourdes`;
+  try {
+    const r = await apiPost('/api/games/keno/play', { numbers: kenoSel, mise });
+    // Afficher les numéros gagnants
+    r.winningNumbers.forEach(n=>{
+      const b=document.getElementById('kn'+n);if(b)b.classList.add('win');
+    });
+    const hits = kenoSel.filter(n=>r.winningNumbers.includes(n)).length;
+    document.getElementById('keno-status').textContent = r.message;
+    // Sync solde depuis DB
+    const j=gJ();
+    if(j[CJ.phone]){j[CJ.phone].solde=r.newBalance;localStorage.setItem('tk_player_cache',JSON.stringify(j));}
+    CJ.solde=r.newBalance; updateAppBar();
+    if(r.gain>0) showNotif('🎉 '+r.message,'ok');
+    else showNotif(r.message,'err');
+    // Rafraîchir l'historique
+    setTimeout(()=>refreshPlayerCache(CJ.phone),500);
+  } catch(e){ showNotif(e.message||'Erreur serveur','err'); }
+  document.getElementById('keno-play').disabled=false;
 }
 document.getElementById('keno-play').addEventListener('click',jouerKeno);
 
@@ -3257,58 +3323,39 @@ async function jouerLucky6(){
   if(mise<=0||mise>sol){showNotif('Mise invalide','err');return;}
 
   document.getElementById('lucky6-play').disabled=true;
-  deduireJ(mise,'Mise Casino','Lucky6');
-  let st=gSt();st.dep+=mise;sSt(st);
-
-  // Pool de tirage selon difficulté
-  let pn=l6sel.slice(),on=Array.from({length:48},(_,i)=>i+1).filter(n=>!pn.includes(n));
-  for(let i=on.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[on[i],on[j]]=[on[j],on[i]];}
-  for(let i=pn.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pn[i],pn[j]]=[pn[j],pn[i]];}
-  const diff=getGameDiff('lucky6');
-  let fp = diff==='easy'    ? pn.concat(on)
-         : diff==='medium'  ? pn.slice(0,3).concat(on,pn.slice(3))
-         : diff==='hard'    ? pn.slice(0,2).concat(on,pn.slice(2))
-         : pn.concat(on);
-  if(diff==='veryhard'){for(let i=fp.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[fp[i],fp[j]]=[fp[j],fp[i]];}}
-
-  // Tirage — affichage compact dans tableau
   const box=document.getElementById('draw-container');
   const prog=document.getElementById('draw-progress-txt');
   const hitsEl=document.getElementById('draw-hits');
   box.innerHTML='';
-  let found=0,lastIdx=-1,total=Math.min(35,fp.length);
+  prog.textContent='Appel serveur...';
 
-  for(let i=0;i<total;i++){
-    await new Promise(r=>setTimeout(r,200)); // rapide — 200ms par boule
-    const num=fp[i];
-    const isHit=l6sel.includes(num);
-    if(isHit){found++;lastIdx=i;}
-
-    // Ajouter dans le mini-tableau
-    const dn=document.createElement('span');
-    dn.className='dn '+(isHit?'hit':'miss');
-    dn.textContent=num;
-    box.appendChild(dn);
-
-    prog.textContent = `boule ${i+1} / ${total}`;
-    hitsEl.textContent = `${found} / 6 trouvés`;
-    hitsEl.style.color = found>0 ? 'var(--green)' : 'var(--gold)';
-
-    if(found===6){
-      prog.textContent='✅ Tous trouvés !';
-      break;
+  try {
+    const r = await apiPost('/api/games/lucky6/play', { numbers: l6sel, mise });
+    // Afficher animation avec les vrais numéros gagnants
+    const winNums = r.winningNumbers||[];
+    let found=0;
+    for(let i=0;i<winNums.length;i++){
+      await new Promise(res=>setTimeout(res,180));
+      const num=winNums[i];
+      const isHit=l6sel.includes(num);
+      if(isHit)found++;
+      const dn=document.createElement('span');
+      dn.className='dn '+(isHit?'hit':'miss');
+      dn.textContent=num;
+      box.appendChild(dn);
+      prog.textContent=`boule ${i+1} / ${winNums.length}`;
+      hitsEl.textContent=`${found} / 6 trouvés`;
+      if(found===6){prog.textContent='✅ Tous trouvés !';break;}
     }
-  }
-
-  // Résultat
-  const gain=found===6 ? mise*Math.max(1,36-(lastIdx+1)) : 0;
-  if(gain>0){
-    crediterJ(gain,'Gain Casino',`Lucky6 ${found}/6 — Position ${lastIdx+1}`);
-    st=gSt();st.pay+=gain;sSt(st);
-    hitsEl.style.color='var(--green)';
-  }
-  document.getElementById('lucky6-status').textContent =
-    found===6 ? `🎉 GAGNÉ ! +${gain} Gourdes` : `😔 PERDU — ${found}/6 trouvés`;
+    document.getElementById('lucky6-status').textContent = r.message;
+    // Sync solde
+    const j=gJ();
+    if(j[CJ.phone]){j[CJ.phone].solde=r.newBalance;localStorage.setItem('tk_player_cache',JSON.stringify(j));}
+    CJ.solde=r.newBalance; updateAppBar();
+    if(r.gain>0) showNotif('🎉 '+r.message,'ok');
+    else showNotif(r.message,'err');
+    setTimeout(()=>refreshPlayerCache(CJ.phone),500);
+  } catch(e){ showNotif(e.message||'Erreur serveur','err'); }
   document.getElementById('lucky6-play').disabled=false;
 }
 document.getElementById('lucky6-play').addEventListener('click',jouerLucky6);
@@ -3382,9 +3429,26 @@ async function lancerCourse(){
   raceRunning=true;
   document.getElementById('course-play').disabled=true;
   document.getElementById('race-result').classList.remove('show');
-  document.getElementById('course-status').textContent='🚦 Prêt... Partez !';
-  deduireJ(mise,'Mise Casino',`Course Auto — Voiture #${selectedCar}`);
-  let st=gSt();st.dep+=mise;sSt(st);
+  document.getElementById('course-status').textContent='🚦 Prêt... Appel serveur...';
+
+  // === APPEL API (résultat décidé côté serveur) ===
+  let apiResult = null;
+  try {
+    apiResult = await apiPost('/api/games/course/play', { carId: selectedCar, mise });
+  } catch(e){ showNotif(e.message||'Erreur serveur','err'); raceRunning=false; document.getElementById('course-play').disabled=false; return; }
+
+  // Sync solde
+  const j=gJ();
+  if(j[CJ?.phone]){j[CJ.phone].solde=apiResult.newBalance;localStorage.setItem('tk_player_cache',JSON.stringify(j));}
+  if(CJ) CJ.solde=apiResult.newBalance; updateAppBar();
+
+  // Le classement vient du serveur (apiResult.ranking)
+  const serverRanking = apiResult.ranking || VOITURES.map(v=>({id:v.id,name:v.nom}));
+  const serverWinnerId = serverRanking[0]?.id;
+  const gagne = serverWinnerId === selectedCar;
+  const gain = apiResult.gain || 0;
+
+  document.getElementById('course-status').textContent='🚦 Course en cours !';
 
   // Reset piste
   VOITURES.forEach(v=>{
@@ -3394,106 +3458,59 @@ async function lancerCourse(){
   });
   document.getElementById('race-lap').textContent='0';
 
-  // Vitesses aléatoires biaisées selon difficulté
-  const diff=getGameDiff('course');
-  const dfMap={easy:1.4,medium:1.0,hard:0.7,veryhard:0.4};
-  const boost=dfMap[diff]||1.0;
-
-  // Vitesse de base pour chaque voiture (aléatoire)
+  // Vitesses biaisées par le résultat serveur
   let speeds=VOITURES.map(v=>({
     id:v.id,
-    speed: Math.random()*2+1, // 1-3 de base
+    speed: serverRanking.findIndex(r=>r.id==v.id) === 0 ? 3.5 : Math.random()*2+1,
     progress:0,
     finished:false,
     position:0
   }));
+  // Si on a gagné, booster notre voiture encore plus
+  if(gagne){ const ps=speeds.find(s=>s.id===selectedCar); if(ps)ps.speed=3.8; }
+  else { const ws=speeds.find(s=>s.id==serverWinnerId); if(ws)ws.speed=3.8; }
 
-  // Booster légèrement la voiture du joueur selon difficulté
-  const playerSpeed=speeds.find(s=>s.id===selectedCar);
-  if(playerSpeed) playerSpeed.speed*=boost;
-
-  // Animation — 50 ticks, interval 120ms = ~6 secondes
-  const TRACK_W=100; // pourcentage
-  const TICKS=80;
-  let finishOrder=[];
-  let lap=0;
-
+  const TICKS=80; let finishOrder=[]; let lap=0;
   for(let tick=0;tick<TICKS;tick++){
     await new Promise(r=>setTimeout(r,120));
-
-    // Mettre à jour progression de chaque voiture
     speeds.forEach(s=>{
       if(s.finished) return;
-      // Variation aléatoire de vitesse
       const variation=(Math.random()-0.45)*0.8;
       s.progress+=s.speed+variation;
       s.progress=Math.max(0,Math.min(s.progress,100));
-
-      // Mettre à jour barre
       document.getElementById('bar-'+s.id).style.width=s.progress+'%';
-      // Déplacer emoji voiture (de 118px à ~90% de la largeur disponible)
       const laneEl=document.getElementById('lane-'+s.id);
       const laneW=laneEl.offsetWidth;
       const carX=118 + (s.progress/100)*(laneW-160);
       document.getElementById('car-'+s.id).style.left=Math.max(118,carX)+'px';
-
-      // Tour
       if(s.progress>=100 && !s.finished){
-        s.finished=true;
-        s.position=finishOrder.length+1;
-        finishOrder.push(s.id);
+        s.finished=true; s.position=finishOrder.length+1; finishOrder.push(s.id);
         const posEl=document.getElementById('pos-'+s.id);
-        posEl.style.display='flex';
-        posEl.textContent='#'+s.position;
+        posEl.style.display='flex'; posEl.textContent='#'+s.position;
         posEl.style.background=s.position===1?'var(--gold)':s.position===2?'#aaa':s.position===3?'#cd7f32':'#333';
         posEl.style.color=s.position<=3?'#000':'#888';
       }
     });
-
-    // Lap counter
     const avgProgress=speeds.reduce((a,s)=>a+s.progress,0)/speeds.length;
     const newLap=Math.min(5,Math.floor(avgProgress/20)+1);
-    if(newLap!==lap){
-      lap=newLap;
-      document.getElementById('race-lap').textContent=lap;
-    }
-
-    // Si tout le monde a fini
+    if(newLap!==lap){lap=newLap;document.getElementById('race-lap').textContent=lap;}
     if(finishOrder.length===VOITURES.length) break;
   }
+  speeds.filter(s=>!s.finished).sort((a,b)=>b.progress-a.progress).forEach(s=>{
+    s.position=finishOrder.length+1; finishOrder.push(s.id);
+    const posEl=document.getElementById('pos-'+s.id);
+    posEl.style.display='flex'; posEl.textContent='#'+s.position;
+    posEl.style.background='#333'; posEl.style.color='#888';
+  });
 
-  // Forcer les non-finis dans l'ordre
-  speeds.filter(s=>!s.finished).sort((a,b)=>b.progress-a.progress)
-    .forEach(s=>{
-      s.position=finishOrder.length+1;
-      finishOrder.push(s.id);
-      const posEl=document.getElementById('pos-'+s.id);
-      posEl.style.display='flex';
-      posEl.textContent='#'+s.position;
-      posEl.style.background='#333';
-      posEl.style.color='#888';
-    });
-
-  // Résultats
-  const winner=finishOrder[0];
   const v=VOITURES.find(x=>x.id===selectedCar);
   const playerPos=finishOrder.indexOf(selectedCar)+1;
-  const gagne=playerPos===1;
-  const gain=gagne ? parseFloat((mise*v.cote).toFixed(2)) : 0;
-
-  if(gagne){
-    crediterJ(gain,'Gain Casino',`Course Auto — Voiture #${selectedCar} 1ère place`);
-    st=gSt();st.pay+=gain;sSt(st);
-  }
-
-  // Afficher classement
   const resultList=document.getElementById('race-result-list');
   resultList.innerHTML=finishOrder.map((cid,idx)=>{
     const cv=VOITURES.find(x=>x.id===cid);
     const isPlayer=cid===selectedCar;
-    const posClass=['pos1','pos2','pos3','pos-other','pos-other','pos-other'][idx]||'pos-other';
     return `<div class="result-row" style="${isPlayer?'background:rgba(245,166,35,.08);border-radius:6px;':''}">
-      <div class="result-pos ${posClass}">${idx+1}</div>
+      <div class="result-pos" style="font-weight:900;font-size:14px;min-width:22px;color:${idx===0?'var(--gold)':idx===1?'#aaa':'#888'}">${idx+1}</div>
       <div style="font-size:14px;margin-right:4px">${cv.emoji}</div>
       <div style="flex:1">
         <div style="font-size:12px;font-weight:700;color:${isPlayer?'var(--gold)':'var(--text)'}">${cv.nom} ${isPlayer?'← TOI':''}</div>
@@ -3504,7 +3521,6 @@ async function lancerCourse(){
   }).join('');
 
   document.getElementById('race-result').classList.add('show');
-
   if(gagne){
     document.getElementById('course-status').textContent=`🏆 VICTOIRE ! +${gain} Gourdes`;
     showNotif(`🏆 Voiture #${selectedCar} gagne ! +${gain} Gourdes`,'ok');
@@ -3512,11 +3528,10 @@ async function lancerCourse(){
     document.getElementById('course-status').textContent=`😔 Voiture #${selectedCar} termine ${playerPos}ème — Perdu`;
     showNotif(`😔 Voiture #${selectedCar} — ${playerPos}ème place`,'err');
   }
-
-  raceRunning=false;
-  selectedCar=null;
+  raceRunning=false; selectedCar=null;
   document.querySelectorAll('.car-card').forEach(c=>c.classList.remove('sel'));
   document.getElementById('course-play').disabled=false;
+  setTimeout(()=>refreshPlayerCache(CJ?.phone),500);
 }
 
 document.getElementById('course-play').addEventListener('click',lancerCourse);
