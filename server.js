@@ -826,6 +826,25 @@ app.post('/api/admin/cashiers', requireAdmin, async (req, res) => {
   res.json({ success: true, cashier: r.rows[0] });
 });
 
+// Route accessible par le directeur pour créer un caissier
+app.post('/api/cashiers', requireAuth, async (req, res) => {
+  try {
+    if (!['admin','directeur'].includes(req.session.role)) return res.status(403).json({ error: 'Non autorisé' });
+    const { name, code, phone, pwd, jeu, dir_code } = req.body;
+    if (!name||!code||!pwd) return res.status(400).json({ error: 'Nom, code et mot de passe obligatoires' });
+    // Un directeur ne peut créer que pour son propre code
+    const effectiveDirCode = req.session.role === 'directeur' ? req.session.user_code : (dir_code || req.session.user_code);
+    const hash = await bcrypt.hash(pwd, 10);
+    const existing = await pool.query("SELECT id FROM cashiers WHERE code=$1", [code.toUpperCase()]);
+    if (existing.rows.length) return res.status(400).json({ error: 'Ce code caissier existe déjà' });
+    const r = await pool.query(
+      "INSERT INTO cashiers (name,code,dir_code,phone,pwd_hash,jeu) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id,name,code,dir_code,phone,jeu",
+      [name, code.toUpperCase(), effectiveDirCode, phone||'', hash, jeu||'all']
+    );
+    res.json({ success: true, cashier: r.rows[0] });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.delete('/api/admin/cashiers/:code', requireAdmin, async (req, res) => {
   await pool.query("UPDATE cashiers SET active=FALSE WHERE code=$1", [req.params.code]);
   res.json({ success: true });
@@ -1091,6 +1110,26 @@ app.post('/api/games/helico/cashout', requireAuth, async (req, res) => {
     const newBalance = (await client.query("SELECT solde FROM players WHERE phone=$1", [session.phone])).rows[0].solde;
     res.json({ success: true, gain, newBalance, message: `Encaissé ! Gain ${gain} Gd` });
   } catch (e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
+});
+
+// Alias pour le frontend qui envoie gain+mise directement
+app.post('/api/games/helico/encaisse', requireAuth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    if (req.session.role!=='joueur') return res.status(403).json({ error: 'Joueurs seulement' });
+    const { mise, altitude, cote, gain } = req.body;
+    if (!gain||gain<=0) return res.status(400).json({ error: 'Gain invalide' });
+    const phone = req.session.user_phone;
+    await client.query('BEGIN');
+    const pr = await client.query("SELECT solde,dir_code FROM players WHERE phone=$1 FOR UPDATE", [phone]);
+    if (!pr.rows.length) throw new Error('Joueur introuvable');
+    await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [gain, phone]);
+    await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'gain',$3,$4)",
+      [phone, pr.rows[0].dir_code, gain, `Gain Hélicoptère encaissé à ${altitude}m (×${parseFloat(cote||1).toFixed(2)})`]);
+    await client.query('COMMIT');
+    const newBalance = parseFloat((await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde);
+    res.json({ success:true, gain, newBalance });
+  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
 });
 
 app.post('/api/games/helico/update', requireAuth, async (req, res) => {

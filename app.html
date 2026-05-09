@@ -622,7 +622,7 @@ th{background:var(--blue);color:#fff;font-size:12px;font-weight:700;}
     </div>
     <div class="ab-right">
       <div class="solde-badge" id="abSolde">0 Gd</div>
-      <button class="btn-logout" onclick="logoutJoueur()">✕</button>
+      <button class="btn-logout" onclick="logoutJoueur()" style="display:flex;align-items:center;gap:4px;font-size:11px;padding:6px 10px;border-radius:7px;" title="Déconnexion">⏻ Déco</button>
     </div>
   </div>
   <!-- JACKPOT WIDGET - shown if jackpot > 0 -->
@@ -2861,9 +2861,16 @@ async function chargerMesRetraits(){
 }
 
 // Mettre à jour le solde dans la section retrait quand on ouvre l'onglet
-function initRetraitTab(){
+async function initRetraitTab(){
   const el = document.getElementById('retrait-solde-display');
-  if(el) el.textContent = getSolde().toLocaleString('fr-FR')+' Gd';
+  if(el) el.textContent = '⏳ Chargement...';
+  try {
+    const data = await apiGet('/api/player/solde');
+    applySoldeFromAPI(data.solde);
+    if(el) el.textContent = parseFloat(data.solde).toLocaleString('fr-FR')+' Gd';
+  } catch(e){
+    if(el) el.textContent = getSolde().toLocaleString('fr-FR')+' Gd';
+  }
   chargerMesRetraits();
 }
 
@@ -2876,7 +2883,8 @@ document.querySelectorAll('.atab[data-tab]').forEach(tab=>{
     tab.classList.add('on');
     document.querySelectorAll('.asec').forEach(s=>s.classList.remove('on'));
     document.getElementById('tab-'+tab.dataset.tab).classList.add('on');
-    if(tab.dataset.tab==='historique')renderJHist();
+    if(tab.dataset.tab==='historique') renderJHist();
+    if(tab.dataset.tab==='retrait') initRetraitTab();
     if(tab.dataset.tab!=='sports'){document.getElementById('cpbar').classList.remove('on');document.getElementById('cppanel').classList.remove('on');}
     else updateCPBar();
   });
@@ -3787,8 +3795,12 @@ function encaisserHelico(){
   clearInterval(helicoTimer);
   helicoRunning=false;
   const gain=parseFloat((helicoMise*helicoCote).toFixed(2));
-  crediterJ(gain,'Gain Casino',`Hélicoptère encaissé à ${helicoAlt}m · ${helicoCote.toFixed(2)}x`);
-  let st=gSt();st.pay+=gain;sSt(st);
+  // Mise à jour optimiste immédiate
+  if(CJ){ CJ.solde = parseFloat(CJ.solde||0) + gain; updateAppBar(); }
+  // Appel API pour enregistrer le gain en DB
+  apiPost('/api/games/helico/encaisse', { mise: helicoMise, altitude: helicoAlt, cote: helicoCote, gain })
+    .then(r => applySoldeFromAPI(r.newBalance))
+    .catch(() => syncSolde());
   document.getElementById('helico-status').textContent=`💰 Encaissé à ${helicoAlt}m ! Gain: +${gain} Gourdes`;
   document.getElementById('helico-cash').style.display='none';
   document.getElementById('helico-start').style.display='inline-flex';
@@ -3840,21 +3852,30 @@ async function loadMatches() {
 const EMKTS={'Double Chance':[['1X','1.15'],['12','1.05'],['X2','1.50']],'Buts':[['Moins 1.5','1.80'],['Plus 1.5','1.95'],['Moins 2.5','2.10'],['Plus 2.5','1.75'],['Moins 3.5','1.45'],['Plus 3.5','2.60']],'Mi-temps/Match':[['1/1','3.20'],['X/X','3.80'],['2/2','2.80'],['1/2','9.00'],['2/1','12.0'],['X/2','4.20']],'BTTS':[['Oui','1.80'],['Non','1.95']],'Handicap':[['-1','2.10'],['0','1.90'],['+1','1.75']],'Score exact':[['1-0','6.00'],['2-1','7.50'],['1-1','5.50'],['0-0','7.00']]};
 const H2H={fr1:['W','W','D','W','L'],fr2:['L','D','W','L','W'],h2h:[{dt:'12 Jan 2025',s1:2,s2:1,cp:'Ligue 1',w:1},{dt:'05 Oct 2024',s1:1,s2:1,cp:'Coupe Nat.',w:0},{dt:'18 Mar 2024',s1:3,s2:0,cp:'Ligue 1',w:1},{dt:'22 Nov 2023',s1:0,s2:2,cp:'Ligue 1',w:2},{dt:'08 Apr 2023',s1:2,s2:2,cp:'Coupe Nat.',w:0}],stats:[{n:'Possession',v1:62,v2:38},{n:'Tirs cadrés',v1:6,v2:3},{n:'Corners',v1:7,v2:4},{n:'Fautes',v1:9,v2:14}]};
 
-// Mapping lk -> région
+// Mapping lk -> région (codes = compCode.toLowerCase() retourné par le serveur)
 const LK_REGION={
-  ligue1:'fr',ligue2:'fr',
-  premier:'en',championship:'en',
-  laliga:'es',liga2:'es',
-  bundesliga:'de',bundesliga2:'de',
-  seriea:'it',serieb:'it',
-  primeiralga:'pt',
-  eredivisie:'nl',
-  jupiler:'other_eu',superlig:'other_eu',superleague:'other_eu',rpl:'other_eu',
-  ucl:'europe',europa:'europe',confleague:'europe',
-  brasileirao:'amsud',primera:'amsud',libertadores:'amsud',sudamericana:'amsud',
-  ligamx:'amnord',mls:'amnord',
-  cafcl:'afrique',npfl:'afrique',
-  jleague:'asie',kleague:'asie',csl:'asie',acl:'asie',splt:'asie',aleague:'asie',
+  // France
+  fl1:'fr', fl2:'fr',
+  // Angleterre
+  pl:'en', elc:'en',
+  // Espagne
+  pd:'es',
+  // Allemagne
+  bl1:'de',
+  // Italie
+  sa:'it',
+  // Portugal
+  ppl:'pt',
+  // Pays-Bas
+  ded:'nl',
+  // Europe (Coupes)
+  cl:'europe', ucl:'europe', uel:'europe', uecl:'europe', ec:'europe', wc:'europe',
+  // Amérique Sud
+  bsa:'amsud', cli:'amsud',
+  // Amérique Nord
+  mls:'amnord', ligamx:'amnord',
+  // Afrique
+  cafcl:'afrique',
 };
 let currentFilter='all';
 
@@ -4102,29 +4123,43 @@ function renderBorCart(){
   if(countEl)countEl.textContent=borCart.length+' paryaj';
 }
 
-function processBorTicket(){
+async function processBorTicket(){
   if(!borCart.length){showNotif('Panye vid','err');return;}
+  if(!CJ){showNotif('Connectez-vous pour jouer','err');return;}
   const total=borCart.reduce((s,b)=>s+b.amount,0);
-  const sol=getSolde();
-  if(CJ&&total>sol){showNotif('Solde insuffisant','err');return;}
-  if(CJ){
-    deduireJ(total,'Borlette/Lotto','Ticket: '+borCart.length+' paryaj');
-    let st=gSt();st.dep+=total;sSt(st);
+  if(total>getSolde()){showNotif('Solde insuffisant','err');return;}
+  const draw = document.getElementById('bor-draw')?.value||'';
+  try {
+    const numeros = borCart.map(b=>b.number);
+    const types   = borCart.map(b=>b.game||'bolet');
+    const montants= borCart.map(b=>b.amount);
+    const r = await apiPost('/api/borlette/bet', { numeros, types, montants, draw });
+    applySoldeFromAPI(r.newBalance);
+    showNotif('✅ Tikè #'+r.ticketRef+' enregistré!','ok');
+    // Sauvegarder dans l'historique local pour affichage
+    const hist = JSON.parse(localStorage.getItem('tk_bor_tickets')||'[]');
+    hist.unshift({ ticketRef: r.ticketRef, draw, bets: borCart, total, date: new Date().toLocaleString('fr-FR') });
+    if(hist.length>50) hist.pop();
+    localStorage.setItem('tk_bor_tickets', JSON.stringify(hist));
+    // Option impression
+    if(confirm('Tikè enregistré ✅\nVoulez-vous imprimer le ticket?')){
+      printBorTicket(borCart, total, r.ticketRef);
+    }
+    borCart=[];renderBorCart();
+  } catch(e){
+    showNotif('Erreur: '+(e.message||'impossible d\'enregistrer'),'err');
   }
-  printBorTicket(borCart,total);
-  borCart=[];renderBorCart();
-  showNotif('✅ Tikè enprime!','ok');
 }
 
-function printBorTicket(bets,total){
+function printBorTicket(bets,total,ticketRef){
   const pw=window.open('','_blank','width=500,height=700');
   if(!pw){alert('Autorisez les pop-ups');return;}
-  const abbr={borlette:'bor',lotto3:'lo3',lotto4:'lo4',lotto5:'lo5',mariage:'mar',auto_marriage:'mara'};
+  const abbr={borlette:'bor',lotto3:'lo3',lotto4:'lo4',lotto5:'lo5',mariage:'mar',auto_marriage:'mara',bolet:'bor'};
   const date=new Date().toLocaleString('fr-FR',{timeZone:'America/Port-au-Prince'});
-  const drawId=bets[0]?.drawId||'';
+  const drawId=bets[0]?.drawId||document.getElementById('bor-draw')?.value||'';
   const drawMap={tn_matin:'Tunisia Matin',tn_soir:'Tunisia Soir',fl_matin:'Florida Matin',fl_soir:'Florida Soir',ny_matin:'New York Matin',ny_soir:'New York Soir',ga_matin:'Georgia Matin',ga_soir:'Georgia Soir',tx_matin:'Texas Matin',tx_soir:'Texas Soir'};
   const drawName=drawMap[drawId]||drawId;
-  const ticketId=Math.floor(Math.random()*1000000).toString().padStart(6,'0');
+  const ticketId=ticketRef||Math.floor(Math.random()*1000000).toString().padStart(6,'0');
   pw.document.write(`<!DOCTYPE html><html><head><title>Ticket Borlette</title><style>
     @page{size:80mm auto;margin:2mm;}
     body{font-family:'Courier New',monospace;font-size:28px;font-weight:bold;width:76mm;margin:0 auto;padding:4mm;background:white;color:black;}
@@ -4706,43 +4741,66 @@ function selHistTab(tab, el){
   else renderJHistCat(tab);
 }
 
-function renderJHistCat(cat){
+async function renderJHistCat(cat){
   if(!CJ) return;
-  const j=gJ()[CJ.phone];
-  const hist=(j&&j.transactions)||[];
-  const catMap={
-    depot: t => ['Dépôt','Retrait','Recharge','Cash','MonCash','NatCash'].some(k=>t.type.includes(k)),
-    lotto: t => ['Borlette','Lotto','borlette','lotto','Tiraj'].some(k=>(t.type+t.details).includes(k)),
-    casino: t => ['Casino','Keno','Course','Hélicoptère','Lucky','Caisse'].some(k=>(t.type+t.details).includes(k))
-  };
-  const filtered = hist.filter(catMap[cat]||(() => true));
   const el = document.getElementById('jhist-'+cat);
   if(!el) return;
-  el.innerHTML = filtered.length
-    ? filtered.map(t=>`<div style="padding:4px 0;border-bottom:1px solid var(--border)">
-        <span style="font-size:10px;color:var(--muted)">${t.date}</span> —
-        <b style="color:${t.montant>0?'var(--green2)':'var(--red)'}">${t.type}</b>:
-        <span style="color:${t.montant>0?'var(--green2)':'var(--red)'}">${t.montant>0?'+':''}${t.montant} Gd</span>
-        <span style="font-size:10px;color:var(--muted)"> — ${t.details||''}</span>
-      </div>`).join('')
-    : '<div style="color:var(--muted);font-size:13px;padding:8px">Aucune transaction dans cette catégorie.</div>';
+  el.innerHTML='<div style="color:var(--muted);font-size:13px;padding:8px;text-align:center">⏳ Chargement...</div>';
+  try {
+    const data = await apiGet('/api/transactions');
+    const txs = (data.transactions||[]);
+    const catFilter = {
+      depot: t => ['depot','retrait','retrait_demande','remboursement','credit_admin','recharge'].includes(t.type),
+      lotto: t => (t.note||'').toLowerCase().includes('borlette') || t.type==='gain_borlette' || t.type==='mise_borlette',
+      casino: t => ['mise','gain'].includes(t.type) && !(t.note||'').toLowerCase().includes('borlette') && !(t.note||'').toLowerCase().includes('sport')
+    };
+    const filtered = cat==='all' ? txs : txs.filter(catFilter[cat]||(() => true));
+    if(!filtered.length){
+      el.innerHTML='<div style="color:var(--muted);font-size:13px;padding:8px">Aucune transaction dans cette catégorie.</div>';
+      return;
+    }
+    const typeLabel = { depot:'💵 Dépôt', retrait:'💸 Retrait', retrait_demande:'⏳ Retrait demandé',
+      remboursement:'↩️ Remboursement', credit_admin:'🎁 Crédit admin',
+      mise:'🎲 Mise', gain:'🏆 Gain', gain_borlette:'🎯 Gain Borlette',
+      mise_borlette:'🎯 Mise Borlette', recharge:'💳 Recharge' };
+    el.innerHTML = filtered.map(t=>{
+      const m = parseFloat(t.montant);
+      const date = new Date(t.created_at||t.date).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+      const label = typeLabel[t.type]||t.type;
+      return `<div style="padding:7px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:12px;font-weight:700">${label}</div>
+          <div style="font-size:10px;color:var(--muted)">${date}${t.note?' · '+t.note:''}</div>
+        </div>
+        <div style="font-size:14px;font-weight:900;color:${m>=0?'var(--green2)':'var(--red)'}">${m>=0?'+':''}${m.toLocaleString('fr-FR')} Gd</div>
+      </div>`;
+    }).join('');
+  } catch(e){
+    el.innerHTML='<div style="color:var(--red);font-size:13px;padding:8px">Erreur chargement. Réessayez.</div>';
+  }
 }
 
-function renderJBets(){
+async function renderJBets(){
   const el=document.getElementById('jbets');
   if(!el||!CJ) return;
-  const bets=gB().filter(b=>b.phone===CJ.phone);
-  el.innerHTML=bets.length
-    ?`<div style="overflow-x:auto"><table style="font-size:11px;min-width:360px"><thead><tr><th>Date</th><th>Match</th><th>Sél.</th><th>Cote</th><th>Mise</th><th>Gain pot.</th><th>Statut</th></tr></thead><tbody>
-    ${bets.map(b=>`<tr><td style="font-size:10px">${b.date}</td><td>${b.match}</td><td><b>${b.selection}</b></td><td style="color:var(--gold)">${b.odd.toFixed(2)}</td><td>${b.mise} Gd</td><td style="color:var(--green2)">${b.gainPotentiel} Gd</td><td><span class="sbadge ${b.statut==='En attente'?'sbp':b.statut==='Gagné'?'sbw':'sbl'}">${b.statut}</span></td></tr>`).join('')}
-    </tbody></table></div>`
-    :'<p style="color:var(--muted);font-size:13px">Aucun pari sportif.</p>';
+  el.innerHTML='<div style="color:var(--muted);font-size:13px;padding:8px;text-align:center">⏳ Chargement...</div>';
+  try {
+    const data = await apiGet('/api/bets');
+    const bets = (data.bets||[]).filter(b=>b.game_type==='sport');
+    if(!bets.length){ el.innerHTML='<p style="color:var(--muted);font-size:13px">Aucun pari sportif.</p>'; return; }
+    el.innerHTML=`<div style="overflow-x:auto"><table style="font-size:11px;min-width:360px;width:100%"><thead><tr><th>Date</th><th>Match</th><th>Mise</th><th>Gain pot.</th><th>Statut</th></tr></thead><tbody>
+    ${bets.map(b=>{
+      const info = b.match_info ? (typeof b.match_info==='string'?JSON.parse(b.match_info):b.match_info) : {};
+      const date = new Date(b.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+      return `<tr><td style="font-size:10px">${date}</td><td>${info.homeTeam||'?'} vs ${info.awayTeam||'?'}<br><small style="color:var(--gold)">${info.prediction||'?'} @ ${info.cote||'?'}</small></td><td>${parseFloat(b.mise)} Gd</td><td style="color:var(--green2)">${parseFloat(b.gain_potentiel)} Gd</td><td><span class="sbadge ${b.statut==='en_attente'?'sbp':b.statut==='gagne'?'sbw':'sbl'}">${b.statut==='en_attente'?'⏳':b.statut==='gagne'?'✅':'❌'} ${b.statut}</span></td></tr>`;
+    }).join('')}
+    </tbody></table></div>`;
+  } catch(e){ el.innerHTML='<div style="color:var(--red);font-size:13px;padding:8px">Erreur chargement.</div>'; }
 }
 
-// Patch renderJHist to use new system
-function renderJHist(){
+// Patch renderJHist to use new async system
+async function renderJHist(){
   if(!CJ) return;
-  // Refresh active tab
   const activeBtn=document.querySelector('#tab-historique .chip.active');
   if(activeBtn){
     const tab=activeBtn.id.replace('htab-','');
@@ -4879,9 +4937,26 @@ function simulerTirage(){
   showNotif('Tirage simulé: '+nums.join(' - '),'ok');
 }
 
-function loadBorResultats(){
-  borResultats=JSON.parse(localStorage.getItem('tk_resultats')||'[]');
+async function loadBorResultats(){
+  try {
+    const data = await apiGet('/api/borlette/results');
+    borResultats = (data.results||[]).map(r=>({
+      drawId: r.draw,
+      drawName: r.draw,
+      date: new Date(r.created_at).toLocaleString('fr-FR'),
+      nums: [r.lot1, r.lot2||'', r.lot3||''],
+      lotto3: r.lotto3||''
+    }));
+  } catch(e){
+    // fallback localStorage
+    borResultats = JSON.parse(localStorage.getItem('tk_resultats')||'[]');
+  }
   renderBorResultats();
+}
+
+// Alias appelé depuis les onglets
+async function renderJoueurDraws(){
+  await loadBorResultats();
 }
 
 // ==================== PATCH: updateCaisseForm initialise les grilles ====================
@@ -5175,7 +5250,7 @@ async function admCreerDirecteur(){
 // ============================================================
 // FIX: creerCaissier — use custom code + phone
 // ============================================================
-function creerCaissier(){
+async function creerCaissier(){
   if(!CDir){ showNotif('Erreur: pas de directeur connecté','err'); return; }
   const name = document.getElementById('new-caiss-name')?.value.trim();
   const code = document.getElementById('new-caiss-code')?.value.trim().toUpperCase();
@@ -5183,15 +5258,21 @@ function creerCaissier(){
   const pwd  = document.getElementById('new-caiss-pwd')?.value;
   const jeu  = document.getElementById('new-caiss-jeu')?.value || 'all';
   if(!name||!code||!pwd){ showNotif('Tous les champs obligatoires','err'); return; }
-  const caiss = gCaiss();
-  if(caiss[code]){ showNotif('Ce code existe déjà','err'); return; }
-  caiss[code] = {name, code, phone:phone||'', pwd, jeu, dirCode:CDir.code, zone:CDir.zone, createdAt:new Date().toLocaleString()};
-  sCaiss(caiss);
-  showNotif('✅ Caissier créé: '+name+' ('+code+')','ok');
-  ['new-caiss-name','new-caiss-code','new-caiss-phone','new-caiss-pwd'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.value='';
-  });
-  refreshDir();
+  try {
+    // Enregistrer en DB via l'API
+    await apiPost('/api/cashiers', { name, code, phone:phone||'', pwd, jeu, dir_code: CDir.code });
+    // Aussi en cache local pour la session caissier
+    const caiss = gCaiss();
+    caiss[code] = {name, code, phone:phone||'', pwd, jeu, dirCode:CDir.code, zone:CDir.zone, createdAt:new Date().toLocaleString()};
+    localStorage.setItem('tk_caiss_cache', JSON.stringify(caiss));
+    showNotif('✅ Caissier créé en base: '+name+' ('+code+')','ok');
+    ['new-caiss-name','new-caiss-code','new-caiss-phone','new-caiss-pwd'].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.value='';
+    });
+    refreshDir();
+  } catch(e){
+    showNotif('Erreur: '+(e.message||'impossible de créer le caissier'),'err');
+  }
 }
 
 // ============================================================
