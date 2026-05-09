@@ -641,7 +641,6 @@ th{background:var(--blue);color:#fff;font-size:12px;font-weight:700;}
     <div class="atab" data-tab="borlette" onclick="switchToTab(this)">🎯 Borlette</div>
     <div class="atab" data-tab="sports" id="tab-sports-btn" onclick="switchToTab(this)">⚽ Sports</div>
     <div class="atab" data-tab="recharge" id="tab-recharge-btn" onclick="switchToTab(this)">💳 Recharge</div>
-    <div class="atab" data-tab="retrait" onclick="switchToTab(this)">💸 Retrait</div>
     <div class="atab" data-tab="historique" id="tab-hist-btn" onclick="switchToTab(this)">📋 Historique</div>
   </div>
   <div class="app-content">
@@ -1265,52 +1264,6 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
     </div>
   </div>
 
-  <!-- RETRAIT JOUEUR -->
-  <div class="asec" id="tab-retrait">
-    <div class="card" style="margin-top:10px">
-      <h3>💸 Demander un Retrait</h3>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Retirez vos gains via MonCash, NatCash ou en espèces au bureau.</p>
-      <div id="retrait-solde-info" style="background:rgba(245,200,0,.08);border:1px solid rgba(245,200,0,.3);border-radius:10px;padding:13px;margin-bottom:16px;text-align:center;">
-        <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Solde disponible</div>
-        <div style="font-size:2em;font-weight:900;color:var(--gold)" id="retrait-solde-display">0 Gd</div>
-      </div>
-      <div class="fg">
-        <label>Méthode de retrait</label>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
-          <div class="rm-card" id="ret-mc" onclick="selRetraitMethod('moncash')" style="border:2px solid var(--border);cursor:pointer;padding:12px;border-radius:10px;text-align:center;transition:.2s;">
-            <div style="font-size:1.5em;margin-bottom:4px">📱</div>
-            <div style="font-size:11px;font-weight:700;color:#ff9800">MonCash</div>
-          </div>
-          <div class="rm-card" id="ret-nc" onclick="selRetraitMethod('natcash')" style="border:2px solid var(--border);cursor:pointer;padding:12px;border-radius:10px;text-align:center;transition:.2s;">
-            <div style="font-size:1.5em;margin-bottom:4px">💳</div>
-            <div style="font-size:11px;font-weight:700;color:#5b8ef5">NatCash</div>
-          </div>
-          <div class="rm-card" id="ret-cash" onclick="selRetraitMethod('cash')" style="border:2px solid var(--border);cursor:pointer;padding:12px;border-radius:10px;text-align:center;transition:.2s;">
-            <div style="font-size:1.5em;margin-bottom:4px">💵</div>
-            <div style="font-size:11px;font-weight:700;color:var(--green2)">Cash</div>
-          </div>
-        </div>
-      </div>
-      <div id="retrait-form" style="display:none">
-        <div class="fg">
-          <label>Montant à retirer (Gourdes)</label>
-          <input type="number" id="ret-montant" min="50" placeholder="Ex: 500" style="width:100%;padding:11px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:15px;font-weight:700;outline:none;">
-        </div>
-        <div class="fg" id="ret-num-row">
-          <label id="ret-num-label">Numéro MonCash / NatCash</label>
-          <input type="tel" id="ret-numero" placeholder="Ex: 50912345678" style="width:100%;padding:11px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none;">
-        </div>
-        <button onclick="soumettreRetrait()" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--gold),#d4a800);color:#000;border:none;border-radius:8px;font-weight:900;font-size:15px;cursor:pointer;margin-top:4px;letter-spacing:1px;">💸 ENVOYER LA DEMANDE</button>
-        <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px">Le retrait sera traité dans les 24h par notre équipe.</p>
-      </div>
-    </div>
-    <div class="card">
-      <h3>📋 Mes Demandes de Retrait</h3>
-      <div id="mes-retraits-list"><div class="empty-msg">Aucune demande.</div></div>
-      <button onclick="chargerMesRetraits()" style="margin-top:8px;padding:7px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;font-size:13px"><i class="fas fa-sync"></i> Actualiser</button>
-    </div>
-  </div>
-
   <!-- HISTORIQUE -->
   <div class="asec" id="tab-historique">
     <!-- Tabs dans historique -->
@@ -1574,7 +1527,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
         <h2>🏢 Espace Directeur</h2>
       </div>
       <div class="ferr" id="derr"></div>
-      <div class="fg"><label>Code Directeur</label><input type="text" id="dcod" placeholder="DIR-001"></div>
+      <div class="fg"><label>Code Directeur</label><input type="text" id="dcode" placeholder="DIR-001"></div>
       <div class="fg"><label>Mot de passe</label><input type="password" id="dpwd"></div>
       <button class="fbtn" onclick="authDir()">ACCÉDER</button>
     </div>
@@ -2178,8 +2131,69 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
       </div>
     </div>
 
-  </div><!-- fin .inner admin -->
-</div><!-- fin sc-admin -->
+
+    </div>
+
+      <!-- Difficulté GLOBALE (fallback) -->
+      <div class="card">
+        <h3>⚙️ Difficulté Globale (par défaut)</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Appliquée si aucune difficulté n'est définie pour le directeur.</p>
+        <div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #5b8ef5;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>🎱 Keno Lucky</b><span style="color:#5b8ef5;font-weight:900" id="keno-pct-lbl">45%</span></div>
+          <input type="range" id="keno-diff-range" min="0" max="80" step="5" value="45" style="width:100%;accent-color:#5b8ef5" oninput="updateDiffLabel('keno',this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span></div>
+          <button onclick="saveGameDiff('keno')" style="margin-top:8px;padding:5px 14px;background:var(--blue);color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
+        </div>
+        <div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid var(--gold);">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>🍀 Lucky 6</b><span style="color:var(--gold);font-weight:900" id="lucky6-pct-lbl">45%</span></div>
+          <input type="range" id="lucky6-diff-range" min="0" max="80" step="5" value="45" style="width:100%;accent-color:var(--gold)" oninput="updateDiffLabel('lucky6',this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span></div>
+          <button onclick="saveGameDiff('lucky6')" style="margin-top:8px;padding:5px 14px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
+        </div>
+        <div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid var(--red);">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>🏎️ Course Auto</b><span style="color:var(--red);font-weight:900" id="course-pct-lbl">45%</span></div>
+          <input type="range" id="course-diff-range" min="0" max="80" step="5" value="45" style="width:100%;accent-color:var(--red)" oninput="updateDiffLabel('course',this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span></div>
+          <button onclick="saveGameDiff('course')" style="margin-top:8px;padding:5px 14px;background:var(--red);color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
+        </div>
+        <div style="background:var(--bg2);border-radius:10px;padding:14px;border-left:4px solid var(--green2);">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>🚁 Hélicoptère</b><span style="color:var(--green2);font-weight:900" id="helico-pct-lbl">45%</span></div>
+          <input type="range" id="helico-diff-range" min="0" max="80" step="5" value="45" style="width:100%;accent-color:var(--green2)" oninput="updateDiffLabel('helico',this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span></div>
+          <button onclick="saveGameDiff('helico')" style="margin-top:8px;padding:5px 14px;background:var(--green2);color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
+        </div>
+      </div>
+      <!-- Ticker & Notifications -->
+      <div class="card">
+        <h3>📢 Bande Passante & Notifications</h3>
+        <div class="fg" style="margin-bottom:12px">
+          <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Message bande passante (ticker)</label>
+          <textarea id="admin-ticker-msg" rows="2" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;resize:none;" placeholder="Ex: Nouvo jwe Penalty disponib ! Jackpot Keno — 10,000 Gd !"></textarea>
+        </div>
+        <div class="fg" style="margin-bottom:12px">
+          <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Notification admin (s'affiche pour tous)</label>
+          <input type="text" id="admin-notif-text-input" placeholder="Ex: Maintenance prévue ce soir à 22h" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;margin-bottom:6px">
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="text" id="admin-notif-icon-input" placeholder="🔔" style="width:60px;padding:8px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:16px;outline:none;text-align:center">
+            <select id="admin-notif-bg" style="flex:1;padding:8px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;outline:none">
+              <option value="rgba(26,58,143,.3)">🔵 Bleu (info)</option>
+              <option value="rgba(245,200,0,.15)">🟡 Or (important)</option>
+              <option value="rgba(40,176,78,.2)">🟢 Vert (succès)</option>
+              <option value="rgba(230,57,70,.2)">🔴 Rouge (alerte)</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="saveAdminMessages()" style="padding:9px 16px;background:linear-gradient(135deg,var(--gold),#d4a800);color:#000;border:none;border-radius:7px;font-weight:700;cursor:pointer">💾 Enregistrer</button>
+          <button onclick="clearAdminMessages()" style="padding:9px 16px;background:var(--red);color:#fff;border:none;border-radius:7px;font-weight:700;cursor:pointer">🗑 Effacer</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>🔐 Identifiants Admin</h3>
+        <p style="font-size:13px;color:var(--muted)">Admin: <strong style="color:var(--gold)">mot de passe: admin</strong></p>
+        <p style="font-size:12px;color:var(--muted);margin-top:5px">Code secret accès staff: <strong style="color:var(--gold)">TONTONKONDO12</strong></p>
+      </div>
+</div>
 
 <!-- OVERLAY TICKETS GAGNANTS -->
 <div class="ticket-win-overlay" id="tickets-win-overlay">
@@ -2741,121 +2755,79 @@ function logoutJoueur(){
 }
 
 function updateAppBar(){
-  if(!CJ)return;
-  const j=gJ()[CJ.phone]||CJ;CJ=j;
-  document.getElementById('abAv').textContent=j.name.charAt(0).toUpperCase();
-  document.getElementById('abName').textContent=j.name;
-  document.getElementById('abPhone').textContent=j.phone;
-  document.getElementById('abSolde').textContent=(j.solde||0)+' Gd';
+  if(!CJ) return;
+  // Priorité: CJ (mis à jour par l'API) > cache localStorage
+  const cached = gJ()[CJ.phone];
+  if(cached && parseFloat(cached.solde) !== parseFloat(CJ.solde)) {
+    // Garder le plus récent (CJ est toujours mis à jour par l'API)
+  }
+  document.getElementById('abAv').textContent = (CJ.name||'?').charAt(0).toUpperCase();
+  document.getElementById('abName').textContent = CJ.name||'';
+  document.getElementById('abPhone').textContent = CJ.phone||'';
+  document.getElementById('abSolde').textContent = parseFloat(CJ.solde||0).toLocaleString('fr-FR') + ' Gd';
 }
 
-function getSolde(){if(CJ){return parseFloat(gJ()[CJ.phone]?.solde||CJ.solde||0);}return 0;}
+function getSolde(){ return CJ ? parseFloat(CJ.solde||0) : 0; }
 
-// Mise à jour solde depuis l'API (utilisé après chaque jeu)
-async function syncSolde(){
-  if(!CJ) return;
+// Met à jour CJ.solde ET le cache localStorage depuis le newBalance de l'API
+function applySoldeFromAPI(newBalance) {
+  if (!CJ || newBalance === undefined) return;
+  CJ.solde = parseFloat(newBalance);
+  // Mettre à jour le cache aussi
   try {
-    const r = await apiGet('/api/player/solde');
     const j = gJ();
-    if(j[CJ.phone]) j[CJ.phone].solde = r.solde;
+    if (j[CJ.phone]) j[CJ.phone].solde = CJ.solde;
+    else j[CJ.phone] = { ...CJ };
     localStorage.setItem('tk_player_cache', JSON.stringify(j));
-    CJ.solde = r.solde;
-    updateAppBar();
   } catch(e) {}
+  updateAppBar();
 }
 
 function addTx(phone,type,montant,details,soldeApres){
   const j=gJ();if(!j[phone])return;
   if(!j[phone].transactions)j[phone].transactions=[];
   const tx={date:new Date().toLocaleString(),type,montant,soldeApres:soldeApres||j[phone].solde,details};
-  j[phone].transactions.unshift(tx);
-  localStorage.setItem('tk_player_cache', JSON.stringify(j));
+  j[phone].transactions.unshift(tx);sJ(j);
+  const at=gAT();
+  at.unshift({...tx,joueurName:j[phone].name,phone,
+    dirCode:j[phone].dirCode||'',caissCode:CCaiss?.code||'',caissName:CCaiss?.name||''});
+  sAT(at);
 }
 
-// deduireJ et crediterJ mettent à jour le cache local immédiatement
-// La vraie transaction se passe via l'API lors du jeu
-function deduireJ(montant,type,details){
-  if(CJ){
-    const j=gJ();
-    if(j[CJ.phone]) { j[CJ.phone].solde=(parseFloat(j[CJ.phone].solde)||0)-montant; localStorage.setItem('tk_player_cache',JSON.stringify(j)); }
-    CJ.solde = (parseFloat(CJ.solde)||0)-montant;
-  }
-  updateAppBar();
-}
-
-function crediterJ(montant,type,details){
-  if(CJ){
-    const j=gJ();
-    if(j[CJ.phone]) { j[CJ.phone].solde=(parseFloat(j[CJ.phone].solde)||0)+montant; localStorage.setItem('tk_player_cache',JSON.stringify(j)); }
-    CJ.solde = (parseFloat(CJ.solde)||0)+montant;
-  }
-  updateAppBar();
-}
-
-// ===== RETRAIT JOUEUR =====
-let retraitMethod = null;
-function selRetraitMethod(m){
-  retraitMethod = m;
-  ['moncash','natcash','cash'].forEach(mt=>{
-    const el = document.getElementById('ret-'+mt.replace('cash','mc').replace('natcash','nc').replace('moncash','mc'));
-    if(mt==='moncash') document.getElementById('ret-mc').style.borderColor = m===mt?'#ff9800':'var(--border)';
-    if(mt==='natcash') document.getElementById('ret-nc').style.borderColor = m===mt?'#5b8ef5':'var(--border)';
-    if(mt==='cash')    document.getElementById('ret-cash').style.borderColor = m===mt?'var(--green2)':'var(--border)';
-  });
-  document.getElementById('retrait-form').style.display='block';
-  const numRow = document.getElementById('ret-num-row');
-  const numLabel = document.getElementById('ret-num-label');
-  if(m==='cash'){ numRow.style.display='none'; }
-  else { numRow.style.display='block'; numLabel.textContent=m==='moncash'?'Numéro MonCash':'Numéro NatCash'; }
-}
-
-async function soumettreRetrait(){
-  if(!CJ){showNotif('Connectez-vous','err');return;}
-  if(!retraitMethod){showNotif('Choisissez une méthode','err');return;}
-  const montant = parseFloat(document.getElementById('ret-montant').value)||0;
-  const numero = document.getElementById('ret-numero').value.trim();
-  if(montant < 50){showNotif('Minimum 50 Gourdes','err');return;}
-  if(montant > getSolde()){showNotif('Solde insuffisant','err');return;}
-  if(retraitMethod !== 'cash' && !numero){showNotif('Entrez votre numéro mobile','err');return;}
+// deduireJ: déduit localement (optimiste) ET sync API après
+function deduireJ(montant, type, details){
+  if(!CJ) return;
+  CJ.solde = Math.max(0, parseFloat(CJ.solde||0) - montant);
   try {
-    const r = await apiPost('/api/retraits/demande', { montant, methode: retraitMethod, numero_mobile: numero||CJ.phone });
-    // Mettre à jour le solde local
-    const j=gJ();
-    if(j[CJ.phone]) j[CJ.phone].solde = r.newSolde;
+    const j = gJ();
+    if(j[CJ.phone]) j[CJ.phone].solde = CJ.solde;
     localStorage.setItem('tk_player_cache', JSON.stringify(j));
-    CJ.solde = r.newSolde;
-    updateAppBar();
-    document.getElementById('retrait-solde-display').textContent = r.newSolde.toLocaleString('fr-FR')+' Gd';
-    showNotif('✅ Demande envoyée ! Traitement sous 24h.','ok');
-    document.getElementById('ret-montant').value='';
-    chargerMesRetraits();
-  } catch(e){ showNotif(e.message||'Erreur','err'); }
+  } catch(e) {}
+  updateAppBar();
+  // Sync réel depuis l'API dans 2s (après la transaction serveur)
+  setTimeout(() => syncSoldeFromAPI(), 2000);
 }
 
-async function chargerMesRetraits(){
+// crediterJ: crédite localement ET sync API
+function crediterJ(montant, type, details){
+  if(!CJ) return;
+  CJ.solde = parseFloat(CJ.solde||0) + montant;
+  try {
+    const j = gJ();
+    if(j[CJ.phone]) j[CJ.phone].solde = CJ.solde;
+    localStorage.setItem('tk_player_cache', JSON.stringify(j));
+  } catch(e) {}
+  updateAppBar();
+  setTimeout(() => syncSoldeFromAPI(), 2000);
+}
+
+// Synchronise le solde réel depuis la DB
+async function syncSoldeFromAPI(){
   if(!CJ) return;
   try {
-    const data = await apiGet('/api/retraits');
-    const el = document.getElementById('mes-retraits-list');
-    if(!el) return;
-    const list = data.retraits||[];
-    if(!list.length){el.innerHTML='<div class="empty-msg">Aucune demande de retrait.</div>';return;}
-    el.innerHTML = list.map(r=>`
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 13px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <div style="font-weight:700;color:var(--text)">${parseFloat(r.montant).toLocaleString('fr-FR')} Gd</div>
-          <div style="font-size:11px;color:var(--muted)">${r.methode.toUpperCase()} · ${r.numero_mobile||'Bureau'} · ${new Date(r.created_at).toLocaleDateString('fr-FR')}</div>
-        </div>
-        <span class="sbadge ${r.statut==='approved'?'sbw':r.statut==='rejected'?'sbl':'sbp'}">${r.statut==='approved'?'✅ Approuvé':r.statut==='rejected'?'❌ Rejeté':'⏳ En attente'}</span>
-      </div>`).join('');
-  } catch(e){ console.warn(e); }
-}
-
-// Mettre à jour le solde dans la section retrait quand on ouvre l'onglet
-function initRetraitTab(){
-  const el = document.getElementById('retrait-solde-display');
-  if(el) el.textContent = getSolde().toLocaleString('fr-FR')+' Gd';
-  chargerMesRetraits();
+    const data = await apiGet('/api/player/solde');
+    applySoldeFromAPI(data.solde);
+  } catch(e) { console.warn('syncSolde:', e.message); }
 }
 
 
@@ -3226,28 +3198,53 @@ async function jouerKeno(){
   if(!CJ){showNotif("Connectez-vous d'abord",'err');return;}
   if(!kenoSel.length){showNotif('Choisissez au moins 1 numéro','err');return;}
   const mise=parseInt(document.getElementById('keno-mise').value)||0;
-  const sol=getSolde();
-  if(mise<=0||mise>sol){showNotif('Mise invalide ou solde insuffisant','err');return;}
-  document.getElementById('keno-play').disabled=true;
-  document.querySelectorAll('.kbtn').forEach(b=>b.classList.remove('win'));
+  if(mise<=0||mise>getSolde()){showNotif('Mise invalide ou solde insuffisant','err');return;}
+
+  const playBtn=document.getElementById('keno-play');
+  playBtn.disabled=true;
+  document.querySelectorAll('.kbtn').forEach(b=>{b.classList.remove('win');b.style.opacity='';});
+  document.getElementById('keno-status').textContent='⏳ Connexion serveur...';
+
   try {
     const r = await apiPost('/api/games/keno/play', { numbers: kenoSel, mise });
-    // Afficher les numéros gagnants
-    r.winningNumbers.forEach(n=>{
-      const b=document.getElementById('kn'+n);if(b)b.classList.add('win');
-    });
-    const hits = kenoSel.filter(n=>r.winningNumbers.includes(n)).length;
-    document.getElementById('keno-status').textContent = r.message;
-    // Sync solde depuis DB
-    const j=gJ();
-    if(j[CJ.phone]){j[CJ.phone].solde=r.newBalance;localStorage.setItem('tk_player_cache',JSON.stringify(j));}
-    CJ.solde=r.newBalance; updateAppBar();
+    // Appliquer le solde RÉEL de la DB immédiatement
+    applySoldeFromAPI(r.newBalance);
+
+    const winNums = r.winningNumbers || [];
+    let drawBox = document.getElementById('keno-draw-box');
+    if(!drawBox){
+      drawBox=document.createElement('div');
+      drawBox.id='keno-draw-box';
+      drawBox.style.cssText='background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;margin:8px 0;display:flex;flex-wrap:wrap;gap:4px;min-height:38px;';
+      document.getElementById('keno-status').before(drawBox);
+    }
+    drawBox.innerHTML='';
+    const progEl=document.getElementById('keno-status');
+    progEl.textContent='🎱 Tirage en cours...';
+    let hits=0;
+    for(let i=0;i<winNums.length;i++){
+      await new Promise(res=>setTimeout(res,1500));
+      const num=winNums[i], isHit=kenoSel.includes(num);
+      if(isHit) hits++;
+      const span=document.createElement('span');
+      span.textContent=num;
+      span.style.cssText=`display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:11px;font-weight:900;border:2px solid ${isHit?'var(--green2)':'var(--border)'};background:${isHit?'var(--green2)':'var(--bg)'};color:${isHit?'#000':'#666'};`;
+      drawBox.appendChild(span);
+      const btn=document.getElementById('kn'+num);
+      if(btn){ if(isHit) btn.classList.add('win'); else btn.style.opacity='0.35'; }
+      progEl.textContent=`🎱 Boule ${i+1}/20 — ${hits}/${kenoSel.length} trouvé${hits>1?'s':''}`;
+    }
+    progEl.textContent=r.message;
     if(r.gain>0) showNotif('🎉 '+r.message,'ok');
     else showNotif(r.message,'err');
-    // Rafraîchir l'historique
-    setTimeout(()=>refreshPlayerCache(CJ.phone),500);
-  } catch(e){ showNotif(e.message||'Erreur serveur','err'); }
-  document.getElementById('keno-play').disabled=false;
+    setTimeout(()=>document.querySelectorAll('.kbtn').forEach(b=>{b.style.opacity='';}),4000);
+  } catch(e){
+    showNotif(e.message||'Erreur serveur','err');
+    document.getElementById('keno-status').textContent='Erreur: '+e.message;
+    // Resync le solde même en cas d'erreur
+    syncSoldeFromAPI();
+  }
+  playBtn.disabled=false;
 }
 document.getElementById('keno-play').addEventListener('click',jouerKeno);
 
@@ -3319,43 +3316,43 @@ async function jouerLucky6(){
   if(!CJ){showNotif("Connectez-vous d'abord",'err');return;}
   if(l6sel.length!==6){showNotif('Sélectionnez exactement 6 numéros','err');return;}
   const mise=parseInt(document.getElementById('lucky6-mise').value)||0;
-  const sol=getSolde();
-  if(mise<=0||mise>sol){showNotif('Mise invalide','err');return;}
+  if(mise<=0||mise>getSolde()){showNotif('Mise invalide','err');return;}
 
   document.getElementById('lucky6-play').disabled=true;
   const box=document.getElementById('draw-container');
   const prog=document.getElementById('draw-progress-txt');
   const hitsEl=document.getElementById('draw-hits');
   box.innerHTML='';
-  prog.textContent='Appel serveur...';
+  prog.textContent='⏳ Connexion serveur...';
+  hitsEl.textContent='0 / 6 trouvés';
 
   try {
     const r = await apiPost('/api/games/lucky6/play', { numbers: l6sel, mise });
-    // Afficher animation avec les vrais numéros gagnants
-    const winNums = r.winningNumbers||[];
-    let found=0;
+    // Appliquer le solde RÉEL de la DB immédiatement
+    applySoldeFromAPI(r.newBalance);
+
+    const winNums = r.winningNumbers || [];
+    let found=0, lastIdx=-1;
     for(let i=0;i<winNums.length;i++){
-      await new Promise(res=>setTimeout(res,180));
-      const num=winNums[i];
-      const isHit=l6sel.includes(num);
-      if(isHit)found++;
+      await new Promise(res=>setTimeout(res,857));
+      const num=winNums[i], isHit=l6sel.includes(num);
+      if(isHit){found++;lastIdx=i;}
       const dn=document.createElement('span');
       dn.className='dn '+(isHit?'hit':'miss');
       dn.textContent=num;
       box.appendChild(dn);
-      prog.textContent=`boule ${i+1} / ${winNums.length}`;
+      prog.textContent=`boule ${i+1}/${winNums.length}`;
       hitsEl.textContent=`${found} / 6 trouvés`;
+      hitsEl.style.color=found>0?'var(--green2)':'var(--gold)';
       if(found===6){prog.textContent='✅ Tous trouvés !';break;}
     }
-    document.getElementById('lucky6-status').textContent = r.message;
-    // Sync solde
-    const j=gJ();
-    if(j[CJ.phone]){j[CJ.phone].solde=r.newBalance;localStorage.setItem('tk_player_cache',JSON.stringify(j));}
-    CJ.solde=r.newBalance; updateAppBar();
+    document.getElementById('lucky6-status').textContent=r.message;
     if(r.gain>0) showNotif('🎉 '+r.message,'ok');
     else showNotif(r.message,'err');
-    setTimeout(()=>refreshPlayerCache(CJ.phone),500);
-  } catch(e){ showNotif(e.message||'Erreur serveur','err'); }
+  } catch(e){
+    showNotif(e.message||'Erreur serveur','err');
+    syncSoldeFromAPI();
+  }
   document.getElementById('lucky6-play').disabled=false;
 }
 document.getElementById('lucky6-play').addEventListener('click',jouerLucky6);
@@ -3429,24 +3426,21 @@ async function lancerCourse(){
   raceRunning=true;
   document.getElementById('course-play').disabled=true;
   document.getElementById('race-result').classList.remove('show');
-  document.getElementById('course-status').textContent='🚦 Prêt... Appel serveur...';
+  document.getElementById('course-status').textContent='⏳ Connexion serveur...';
 
-  // === APPEL API (résultat décidé côté serveur) ===
-  let apiResult = null;
+  // APPEL API D'ABORD — le résultat est décidé côté serveur
+  let apiResult;
   try {
     apiResult = await apiPost('/api/games/course/play', { carId: selectedCar, mise });
-  } catch(e){ showNotif(e.message||'Erreur serveur','err'); raceRunning=false; document.getElementById('course-play').disabled=false; return; }
-
-  // Sync solde
-  const j=gJ();
-  if(j[CJ?.phone]){j[CJ.phone].solde=apiResult.newBalance;localStorage.setItem('tk_player_cache',JSON.stringify(j));}
-  if(CJ) CJ.solde=apiResult.newBalance; updateAppBar();
-
-  // Le classement vient du serveur (apiResult.ranking)
-  const serverRanking = apiResult.ranking || VOITURES.map(v=>({id:v.id,name:v.nom}));
-  const serverWinnerId = serverRanking[0]?.id;
-  const gagne = serverWinnerId === selectedCar;
-  const gain = apiResult.gain || 0;
+    applySoldeFromAPI(apiResult.newBalance); // solde RÉEL immédiatement
+  } catch(e) {
+    showNotif(e.message||'Erreur serveur','err');
+    raceRunning=false; selectedCar=null;
+    document.querySelectorAll('.car-card').forEach(c=>c.classList.remove('sel'));
+    document.getElementById('course-play').disabled=false;
+    syncSoldeFromAPI();
+    return;
+  }
 
   document.getElementById('course-status').textContent='🚦 Course en cours !';
 
@@ -3458,59 +3452,98 @@ async function lancerCourse(){
   });
   document.getElementById('race-lap').textContent='0';
 
-  // Vitesses biaisées par le résultat serveur
+  // Vitesses aléatoires biaisées selon difficulté
+  const diff=getGameDiff('course');
+  const dfMap={easy:1.4,medium:1.0,hard:0.7,veryhard:0.4};
+  const boost=dfMap[diff]||1.0;
+
+  // Vitesse de base pour chaque voiture (aléatoire)
   let speeds=VOITURES.map(v=>({
     id:v.id,
-    speed: serverRanking.findIndex(r=>r.id==v.id) === 0 ? 3.5 : Math.random()*2+1,
+    speed: Math.random()*2+1, // 1-3 de base
     progress:0,
     finished:false,
     position:0
   }));
-  // Si on a gagné, booster notre voiture encore plus
-  if(gagne){ const ps=speeds.find(s=>s.id===selectedCar); if(ps)ps.speed=3.8; }
-  else { const ws=speeds.find(s=>s.id==serverWinnerId); if(ws)ws.speed=3.8; }
 
-  const TICKS=80; let finishOrder=[]; let lap=0;
+  // Booster légèrement la voiture du joueur selon difficulté
+  const playerSpeed=speeds.find(s=>s.id===selectedCar);
+  if(playerSpeed) playerSpeed.speed*=boost;
+
+  // Animation — 50 ticks, interval 120ms = ~6 secondes
+  const TRACK_W=100; // pourcentage
+  const TICKS=80;
+  let finishOrder=[];
+  let lap=0;
+
   for(let tick=0;tick<TICKS;tick++){
     await new Promise(r=>setTimeout(r,120));
+
+    // Mettre à jour progression de chaque voiture
     speeds.forEach(s=>{
       if(s.finished) return;
+      // Variation aléatoire de vitesse
       const variation=(Math.random()-0.45)*0.8;
       s.progress+=s.speed+variation;
       s.progress=Math.max(0,Math.min(s.progress,100));
+
+      // Mettre à jour barre
       document.getElementById('bar-'+s.id).style.width=s.progress+'%';
+      // Déplacer emoji voiture (de 118px à ~90% de la largeur disponible)
       const laneEl=document.getElementById('lane-'+s.id);
       const laneW=laneEl.offsetWidth;
       const carX=118 + (s.progress/100)*(laneW-160);
       document.getElementById('car-'+s.id).style.left=Math.max(118,carX)+'px';
+
+      // Tour
       if(s.progress>=100 && !s.finished){
-        s.finished=true; s.position=finishOrder.length+1; finishOrder.push(s.id);
+        s.finished=true;
+        s.position=finishOrder.length+1;
+        finishOrder.push(s.id);
         const posEl=document.getElementById('pos-'+s.id);
-        posEl.style.display='flex'; posEl.textContent='#'+s.position;
+        posEl.style.display='flex';
+        posEl.textContent='#'+s.position;
         posEl.style.background=s.position===1?'var(--gold)':s.position===2?'#aaa':s.position===3?'#cd7f32':'#333';
         posEl.style.color=s.position<=3?'#000':'#888';
       }
     });
+
+    // Lap counter
     const avgProgress=speeds.reduce((a,s)=>a+s.progress,0)/speeds.length;
     const newLap=Math.min(5,Math.floor(avgProgress/20)+1);
-    if(newLap!==lap){lap=newLap;document.getElementById('race-lap').textContent=lap;}
+    if(newLap!==lap){
+      lap=newLap;
+      document.getElementById('race-lap').textContent=lap;
+    }
+
+    // Si tout le monde a fini
     if(finishOrder.length===VOITURES.length) break;
   }
-  speeds.filter(s=>!s.finished).sort((a,b)=>b.progress-a.progress).forEach(s=>{
-    s.position=finishOrder.length+1; finishOrder.push(s.id);
-    const posEl=document.getElementById('pos-'+s.id);
-    posEl.style.display='flex'; posEl.textContent='#'+s.position;
-    posEl.style.background='#333'; posEl.style.color='#888';
-  });
 
-  const v=VOITURES.find(x=>x.id===selectedCar);
-  const playerPos=finishOrder.indexOf(selectedCar)+1;
+  // Forcer les non-finis dans l'ordre
+  speeds.filter(s=>!s.finished).sort((a,b)=>b.progress-a.progress)
+    .forEach(s=>{
+      s.position=finishOrder.length+1;
+      finishOrder.push(s.id);
+      const posEl=document.getElementById('pos-'+s.id);
+      posEl.style.display='flex';
+      posEl.textContent='#'+s.position;
+      posEl.style.background='#333';
+      posEl.style.color='#888';
+    });
+
+  const gagne = apiResult.gagne;
+  const gain = apiResult.gain || 0;
+  const playerPos = (apiResult.ranking||[]).findIndex(r=>r.id===selectedCar)+1 || (finishOrder.indexOf(selectedCar)+1);
+
+  // Afficher classement
   const resultList=document.getElementById('race-result-list');
   resultList.innerHTML=finishOrder.map((cid,idx)=>{
     const cv=VOITURES.find(x=>x.id===cid);
     const isPlayer=cid===selectedCar;
+    const posClass=['pos1','pos2','pos3','pos-other','pos-other','pos-other'][idx]||'pos-other';
     return `<div class="result-row" style="${isPlayer?'background:rgba(245,166,35,.08);border-radius:6px;':''}">
-      <div class="result-pos" style="font-weight:900;font-size:14px;min-width:22px;color:${idx===0?'var(--gold)':idx===1?'#aaa':'#888'}">${idx+1}</div>
+      <div class="result-pos ${posClass}">${idx+1}</div>
       <div style="font-size:14px;margin-right:4px">${cv.emoji}</div>
       <div style="flex:1">
         <div style="font-size:12px;font-weight:700;color:${isPlayer?'var(--gold)':'var(--text)'}">${cv.nom} ${isPlayer?'← TOI':''}</div>
@@ -3521,6 +3554,7 @@ async function lancerCourse(){
   }).join('');
 
   document.getElementById('race-result').classList.add('show');
+
   if(gagne){
     document.getElementById('course-status').textContent=`🏆 VICTOIRE ! +${gain} Gourdes`;
     showNotif(`🏆 Voiture #${selectedCar} gagne ! +${gain} Gourdes`,'ok');
@@ -3528,10 +3562,11 @@ async function lancerCourse(){
     document.getElementById('course-status').textContent=`😔 Voiture #${selectedCar} termine ${playerPos}ème — Perdu`;
     showNotif(`😔 Voiture #${selectedCar} — ${playerPos}ème place`,'err');
   }
-  raceRunning=false; selectedCar=null;
+
+  raceRunning=false;
+  selectedCar=null;
   document.querySelectorAll('.car-card').forEach(c=>c.classList.remove('sel'));
   document.getElementById('course-play').disabled=false;
-  setTimeout(()=>refreshPlayerCache(CJ?.phone),500);
 }
 
 document.getElementById('course-play').addEventListener('click',lancerCourse);
@@ -5583,8 +5618,11 @@ function spinRoulette(){
   if(!rouletteCanvas){ initRoulette(); }
   const totalBet = Object.values(rouletteBets).reduce((a,b)=>a+b,0);
   if(totalBet === 0){ showNotif('Plas yon mise sou tab la !','err'); return; }
-  if(CJ && totalBet > getSolde()){ showNotif('Solde insuffisant !','err'); return; }
-  if(CJ){ deduireJ(totalBet,'Roulette','Mise roulette: '+totalBet+' Gd'); }
+  if(!CJ){ showNotif('Connectez-vous','err'); return; }
+  if(totalBet > getSolde()){ showNotif('Solde insuffisant !','err'); return; }
+  // Mise optimiste locale
+  CJ.solde = parseFloat(CJ.solde||0) - totalBet;
+  updateAppBar();
   rouletteSpinning = true;
   const btn = document.getElementById('spin-btn');
   if(btn) btn.disabled = true;
@@ -5603,7 +5641,6 @@ function showRouletteResult(landed){
   const btn = document.getElementById('spin-btn');
   if(btn) btn.disabled = false;
 
-  // Calculate winnings
   let totalWin = 0;
   const landedStr = String(landed);
   const landedNum = parseInt(landed);
@@ -5624,13 +5661,30 @@ function showRouletteResult(landed){
     totalWin += win;
   });
 
+  // Calculer totalBet pour l'appel API
+  const totalBet = Object.values(rouletteBets).reduce((a,b)=>a+b,0);
+
+  // Appel API pour enregistrer en DB et récupérer le vrai solde
+  if(CJ) {
+    // Construire betType/betValue pour l'API (premier pari)
+    const firstBet = Object.entries(rouletteBets).find(([k,v])=>v>0);
+    apiPost('/api/games/roulette/play', {
+      betType: isNaN(parseInt(firstBet?.[0])) ? (firstBet?.[0]||'color') : 'number',
+      betValue: firstBet?.[0]||'0',
+      mise: totalBet
+    }).then(r => {
+      applySoldeFromAPI(r.newBalance);
+    }).catch(() => syncSoldeFromAPI());
+  }
+
   if(totalWin > 0){
-    if(CJ){ crediterJ(totalWin,'Gain Roulette','Roulette: '+landed+' — gain '+totalWin+' Gd'); }
+    if(CJ){ CJ.solde = parseFloat(CJ.solde||0) + totalWin; updateAppBar(); }
     showNotif('🎉 '+landed+' — Gain: +'+totalWin+' Gd !','ok');
   } else {
     showNotif('😔 '+landed+' — Perdu.','err');
   }
-  updateAppBar();
+  // Sync réel après 1s
+  setTimeout(()=>syncSoldeFromAPI(), 1000);
 }
 
 function placeRouletteBet(key, el){
@@ -6090,10 +6144,14 @@ function shoot(){
   document.getElementById('shootBtn').style.display='none';
   document.getElementById('winMsg').className='win-msg';
 
-  // Mise
+  // Mise - appel API pour enregistrer en DB
   const rawAmt=parseInt(document.getElementById('betAmt').value)||50;
-  const betAmt=Math.min(Math.max(10,rawAmt),getSolde()&&CJ?getSolde():rawAmt);
-  if(betZone&&CJ){deduireJ(betAmt,"Penalty","Mise penalty zone "+betZone);let st=gSt();st.dep+=betAmt;sSt(st);}
+  const betAmt=Math.min(Math.max(10,rawAmt),CJ?getSolde():rawAmt);
+  if(betZone && CJ){
+    // Déduire optimiste local
+    CJ.solde = Math.max(0, parseFloat(CJ.solde||0) - betAmt);
+    updateAppBar();
+  }
   updatePenaltyWallet();
 
   // Fade shooter
@@ -6171,7 +6229,14 @@ function showResult(res, fx, fy, betAmt){
       const wm=document.getElementById('winMsg');
       if(betZone===pickedZone){
         const gain=Math.round(betAmt*ZONE_ODDS[betZone]);
-        if(CJ){crediterJ(gain,"Gain Penalty","Penalty zone "+pickedZone+" x"+ZONE_ODDS[betZone]);} penaltyTotalWon+=(gain-betAmt);
+        // Appel API pour enregistrer gain en DB
+        if(CJ){
+          apiPost('/api/games/penalty/play', { direction: String(betZone), mise: betAmt })
+            .then(r => applySoldeFromAPI(r.newBalance))
+            .catch(() => syncSoldeFromAPI());
+          CJ.solde = parseFloat(CJ.solde||0) + gain; updateAppBar();
+        }
+        penaltyTotalWon+=(gain-betAmt);
         updatePenaltyWallet();
         wm.className='win-msg won';
         wm.textContent=`🎉 GAGNÉ ! +${gain} pts (×${ZONE_ODDS[betZone]})`;
