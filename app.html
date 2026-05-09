@@ -2746,7 +2746,8 @@ function accesAdminSecret(){
   const code = prompt('🔐 Code d\'accès administration:');
   if(!code) return;
   if(code.trim() === 'TONTONKONDO12'){
-    window.location.href = 'app.html';
+    refreshAdmin();
+    goTo('sc-admin');
   } else {
     showNotif('Code incorrect','err');
   }

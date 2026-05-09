@@ -966,108 +966,115 @@ app.post('/api/cashier/players', requireAuth, async (req, res) => {
 app.post('/api/games/keno/play', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
+    if (req.session.role !== 'joueur') return res.status(403).json({ error: 'Joueurs seulement' });
     const { numbers, mise } = req.body;
     const phone = req.session.user_phone;
-    if (!numbers || !numbers.length || numbers.length > 10) throw new Error('Sélection invalide');
-    if (mise <= 0) throw new Error('Mise invalide');
+    if (!numbers || !numbers.length || numbers.length > 10 || !mise || mise <= 0) return res.status(400).json({ error: 'Données invalides' });
+    await client.query('BEGIN');
     const player = await client.query("SELECT solde, dir_code FROM players WHERE phone=$1 FOR UPDATE", [phone]);
-    if (!player.rows.length) throw new Error('Joueur inconnu');
-    if (player.rows[0].solde < mise) throw new Error('Solde insuffisant');
+    if (!player.rows.length) throw new Error('Joueur introuvable');
+    if (parseFloat(player.rows[0].solde) < mise) throw new Error('Solde insuffisant');
     const dirCode = player.rows[0].dir_code;
+    // Difficulté depuis la DB
     const proba = await getWinProbability(dirCode, 'keno');
-    const gainPossible = isWin(proba);
-    const allNumbers = Array.from({length: 80}, (_,i) => i+1);
-    const shuffled = [...allNumbers];
-    for (let i = shuffled.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; }
-    const winningNumbers = shuffled.slice(0, 20);
+    const canWin = isWin(proba);
+    // Tirage 20/80
+    const pool80 = Array.from({length:80},(_,i)=>i+1);
+    for (let i=pool80.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool80[i],pool80[j]]=[pool80[j],pool80[i]];}
+    const winningNumbers = pool80.slice(0,20);
     const hits = numbers.filter(n => winningNumbers.includes(parseInt(n))).length;
-    const multiplier = getKenoMultiplier(hits, numbers.length);
-    const gain = gainPossible ? mise * multiplier : 0;
-    await client.query("UPDATE players SET solde = solde - $1 WHERE phone = $2", [mise, phone]);
-    if (gain > 0) await client.query("UPDATE players SET solde = solde + $1 WHERE phone = $2", [gain, phone]);
-    await client.query("INSERT INTO transactions (player_phone, dir_code, type, montant, note) VALUES ($1, $2, 'perte', $3, $4)", [phone, dirCode, -mise, `Mise Keno`]);
-    if (gain > 0) await client.query("INSERT INTO transactions (player_phone, dir_code, type, montant, note) VALUES ($1, $2, 'gain', $3, $4)", [phone, dirCode, gain, `Gain Keno (${hits} numéros)`]);
-    await client.query("INSERT INTO bets (player_phone, dir_code, type, selection, mise, gain_potentiel, statut) VALUES ($1, $2, 'keno', $3, $4, $5, $6)", [phone, dirCode, numbers.join(','), mise, gain, gain > 0 ? 'gagne' : 'perdu']);
-    if (dirCode) {
-      await client.query(`INSERT INTO jackpots (dir_code, amount, week_sales) VALUES ($1, $2, $3) ON CONFLICT (dir_code) DO UPDATE SET amount = jackpots.amount + $2, week_sales = jackpots.week_sales + $3`, [dirCode, mise * JACKPOT_PCT / 100, mise]);
-    }
-    const newBalance = player.rows[0].solde - mise + gain;
-    res.json({ success: true, newBalance, message: gain > 0 ? `Félicitations ! ${hits} numéros trouvés, gain de ${gain} Gd` : `Dommage, aucun gain cette fois.`, gain, winningNumbers });
-  } catch (e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
+    const mult = canWin ? (getKenoMultiplier(hits, numbers.length)||0) : 0;
+    const gain = Math.round(mise * mult);
+    // Déduire mise + créditer gain dans la même transaction
+    await client.query("UPDATE players SET solde=solde-$1 WHERE phone=$2", [mise, phone]);
+    if (gain > 0) await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [gain, phone]);
+    await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'mise',$3,'Mise Keno')", [phone,dirCode,-mise]);
+    if (gain > 0) await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'gain',$3,$4)", [phone,dirCode,gain,`Gain Keno ${hits}/${numbers.length}`]);
+    await client.query("INSERT INTO bets (player_phone,dir_code,type,selection,mise,gain_potentiel,statut) VALUES ($1,$2,'keno',$3,$4,$5,$6)", [phone,dirCode,numbers.join(','),mise,gain,gain>0?'gagne':'perdu']);
+    if (dirCode) await client.query("INSERT INTO jackpots (dir_code,amount,week_sales) VALUES ($1,$2,$3) ON CONFLICT (dir_code) DO UPDATE SET amount=jackpots.amount+$2,week_sales=jackpots.week_sales+$3", [dirCode,mise*JACKPOT_PCT/100,mise]);
+    await client.query('COMMIT');
+    // Lire le VRAI solde après COMMIT
+    const nb = await pool.query("SELECT solde FROM players WHERE phone=$1",[phone]);
+    const newBalance = parseFloat(nb.rows[0].solde);
+    res.json({ success:true, winningNumbers, hits, gain, newBalance, message: gain>0?`🎉 ${hits}/${numbers.length} hits — Gain: ${gain} Gd`:`😔 ${hits}/${numbers.length} hits — Perdu` });
+  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
 });
 
 app.post('/api/games/lucky6/play', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
+    if (req.session.role !== 'joueur') return res.status(403).json({ error: 'Joueurs seulement' });
     const { numbers, mise } = req.body;
     const phone = req.session.user_phone;
-    if (!numbers || numbers.length !== 6) throw new Error('Sélectionnez exactement 6 numéros');
-    if (mise <= 0) throw new Error('Mise invalide');
-    const player = await client.query("SELECT solde, dir_code FROM players WHERE phone=$1 FOR UPDATE", [phone]);
-    if (!player.rows.length) throw new Error('Joueur inconnu');
-    if (player.rows[0].solde < mise) throw new Error('Solde insuffisant');
+    if (!numbers || numbers.length !== 6 || !mise || mise <= 0) return res.status(400).json({ error: '6 numéros requis' });
+    await client.query('BEGIN');
+    const player = await client.query("SELECT solde,dir_code FROM players WHERE phone=$1 FOR UPDATE", [phone]);
+    if (!player.rows.length) throw new Error('Joueur introuvable');
+    if (parseFloat(player.rows[0].solde) < mise) throw new Error('Solde insuffisant');
     const dirCode = player.rows[0].dir_code;
     const proba = await getWinProbability(dirCode, 'lucky6');
-    const won = isWin(proba);
-    const all = Array.from({length: 48}, (_,i) => i+1);
-    for (let i = all.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [all[i], all[j]] = [all[j], all[i]]; }
-    const winningNumbers = all.slice(0, 6);
-    const hits = numbers.filter(n => winningNumbers.includes(parseInt(n))).length;
+    const canWin = isWin(proba);
+    const all = Array.from({length:48},(_,i)=>i+1);
+    for(let i=all.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[all[i],all[j]]=[all[j],all[i]];}
+    const winningNumbers = all.slice(0,35);
+    let hits=0, lastHitPos=-1;
+    for(let i=0;i<winningNumbers.length;i++){
+      if(numbers.map(Number).includes(winningNumbers[i])){hits++;lastHitPos=i;}
+      if(hits===6) break;
+    }
     let gain = 0;
-    if (won && hits >= 3) {
-      if (hits === 3) gain = mise * 2;
-      else if (hits === 4) gain = mise * 10;
-      else if (hits === 5) gain = mise * 50;
-      else if (hits === 6) gain = mise * 200;
+    if (canWin && hits >= 3) {
+      if(hits===3) gain=Math.round(mise*2);
+      else if(hits===4) gain=Math.round(mise*10);
+      else if(hits===5) gain=Math.round(mise*50);
+      else if(hits===6) gain=Math.round(mise*200);
     }
-    await client.query("UPDATE players SET solde = solde - $1 WHERE phone = $2", [mise, phone]);
-    if (gain > 0) await client.query("UPDATE players SET solde = solde + $1 WHERE phone = $2", [gain, phone]);
-    await client.query("INSERT INTO transactions (player_phone, dir_code, type, montant, note) VALUES ($1, $2, 'perte', $3, $4)", [phone, dirCode, -mise, `Mise Lucky6`]);
-    if (gain > 0) await client.query("INSERT INTO transactions (player_phone, dir_code, type, montant, note) VALUES ($1, $2, 'gain', $3, $4)", [phone, dirCode, gain, `Gain Lucky6 (${hits} numéros)`]);
-    await client.query("INSERT INTO bets (player_phone, dir_code, type, selection, mise, gain_potentiel, statut) VALUES ($1, $2, 'lucky6', $3, $4, $5, $6)", [phone, dirCode, numbers.join(','), mise, gain, gain > 0 ? 'gagne' : 'perdu']);
-    if (dirCode) {
-      await client.query(`INSERT INTO jackpots (dir_code, amount, week_sales) VALUES ($1, $2, $3) ON CONFLICT (dir_code) DO UPDATE SET amount = jackpots.amount + $2, week_sales = jackpots.week_sales + $3`, [dirCode, mise * JACKPOT_PCT / 100, mise]);
-    }
-    const newBalance = player.rows[0].solde - mise + gain;
-    res.json({ success: true, newBalance, message: gain > 0 ? `Bravo ! ${hits} numéros, gain ${gain} Gd` : `Perdu... vous avez ${hits} bon(s) numéro(s).`, gain, winningNumbers });
-  } catch (e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
+    await client.query("UPDATE players SET solde=solde-$1 WHERE phone=$2", [mise, phone]);
+    if (gain > 0) await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [gain, phone]);
+    await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'mise',$3,'Mise Lucky6')", [phone,dirCode,-mise]);
+    if (gain > 0) await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'gain',$3,$4)", [phone,dirCode,gain,`Gain Lucky6 ${hits}/6`]);
+    await client.query("INSERT INTO bets (player_phone,dir_code,type,selection,mise,gain_potentiel,statut) VALUES ($1,$2,'lucky6',$3,$4,$5,$6)", [phone,dirCode,numbers.join(','),mise,gain,gain>0?'gagne':'perdu']);
+    if (dirCode) await client.query("INSERT INTO jackpots (dir_code,amount,week_sales) VALUES ($1,$2,$3) ON CONFLICT (dir_code) DO UPDATE SET amount=jackpots.amount+$2,week_sales=jackpots.week_sales+$3", [dirCode,mise*JACKPOT_PCT/100,mise]);
+    await client.query('COMMIT');
+    const nb = await pool.query("SELECT solde FROM players WHERE phone=$1",[phone]);
+    const newBalance = parseFloat(nb.rows[0].solde);
+    res.json({ success:true, winningNumbers, hits, gain, newBalance, message: gain>0?`🎉 ${hits}/6 trouvés — Gain: ${gain} Gd`:`😔 ${hits}/6 trouvés — Perdu` });
+  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
 });
 
 app.post('/api/games/course/play', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
+    if (req.session.role !== 'joueur') return res.status(403).json({ error: 'Joueurs seulement' });
     const { carId, mise } = req.body;
     const phone = req.session.user_phone;
-    if (!carId) throw new Error('Choisissez une voiture');
-    if (mise <= 0) throw new Error('Mise invalide');
-    const player = await client.query("SELECT solde, dir_code FROM players WHERE phone=$1 FOR UPDATE", [phone]);
-    if (!player.rows.length) throw new Error('Joueur inconnu');
-    if (player.rows[0].solde < mise) throw new Error('Solde insuffisant');
+    if (!carId || !mise || mise <= 0) return res.status(400).json({ error: 'Données invalides' });
+    await client.query('BEGIN');
+    const player = await client.query("SELECT solde,dir_code FROM players WHERE phone=$1 FOR UPDATE", [phone]);
+    if (!player.rows.length) throw new Error('Joueur introuvable');
+    if (parseFloat(player.rows[0].solde) < mise) throw new Error('Solde insuffisant');
     const dirCode = player.rows[0].dir_code;
     const proba = await getWinProbability(dirCode, 'course');
-    const won = isWin(proba);
-    const odds = {1: 2.10, 2: 1.75, 3: 2.50, 4: 3.20, 5: 4.00, 6: 5.50};
-    const cote = odds[carId] || 2.0;
-    const gain = won ? mise * cote : 0;
-    await client.query("UPDATE players SET solde = solde - $1 WHERE phone = $2", [mise, phone]);
-    if (gain > 0) await client.query("UPDATE players SET solde = solde + $1 WHERE phone = $2", [gain, phone]);
-    await client.query("INSERT INTO transactions (player_phone, dir_code, type, montant, note) VALUES ($1, $2, 'perte', $3, $4)", [phone, dirCode, -mise, `Mise Course voiture ${carId}`]);
-    if (gain > 0) await client.query("INSERT INTO transactions (player_phone, dir_code, type, montant, note) VALUES ($1, $2, 'gain', $3, $4)", [phone, dirCode, gain, `Gain Course (cote ${cote})`]);
-    await client.query("INSERT INTO bets (player_phone, dir_code, type, selection, mise, cote, gain_potentiel, statut) VALUES ($1, $2, 'course', $3, $4, $5, $6, $7)", [phone, dirCode, `Voiture ${carId}`, mise, cote, gain, gain > 0 ? 'gagne' : 'perdu']);
-    if (dirCode) {
-      await client.query(`INSERT INTO jackpots (dir_code, amount, week_sales) VALUES ($1, $2, $3) ON CONFLICT (dir_code) DO UPDATE SET amount = jackpots.amount + $2, week_sales = jackpots.week_sales + $3`, [dirCode, mise * JACKPOT_PCT / 100, mise]);
-    }
-    const newBalance = player.rows[0].solde - mise + gain;
-    const ranking = [
-      { id: 1, name: "🔴 Ferrari SF-23" }, { id: 2, name: "🔵 Red Bull RB19" }, { id: 3, name: "⚫ Mercedes W14" },
-      { id: 4, name: "🟠 McLaren MCL60" }, { id: 5, name: "🟢 Aston Martin" }, { id: 6, name: "🩵 Alpine A523" }
-    ];
-    const winnerIndex = won ? ranking.findIndex(r => r.id == carId) : Math.floor(Math.random() * ranking.length);
-    const winner = ranking[winnerIndex];
-    ranking.splice(winnerIndex, 1);
+    const canWin = isWin(proba);
+    const odds = {1:2.10,2:1.75,3:2.50,4:3.20,5:4.00,6:5.50};
+    const cote = odds[parseInt(carId)] || 2.0;
+    const gain = canWin ? Math.round(mise * cote) : 0;
+    // Classement
+    const ranking = [{id:1,name:"🔴 Ferrari SF-23"},{id:2,name:"🔵 Red Bull RB19"},{id:3,name:"⚫ Mercedes W14"},{id:4,name:"🟠 McLaren MCL60"},{id:5,name:"🟢 Aston Martin"},{id:6,name:"🩵 Alpine A523"}];
+    const winnerIdx = canWin ? ranking.findIndex(r=>r.id==carId) : Math.floor(Math.random()*ranking.length);
+    const winner = ranking.splice(winnerIdx,1)[0];
     ranking.unshift(winner);
-    res.json({ success: true, newBalance, message: gain > 0 ? `Votre voiture a gagné ! Gain ${gain} Gd` : `Pas de chance, votre voiture n'a pas gagné.`, gain, ranking });
-  } catch (e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
+    await client.query("UPDATE players SET solde=solde-$1 WHERE phone=$2", [mise, phone]);
+    if (gain > 0) await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [gain, phone]);
+    await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'mise',$3,$4)", [phone,dirCode,-mise,`Mise Course voiture ${carId}`]);
+    if (gain > 0) await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'gain',$3,$4)", [phone,dirCode,gain,`Gain Course voiture ${carId} (cote ${cote})`]);
+    await client.query("INSERT INTO bets (player_phone,dir_code,type,selection,mise,cote,gain_potentiel,statut) VALUES ($1,$2,'course',$3,$4,$5,$6,$7)", [phone,dirCode,`Voiture ${carId}`,mise,cote,gain,gain>0?'gagne':'perdu']);
+    if (dirCode) await client.query("INSERT INTO jackpots (dir_code,amount,week_sales) VALUES ($1,$2,$3) ON CONFLICT (dir_code) DO UPDATE SET amount=jackpots.amount+$2,week_sales=jackpots.week_sales+$3", [dirCode,mise*JACKPOT_PCT/100,mise]);
+    await client.query('COMMIT');
+    const nb = await pool.query("SELECT solde FROM players WHERE phone=$1",[phone]);
+    const newBalance = parseFloat(nb.rows[0].solde);
+    res.json({ success:true, ranking, gagne:canWin, gain, newBalance, message: canWin?`🏆 Voiture #${carId} gagne ! +${gain} Gd`:`😔 Voiture #${carId} n'a pas gagné` });
+  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
 });
 
 // Hélicoptère – sessions en mémoire
@@ -1449,151 +1456,6 @@ async function creditGain(client, phone, dirCode, gain, gameType, detail) {
   await client.query("INSERT INTO transactions (player_phone, dir_code, type, montant, note) VALUES ($1,$2,'gain',$3,$4)",
     [phone, dirCode, gain, `Gain ${gameType}: ${detail}`]);
 }
-
-// ── KENO ──────────────────────────────────────────────────
-app.post('/api/games/keno/play', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    if (req.session.role !== 'joueur') return res.status(403).json({ error: 'Joueurs seulement' });
-    const phone = req.session.user_phone;
-    const { numbers, mise } = req.body;
-    if (!numbers || !numbers.length || !mise || mise <= 0) return res.status(400).json({ error: 'Données invalides' });
-    if (numbers.length < 1 || numbers.length > 10) return res.status(400).json({ error: '1 à 10 numéros' });
-
-    await client.query('BEGIN');
-    const { dirCode } = await deductAndRecord(client, phone, mise, 'Keno', `${numbers.length} numéros`);
-
-    // Tirage de 20 numéros parmi 80
-    const pool80 = Array.from({length:80},(_,i)=>i+1);
-    for (let i = pool80.length-1; i > 0; i--) {
-      const j = Math.floor(Math.random()*(i+1)); [pool80[i],pool80[j]]=[pool80[j],pool80[i]];
-    }
-    const winningNumbers = pool80.slice(0,20);
-    const hits = numbers.filter(n => winningNumbers.includes(n)).length;
-
-    // Table de gains Keno standard
-    const kenoPayouts = {1:{1:3},2:{1:1,2:9},3:{2:2,3:16},4:{2:2,3:6,4:40},
-      5:{3:4,4:12,5:75},6:{3:3,4:8,5:25,6:150},7:{4:6,5:15,6:50,7:300},
-      8:{4:5,5:10,6:30,7:100,8:700},9:{4:4,5:6,6:20,7:60,8:250,9:2000},
-      10:{5:5,6:15,7:40,8:150,9:500,10:5000}};
-    const multTable = kenoPayouts[numbers.length] || {};
-    const mult = multTable[hits] || 0;
-    const gain = mise * mult;
-
-    if (gain > 0) await creditGain(client, phone, dirCode, gain, 'Keno', `${hits}/${numbers.length} hits`);
-
-    // Enregistrer le jeu
-    await client.query("INSERT INTO bets (player_phone, dir_code, game_type, mise, gain_potentiel, numeros_joues, numeros_tires, statut) VALUES ($1,$2,'keno',$3,$4,$5,$6,$7)",
-      [phone, dirCode, mise, gain, JSON.stringify(numbers), JSON.stringify(winningNumbers), gain>0?'gagne':'perdu']);
-
-    await client.query('COMMIT');
-    const newBalance = parseFloat((await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde);
-    const message = gain > 0 ? `🎉 ${hits}/${numbers.length} hits — Gain: ${gain} Gd` : `😔 ${hits}/${numbers.length} hits — Perdu`;
-    res.json({ winningNumbers, hits, gain, newBalance, message });
-  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
-});
-
-// ── LUCKY 6 ───────────────────────────────────────────────
-app.post('/api/games/lucky6/play', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    if (req.session.role !== 'joueur') return res.status(403).json({ error: 'Joueurs seulement' });
-    const phone = req.session.user_phone;
-    const { numbers, mise } = req.body;
-    if (!numbers || numbers.length !== 6 || !mise || mise <= 0) return res.status(400).json({ error: '6 numéros requis' });
-
-    await client.query('BEGIN');
-    const { dirCode } = await deductAndRecord(client, phone, mise, 'Lucky6', '6 numéros');
-
-    // Tirage parmi 48 numéros
-    const pool48 = Array.from({length:48},(_,i)=>i+1);
-    for (let i = pool48.length-1; i > 0; i--) {
-      const j = Math.floor(Math.random()*(i+1)); [pool48[i],pool48[j]]=[pool48[j],pool48[i]];
-    }
-    const winningNumbers = pool48.slice(0,35); // on tire 35 boules
-    let hits = 0, lastHitPos = -1;
-    for (let i = 0; i < winningNumbers.length; i++) {
-      if (numbers.includes(winningNumbers[i])) { hits++; lastHitPos = i; }
-      if (hits === 6) break;
-    }
-    // Gain: trouver les 6 = gain basé sur position du dernier tiré
-    const gain = hits === 6 ? Math.round(mise * Math.max(2, 36 - lastHitPos)) : 0;
-
-    if (gain > 0) await creditGain(client, phone, dirCode, gain, 'Lucky6', `6/6 pos.${lastHitPos+1}`);
-
-    await client.query("INSERT INTO bets (player_phone, dir_code, game_type, mise, gain_potentiel, numeros_joues, numeros_tires, statut) VALUES ($1,$2,'lucky6',$3,$4,$5,$6,$7)",
-      [phone, dirCode, mise, gain, JSON.stringify(numbers), JSON.stringify(winningNumbers), hits===6?'gagne':'perdu']);
-
-    await client.query('COMMIT');
-    const newBalance = parseFloat((await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde);
-    const message = hits===6 ? `🎉 Tous trouvés ! Gain: ${gain} Gd` : `😔 ${hits}/6 trouvés — Perdu`;
-    res.json({ winningNumbers, hits, gain, newBalance, message });
-  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
-});
-
-// ── COURSE AUTOMOBILE ─────────────────────────────────────
-app.post('/api/games/course/play', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    if (req.session.role !== 'joueur') return res.status(403).json({ error: 'Joueurs seulement' });
-    const phone = req.session.user_phone;
-    const { carId, mise } = req.body;
-    if (!carId || !mise || mise <= 0) return res.status(400).json({ error: 'Données invalides' });
-
-    await client.query('BEGIN');
-    const { dirCode } = await deductAndRecord(client, phone, mise, 'Course Auto', `Voiture #${carId}`);
-
-    // Classement aléatoire des 6 voitures
-    const cars = [1,2,3,4,5,6];
-    for (let i = cars.length-1; i > 0; i--) {
-      const j = Math.floor(Math.random()*(i+1)); [cars[i],cars[j]]=[cars[j],cars[i]];
-    }
-    const ranking = cars.map((id,pos) => ({ id, position: pos+1 }));
-    const winnerPosition = ranking.findIndex(r => r.id === parseInt(carId)) + 1;
-    const gagne = winnerPosition === 1;
-    // Cotes selon position gagnante
-    const cotes = {1: 3.5, 2: 2.0, 3: 1.5};
-    const gain = gagne ? Math.round(mise * (cotes[1] || 3.5)) : 0;
-
-    if (gain > 0) await creditGain(client, phone, dirCode, gain, 'Course', `Voiture #${carId} 1ère place`);
-
-    await client.query("INSERT INTO bets (player_phone, dir_code, game_type, mise, gain_potentiel, numeros_joues, numeros_tires, statut) VALUES ($1,$2,'course',$3,$4,$5,$6,$7)",
-      [phone, dirCode, mise, gain, JSON.stringify([carId]), JSON.stringify(ranking.map(r=>r.id)), gagne?'gagne':'perdu']);
-
-    await client.query('COMMIT');
-    const newBalance = parseFloat((await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde);
-    res.json({ ranking, winnerPosition, gain, newBalance, gagne,
-      message: gagne ? `🏆 Voiture #${carId} gagne ! +${gain} Gd` : `😔 Voiture #${carId} — ${winnerPosition}ème place` });
-  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
-});
-
-// ── HÉLICOPTÈRE ───────────────────────────────────────────
-app.post('/api/games/helico/play', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    if (req.session.role !== 'joueur') return res.status(403).json({ error: 'Joueurs seulement' });
-    const phone = req.session.user_phone;
-    const { choice, mise } = req.body; // choice: numéro 1-6
-    if (!choice || !mise || mise <= 0) return res.status(400).json({ error: 'Données invalides' });
-
-    await client.query('BEGIN');
-    const { dirCode } = await deductAndRecord(client, phone, mise, 'Hélicoptère', `Choix #${choice}`);
-
-    const result = Math.floor(Math.random()*6) + 1;
-    const gagne = parseInt(choice) === result;
-    const gain = gagne ? mise * 5 : 0;
-
-    if (gain > 0) await creditGain(client, phone, dirCode, gain, 'Hélicoptère', `#${choice} correct`);
-
-    await client.query("INSERT INTO bets (player_phone, dir_code, game_type, mise, gain_potentiel, numeros_joues, numeros_tires, statut) VALUES ($1,$2,'helico',$3,$4,$5,$6,$7)",
-      [phone, dirCode, mise, gain, JSON.stringify([choice]), JSON.stringify([result]), gagne?'gagne':'perdu']);
-
-    await client.query('COMMIT');
-    const newBalance = parseFloat((await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde);
-    res.json({ result, gagne, gain, newBalance,
-      message: gagne ? `🚁 Correct ! +${gain} Gd` : `😔 Résultat: #${result} — Perdu` });
-  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
-});
 
 // ── PENALTY ───────────────────────────────────────────────
 app.post('/api/games/penalty/play', requireAuth, async (req, res) => {
