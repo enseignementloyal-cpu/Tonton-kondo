@@ -622,6 +622,7 @@ th{background:var(--blue);color:#fff;font-size:12px;font-weight:700;}
     </div>
     <div class="ab-right">
       <div class="solde-badge" id="abSolde">0 Gd</div>
+      <button onclick="accesAdminSecret()" title="Accès administration" style="background:rgba(245,200,0,.15);border:1px solid rgba(245,200,0,.3);color:var(--gold);padding:6px 9px;border-radius:7px;cursor:pointer;font-size:13px;line-height:1;">⭐</button>
       <button class="btn-logout" onclick="logoutJoueur()" style="display:flex;align-items:center;gap:4px;font-size:11px;padding:6px 10px;border-radius:7px;" title="Déconnexion">⏻ Déco</button>
     </div>
   </div>
@@ -2737,7 +2738,18 @@ function logoutJoueur(){
   clearToken(); CJ=null; CT=null; MODE=null; clearSlip();
   document.getElementById('cpbar').classList.remove('on');
   document.getElementById('cppanel').classList.remove('on');
-  if(CCaiss){goTo('sc-sec');refreshSec();} else {goTo('sc-landing');}
+  // Toujours retourner vers index.html (page d'accueil générale)
+  window.location.href = 'index.html';
+}
+
+function accesAdminSecret(){
+  const code = prompt('🔐 Code d\'accès administration:');
+  if(!code) return;
+  if(code.trim() === 'TONTONKONDO12'){
+    window.location.href = 'app.html';
+  } else {
+    showNotif('Code incorrect','err');
+  }
 }
 
 function updateAppBar(){
@@ -4221,9 +4233,14 @@ async function checkPaymentStatus(refId) {
     const res = await apiGet(`/api/recharges/status/${refId}`);
     if (res.status === 'completed') {
       showNotif(`✅ Recharge de ${res.montant} Gd confirmée !`, 'ok');
-      await refreshPlayerCache(CJ.phone);
-      CJ = gJ()[CJ.phone];
-      updateAppBar();
+      // Sync le vrai solde depuis la DB directement
+      try {
+        const soldeData = await apiGet('/api/player/solde');
+        applySoldeFromAPI(soldeData.solde);
+      } catch(e) {
+        // Fallback: ajouter le montant localement
+        if(CJ){ CJ.solde = parseFloat(CJ.solde||0) + parseFloat(res.montant||0); updateAppBar(); }
+      }
       renderJackpotWidget();
       document.getElementById('recharge-form').style.display = 'none';
       document.getElementById('rch-amount').value = '';
@@ -4295,19 +4312,33 @@ function admRefreshRecharges(){
       ${r.statut==='En attente'?`<div style="display:flex;gap:5px;margin-top:6px"><button class="tbtn g" onclick="admValiderRch(${r.id})">✅ Valider</button><button class="tbtn r" onclick="admRejeterRch(${r.id})">❌ Rejeter</button></div>`:''}
     </div>`).join('');
 }
-function admValiderRch(id){
-  const rch=gRch();const idx=rch.findIndex(r=>r.id===id);if(idx<0)return;
-  const r=rch[idx];r.statut='Validé';
-  const j=gJ();if(j[r.phone]){
-    j[r.phone].solde=(j[r.phone].solde||0)+r.amount;sJ(j);
-    addTx(r.phone,'Recharge '+r.method,r.amount,'Validée par Admin',j[r.phone].solde);
-    let st=gSt();st.dep+=r.amount;sSt(st);
-  }
-  sRch(rch);showNotif('✅ Recharge validée','ok');admRefreshRecharges();
+async function admValiderRch(id){
+  try {
+    await apiPost(`/api/recharges/${id}/validate`, {});
+    showNotif('✅ Recharge validée en base','ok');
+    admRefreshRechargesFromAPI();
+  } catch(e){ showNotif('Erreur: '+(e.message||'validation échouée'),'err'); }
 }
 function admRejeterRch(id){
-  const rch=gRch();const idx=rch.findIndex(r=>r.id===id);if(idx<0)return;
-  rch[idx].statut='Rejeté';sRch(rch);showNotif('Recharge rejetée','err');admRefreshRecharges();
+  apiPost(`/api/recharges/${id}/reject`, {})
+    .then(()=>{ showNotif('Recharge rejetée','err'); admRefreshRechargesFromAPI(); })
+    .catch(e=>showNotif('Erreur: '+e.message,'err'));
+}
+async function admRefreshRechargesFromAPI(){
+  try {
+    const data = await apiGet('/api/recharges');
+    const el = document.getElementById('adm-recharges-list');
+    if(!el) return;
+    const list = data.recharges||[];
+    if(!list.length){ el.innerHTML='<p style="color:var(--muted);font-size:13px">Aucune recharge.</p>'; return; }
+    el.innerHTML = list.map(r=>`
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:11px;margin-bottom:7px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px"><strong>${r.player_name||r.player_phone}</strong><span style="font-size:10px;color:var(--muted)">${new Date(r.created_at).toLocaleString('fr-FR')}</span></div>
+        <div style="font-size:12px;margin-bottom:5px">📱 ${(r.methode||'').toUpperCase()} · Ref: <code>${r.reference_id||''}</code> · <b style="color:var(--gold)">${r.montant} Gd</b></div>
+        <span class="sbadge ${r.statut==='pending'?'sbp':r.statut==='completed'?'sbw':'sbl'}">${r.statut==='pending'?'⏳ En attente':r.statut==='completed'?'✅ Validé':'❌ Rejeté'}</span>
+        ${r.statut==='pending'?`<div style="display:flex;gap:5px;margin-top:6px"><button class="tbtn g" onclick="admValiderRch(${r.id})">✅ Valider</button><button class="tbtn r" onclick="admRejeterRch(${r.id})">❌ Rejeter</button></div>`:''}
+      </div>`).join('');
+  } catch(e){ console.warn(e); }
 }
 
 // ==================== CAISSIER: Recharges ====================

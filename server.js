@@ -1158,11 +1158,19 @@ app.get('/api/bets', requireAuth, async (req, res) => {
   res.json({ bets: r.rows });
 });
 
-app.get('/api/transactions', requireAdmin, async (req, res) => {
-  const r = await pool.query(`SELECT t.*, p.name AS player_name FROM transactions t LEFT JOIN players p ON t.player_phone = p.phone ORDER BY t.created_at DESC LIMIT 300`);
-  res.json({ transactions: r.rows });
+app.get('/api/transactions', requireAuth, async (req, res) => {
+  try {
+    let q, params = [];
+    if (req.session.role === 'joueur') {
+      q = "SELECT * FROM transactions WHERE player_phone=$1 ORDER BY created_at DESC LIMIT 200";
+      params = [req.session.user_phone];
+    } else {
+      q = "SELECT t.*, p.name AS player_name FROM transactions t LEFT JOIN players p ON t.player_phone=p.phone ORDER BY t.created_at DESC LIMIT 300";
+    }
+    const r = await pool.query(q, params);
+    res.json({ transactions: r.rows });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
-
 // ── BORLETTE BLOCKED & LIMITS (routes manquantes) ────────
 app.get('/api/borlette/blocked', requireAuth, async (req, res) => {
   const r = await pool.query("SELECT * FROM borlette_blocked ORDER BY created_at DESC");
