@@ -394,12 +394,22 @@ app.get('/api/auth/me', async (req, res) => {
 // ── FOOTBALL / MATCHS ─────────────────────────────────────
 let matchCache = { data: [], updatedAt: 0 };
 const CACHE_TTL = 90 * 1000;
-const COMPETITIONS = ['PL','PD','BL1','SA','FL1','CL','ELC','PPL','DED','BSA','CLI'];
+// Tous les championnats disponibles sur football-data.org
+const COMPETITIONS = ['PL','PD','BL1','SA','FL1','CL','ELC','PPL','DED','BSA','WC','EC','CLI'];
 const COMP_LABELS = {
-  PL:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League', PD:'🇪🇸 La Liga', BL1:'🇩🇪 Bundesliga',
-  SA:'🇮🇹 Serie A', FL1:'🇫🇷 Ligue 1', CL:'🏆 Champions League',
-  ELC:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship', PPL:'🇵🇹 Primeira Liga',
-  DED:'🇳🇱 Eredivisie', BSA:'🇧🇷 Brasileirão', CLI:'🌎 Copa Libertadores',
+  PL:  '🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League',
+  PD:  '🇪🇸 La Liga',
+  BL1: '🇩🇪 Bundesliga',
+  SA:  '🇮🇹 Serie A',
+  FL1: '🇫🇷 Ligue 1',
+  CL:  '🏆 Champions League',
+  ELC: '🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship',
+  PPL: '🇵🇹 Primeira Liga',
+  DED: '🇳🇱 Eredivisie',
+  BSA: '🇧🇷 Brasileirão',
+  WC:  '🌍 Coupe du Monde',
+  EC:  '🇪🇺 Euro',
+  CLI: '🌎 Copa Libertadores',
 };
 
 function formatMatch(match, compCode) {
@@ -433,14 +443,18 @@ app.get('/api/matches', async (req, res) => {
     }
     const allMatches = [];
     const today = new Date().toISOString().split('T')[0];
-    const in7 = new Date(Date.now()+7*86400000).toISOString().split('T')[0];
+    const in7days = new Date(Date.now()+7*86400000).toISOString().split('T')[0];
     for (const comp of COMPETITIONS) {
       try {
-        const url = `https://api.football-data.org/v4/competitions/${comp}/matches?dateFrom=${today}&dateTo=${in7}`;
+        // Matchs en cours et à venir
+        const url = `https://api.football-data.org/v4/competitions/${comp}/matches?dateFrom=${today}&dateTo=${in7days}`;
         const r = await fetch(url, { headers: { 'X-Auth-Token': FOOTBALL_API_KEY } });
         if (!r.ok) continue;
         const data = await r.json();
-        if (data.matches) allMatches.push(...data.matches.map(m => formatMatch(m, comp)));
+        if (data.matches) {
+          const formatted = data.matches.map(m => formatMatch(m, comp));
+          allMatches.push(...formatted);
+        }
       } catch (e) { console.error(`Failed ${comp}:`, e.message); }
     }
     allMatches.sort((a,b) => {
@@ -450,7 +464,46 @@ app.get('/api/matches', async (req, res) => {
     });
     matchCache = { data: allMatches, updatedAt: now };
     res.json({ matches: allMatches, count: allMatches.length });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Route pour les matchs d'un championnat spécifique
+app.get('/api/matches/:comp', async (req, res) => {
+  try {
+    const comp = req.params.comp.toUpperCase();
+    const today = new Date().toISOString().split('T')[0];
+    const in7days = new Date(Date.now()+7*86400000).toISOString().split('T')[0];
+    const r = await fetch(`https://api.football-data.org/v4/competitions/${comp}/matches?dateFrom=${today}&dateTo=${in7days}`, {
+      headers: { 'X-Auth-Token': FOOTBALL_API_KEY }
+    });
+    if (!r.ok) return res.status(502).json({ error: 'Compétition indisponible' });
+    const data = await r.json();
+    const matches = (data.matches||[]).map(m => formatMatch(m, comp));
+    res.json({ matches, competition: COMP_LABELS[comp]||comp });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Route pour résultats récents (derniers 7 jours)
+app.get('/api/results', async (req, res) => {
+  try {
+    const allResults = [];
+    const ago7 = new Date(Date.now()-7*86400000).toISOString().split('T')[0];
+    const today = new Date().toISOString().split('T')[0];
+    for (const comp of ['PL','PD','BL1','SA','FL1','CL']) {
+      try {
+        const r = await fetch(`https://api.football-data.org/v4/competitions/${comp}/matches?dateFrom=${ago7}&dateTo=${today}&status=FINISHED`, {
+          headers: { 'X-Auth-Token': FOOTBALL_API_KEY }
+        });
+        if (!r.ok) continue;
+        const data = await r.json();
+        if (data.matches) allResults.push(...data.matches.map(m => formatMatch(m, comp)));
+      } catch(e) {}
+    }
+    allResults.sort((a,b) => new Date(b.utcDate||0) - new Date(a.utcDate||0));
+    res.json({ results: allResults });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // ── JOUEUR ────────────────────────────────────────────────
@@ -1056,7 +1109,7 @@ app.post('/api/games/helico/update', requireAuth, async (req, res) => {
   res.json({ crashed: false, altitude: session.altitude });
 });
 
-// ── AUTRES ROUTES API ──────────────────────────────────────
+// ── AUTRES ROUTES API (bets, transactions, etc.) ──────────
 app.get('/api/bets', requireAuth, async (req, res) => {
   let query = `SELECT b.*, p.name AS player_name FROM bets b LEFT JOIN players p ON b.player_phone = p.phone`;
   let params = [];
@@ -1066,153 +1119,114 @@ app.get('/api/bets', requireAuth, async (req, res) => {
   res.json({ bets: r.rows });
 });
 
-app.get('/api/transactions', requireAuth, async (req, res) => {
-  let q, params = [];
-  if (req.session.role === 'joueur') {
-    q = "SELECT * FROM transactions WHERE player_phone=$1 ORDER BY created_at DESC LIMIT 200";
-    params = [req.session.user_phone];
-  } else {
-    q = "SELECT t.*, p.name AS player_name FROM transactions t LEFT JOIN players p ON t.player_phone=p.phone ORDER BY t.created_at DESC LIMIT 300";
-  }
-  const r = await pool.query(q, params);
+app.get('/api/transactions', requireAdmin, async (req, res) => {
+  const r = await pool.query(`SELECT t.*, p.name AS player_name FROM transactions t LEFT JOIN players p ON t.player_phone = p.phone ORDER BY t.created_at DESC LIMIT 300`);
   res.json({ transactions: r.rows });
 });
 
-app.get('/api/player/solde', requireAuth, async (req, res) => {
-  if (req.session.role !== 'joueur') return res.status(403).json({ error: 'Joueurs seulement' });
-  const r = await pool.query("SELECT solde FROM players WHERE phone=$1", [req.session.user_phone]);
-  res.json({ solde: parseFloat(r.rows[0]?.solde||0) });
+// ── BORLETTE BLOCKED & LIMITS (routes manquantes) ────────
+app.get('/api/borlette/blocked', requireAuth, async (req, res) => {
+  const r = await pool.query("SELECT * FROM borlette_blocked ORDER BY created_at DESC");
+  res.json({ blocked: r.rows });
 });
 
-// ── BORLETTE: BLOCAGES ────────────────────────────────────
-app.get('/api/borlette/blocked', requireAuth, async (req, res) => {
-  try { const r = await pool.query("SELECT * FROM borlette_blocked ORDER BY created_at DESC"); res.json({ blocked: r.rows }); }
-  catch(e) { res.status(500).json({ error: e.message }); }
-});
 app.post('/api/borlette/block', requireAuth, async (req, res) => {
   if (!['admin','directeur','caissier'].includes(req.session.role)) return res.status(403).json({ error: 'Non autorisé' });
   const { number, draw } = req.body;
-  await pool.query("INSERT INTO borlette_blocked (number,draw) VALUES ($1,$2) ON CONFLICT (number,draw) DO NOTHING", [String(number).padStart(2,'0'), draw||'']);
+  if (!number) return res.status(400).json({ error: 'Numéro requis' });
+  await pool.query("INSERT INTO borlette_blocked (number, draw) VALUES ($1, $2) ON CONFLICT (number, draw) DO NOTHING", [number.padStart(2,'0'), draw||'']);
   res.json({ success: true });
 });
+
 app.delete('/api/borlette/block/:id', requireAuth, async (req, res) => {
   if (!['admin','directeur','caissier'].includes(req.session.role)) return res.status(403).json({ error: 'Non autorisé' });
   await pool.query("DELETE FROM borlette_blocked WHERE id=$1", [req.params.id]);
   res.json({ success: true });
 });
 
-// ── BORLETTE: LIMITES ─────────────────────────────────────
 app.get('/api/borlette/limits', requireAuth, async (req, res) => {
-  try { const r = await pool.query("SELECT * FROM borlette_limits ORDER BY number"); res.json({ limits: r.rows }); }
-  catch(e) { res.status(500).json({ error: e.message }); }
+  const r = await pool.query("SELECT * FROM borlette_limits ORDER BY number");
+  res.json({ limits: r.rows });
 });
+
 app.post('/api/borlette/limit', requireAuth, async (req, res) => {
   if (!['admin','directeur','caissier'].includes(req.session.role)) return res.status(403).json({ error: 'Non autorisé' });
   const { number, draw, max_amount } = req.body;
-  await pool.query("INSERT INTO borlette_limits (number,draw,max_amount) VALUES ($1,$2,$3) ON CONFLICT (number,draw) DO UPDATE SET max_amount=$3,updated_at=NOW()", [String(number).padStart(2,'0'), draw||'', max_amount]);
+  if (!number || !max_amount) return res.status(400).json({ error: 'Données manquantes' });
+  await pool.query("INSERT INTO borlette_limits (number, draw, max_amount) VALUES ($1,$2,$3) ON CONFLICT (number, draw) DO UPDATE SET max_amount=$3, updated_at=NOW()", [number.padStart(2,'0'), draw||'', max_amount]);
   res.json({ success: true });
 });
+
 app.delete('/api/borlette/limit/:id', requireAuth, async (req, res) => {
   if (!['admin','directeur','caissier'].includes(req.session.role)) return res.status(403).json({ error: 'Non autorisé' });
   await pool.query("DELETE FROM borlette_limits WHERE id=$1", [req.params.id]);
   res.json({ success: true });
 });
 
-// ── BORLETTE: PUBLIER RÉSULTAT (ADMIN) ───────────────────
-app.post('/api/borlette/publish', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    if (!['admin','directeur','caissier'].includes(req.session.role)) return res.status(403).json({ error: 'Non autorisé' });
-    const { draw, lotto3, lot2, lot3 } = req.body;
-    if (!draw || !lotto3 || lotto3.length !== 3) return res.status(400).json({ error: 'draw et lotto3 (3 chiffres) requis' });
-    const lot1 = lotto3.slice(1); // 2 derniers chiffres
-    await client.query('BEGIN');
-    await client.query(`INSERT INTO borlette_results (draw,lotto3,lot1,lot2,lot3,resolved_by,created_at)
-      VALUES ($1,$2,$3,$4,$5,$6,NOW())`,
-      [draw, lotto3, lot1, lot2||'', lot3||'', req.session.user_phone||req.session.user_code]);
-    const MULTS = { bolet_lot1:50, bolet_lot2:25, bolet_lot3:10, lotto3:500, lotto2:80 };
-    const betsQ = await client.query(`SELECT bb.*, bt.player_phone, p.dir_code FROM borlette_bets bb
-      JOIN borlette_tickets bt ON bb.ticket_id=bt.id
-      JOIN players p ON bt.player_phone=p.phone
-      WHERE bb.draw=$1 AND bb.statut='actif'`, [draw]);
-    let totalPaid=0, resolved=0;
-    for (const bet of betsQ.rows) {
-      const n = bet.numero, m = parseFloat(bet.montant);
-      let gain = 0;
-      if (bet.type_jeu==='bolet') {
-        if (n===lot1) gain = m * MULTS.bolet_lot1;
-        else if (lot2 && n===lot2.padStart(2,'0')) gain = m * MULTS.bolet_lot2;
-        else if (lot3 && n===lot3.padStart(2,'0')) gain = m * MULTS.bolet_lot3;
-      } else if (bet.type_jeu==='lotto3' && n===lotto3) { gain = m * MULTS.lotto3; }
-      else if (bet.type_jeu==='lotto2' && lot2 && n===lot2.padStart(2,'0')) { gain = m * MULTS.lotto2; }
-      await client.query("UPDATE borlette_bets SET statut=$1,gain=$2 WHERE id=$3", [gain>0?'gagne':'perdu', gain, bet.id]);
-      if (gain>0) {
-        await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [gain, bet.player_phone]);
-        await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'gain_borlette',$3,$4)",
-          [bet.player_phone, bet.dir_code, gain, `Gain borlette ${draw} #${n} ×${gain/m}`]);
-        totalPaid += gain;
-      }
-      resolved++;
-    }
-    await client.query("UPDATE borlette_tickets SET statut='clos' WHERE draw=$1 AND statut='actif'", [draw]);
-    await client.query('COMMIT');
-    res.json({ success:true, draw, lot1, lot2:lot2||'', lot3:lot3||'', lotto3, resolved, totalPaid });
-  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
-});
+// ── RETRAITS JOUEUR (Moncash / Natcash / Cash) ────────────
+// Table retraits
+(async () => {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS retraits (
+      id SERIAL PRIMARY KEY,
+      player_phone TEXT REFERENCES players(phone),
+      dir_code TEXT REFERENCES directors(code),
+      montant REAL NOT NULL,
+      methode TEXT NOT NULL,
+      numero_mobile TEXT,
+      statut TEXT DEFAULT 'pending',
+      note TEXT,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP
+    );
+  `);
+})();
 
-app.get('/api/borlette/results', async (req, res) => {
-  try {
-    const draw = req.query.draw;
-    let q = "SELECT * FROM borlette_results", params=[];
-    if (draw) { q += " WHERE draw=$1"; params.push(draw); }
-    q += " ORDER BY created_at DESC LIMIT 50";
-    res.json({ results: (await pool.query(q,params)).rows });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-// ── RETRAITS JOUEUR ───────────────────────────────────────
 app.post('/api/retraits/demande', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
     if (req.session.role !== 'joueur') return res.status(403).json({ error: 'Joueurs seulement' });
     const { montant, methode, numero_mobile } = req.body;
-    if (!montant || montant < 50) return res.status(400).json({ error: 'Minimum 50 Gourdes' });
+    if (!montant || montant < 50) return res.status(400).json({ error: 'Montant minimum 50 Gourdes' });
     if (!['moncash','natcash','cash'].includes(methode)) return res.status(400).json({ error: 'Méthode invalide' });
     const phone = req.session.user_phone;
     await client.query('BEGIN');
-    const pr = await client.query("SELECT solde,dir_code FROM players WHERE phone=$1 FOR UPDATE", [phone]);
+    const pr = await client.query("SELECT solde, dir_code FROM players WHERE phone=$1 FOR UPDATE", [phone]);
     if (!pr.rows.length) throw new Error('Joueur introuvable');
     if (parseFloat(pr.rows[0].solde) < montant) throw new Error('Solde insuffisant');
+    // Bloquer le montant
     await client.query("UPDATE players SET solde=solde-$1 WHERE phone=$2", [montant, phone]);
-    const r = await client.query("INSERT INTO retraits (player_phone,dir_code,montant,methode,numero_mobile,statut) VALUES ($1,$2,$3,$4,$5,'pending') RETURNING id",
-      [phone, pr.rows[0].dir_code, montant, methode, numero_mobile||phone]);
-    await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'retrait_demande',$3,$4)",
-      [phone, pr.rows[0].dir_code, -montant, `Demande retrait ${methode} — en attente`]);
+    const r = await client.query("INSERT INTO retraits (player_phone, dir_code, montant, methode, numero_mobile, statut) VALUES ($1,$2,$3,$4,$5,'pending') RETURNING id", [phone, pr.rows[0].dir_code, montant, methode, numero_mobile||phone]);
+    await client.query("INSERT INTO transactions (player_phone, dir_code, type, montant, note) VALUES ($1,$2,'retrait_demande',$3,$4)", [phone, pr.rows[0].dir_code, -montant, `Demande retrait ${methode} — en attente`]);
     await client.query('COMMIT');
-    const newSolde = (await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde;
-    res.json({ success:true, retrait_id:r.rows[0].id, newSolde:parseFloat(newSolde) });
+    const newSolde = (await pool.query("SELECT solde FROM players WHERE phone=$1", [phone])).rows[0].solde;
+    res.json({ success: true, retrait_id: r.rows[0].id, newSolde });
   } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
 });
 
 app.get('/api/retraits', requireAuth, async (req, res) => {
-  let q = "SELECT rt.*,p.name AS player_name FROM retraits rt LEFT JOIN players p ON rt.player_phone=p.phone WHERE 1=1";
+  let q = "SELECT rt.*, p.name AS player_name FROM retraits rt LEFT JOIN players p ON rt.player_phone=p.phone WHERE 1=1";
   const params = [];
-  if (req.session.role==='joueur') { params.push(req.session.user_phone); q += ` AND rt.player_phone=$${params.length}`; }
-  else if (req.session.role==='directeur') { params.push(req.session.user_code); q += ` AND rt.dir_code=$${params.length}`; }
+  if (req.session.role === 'joueur') { params.push(req.session.user_phone); q += ` AND rt.player_phone=$${params.length}`; }
+  else if (req.session.role === 'directeur') { params.push(req.session.user_code); q += ` AND rt.dir_code=$${params.length}`; }
   q += " ORDER BY rt.created_at DESC LIMIT 100";
-  res.json({ retraits: (await pool.query(q,params)).rows });
+  const r = await pool.query(q, params);
+  res.json({ retraits: r.rows });
 });
 
 app.post('/api/retraits/:id/approve', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
     if (!['admin','caissier','directeur'].includes(req.session.role)) return res.status(403).json({ error: 'Non autorisé' });
+    const id = parseInt(req.params.id);
     await client.query('BEGIN');
-    const r = await client.query("SELECT * FROM retraits WHERE id=$1 AND statut='pending' FOR UPDATE", [req.params.id]);
-    if (!r.rows.length) throw new Error('Retrait introuvable');
-    await client.query("UPDATE retraits SET statut='approved',updated_at=NOW() WHERE id=$1", [req.params.id]);
+    const r = await client.query("SELECT * FROM retraits WHERE id=$1 AND statut='pending' FOR UPDATE", [id]);
+    if (!r.rows.length) throw new Error('Retrait introuvable ou déjà traité');
+    const rt = r.rows[0];
+    await client.query("UPDATE retraits SET statut='approved', updated_at=NOW(), note=$1 WHERE id=$2", [req.body.note||'Approuvé', id]);
+    await client.query("UPDATE transactions SET note='Retrait '+$1+' approuvé' WHERE player_phone=$2 AND type='retrait_demande' AND note LIKE 'Demande retrait%' AND created_at=(SELECT MAX(created_at) FROM transactions WHERE player_phone=$2 AND type='retrait_demande')", [rt.methode, rt.player_phone]);
     await client.query('COMMIT');
-    res.json({ success:true });
+    res.json({ success: true });
   } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
 });
 
@@ -1220,36 +1234,38 @@ app.post('/api/retraits/:id/reject', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
     if (!['admin','caissier','directeur'].includes(req.session.role)) return res.status(403).json({ error: 'Non autorisé' });
+    const id = parseInt(req.params.id);
     await client.query('BEGIN');
-    const r = await client.query("SELECT * FROM retraits WHERE id=$1 AND statut='pending' FOR UPDATE", [req.params.id]);
+    const r = await client.query("SELECT * FROM retraits WHERE id=$1 AND statut='pending' FOR UPDATE", [id]);
     if (!r.rows.length) throw new Error('Retrait introuvable');
     const rt = r.rows[0];
+    // Rembourser le solde
     await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [rt.montant, rt.player_phone]);
-    await client.query("UPDATE retraits SET statut='rejected',updated_at=NOW() WHERE id=$1", [req.params.id]);
-    await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'remboursement',$3,'Retrait rejeté — remboursé')",
-      [rt.player_phone, rt.dir_code, rt.montant]);
+    await client.query("UPDATE retraits SET statut='rejected', updated_at=NOW() WHERE id=$1", [id]);
+    await client.query("INSERT INTO transactions (player_phone, dir_code, type, montant, note) VALUES ($1,$2,'remboursement',$3,'Retrait rejeté — solde remboursé')", [rt.player_phone, rt.dir_code, rt.montant]);
     await client.query('COMMIT');
-    res.json({ success:true });
+    res.json({ success: true });
   } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
 });
 
-// ── CAISSIER: RECHARGE / RETRAIT CASH ────────────────────
+// ── CAISSIER: RECHARGE ET RETRAIT CASH DIRECT ────────────
 app.post('/api/cashier/recharge', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
     if (!['caissier','directeur','admin'].includes(req.session.role)) return res.status(403).json({ error: 'Non autorisé' });
     const { player_phone, montant, methode, note } = req.body;
-    if (!player_phone || !montant || montant<=0) return res.status(400).json({ error: 'Données invalides' });
+    if (!player_phone || !montant || montant <= 0) return res.status(400).json({ error: 'Données invalides' });
     await client.query('BEGIN');
-    const pr = await client.query("SELECT solde,dir_code FROM players WHERE phone=$1 FOR UPDATE", [player_phone]);
+    const pr = await client.query("SELECT solde, dir_code FROM players WHERE phone=$1 FOR UPDATE", [player_phone]);
     if (!pr.rows.length) throw new Error('Joueur introuvable');
-    const caiss_code = req.session.role==='caissier' ? req.session.user_code : null;
+    let caiss_code = null, dir_code = pr.rows[0].dir_code;
+    if (req.session.role === 'caissier') { caiss_code = req.session.user_code; }
     await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [montant, player_phone]);
-    await client.query("INSERT INTO transactions (player_phone,dir_code,caiss_code,type,montant,note) VALUES ($1,$2,$3,'depot',$4,$5)",
-      [player_phone, pr.rows[0].dir_code, caiss_code, montant, note||`Rechargement ${methode||'cash'}`]);
+    await client.query("INSERT INTO transactions (player_phone, dir_code, caiss_code, type, montant, note) VALUES ($1,$2,$3,'depot',$4,$5)", [player_phone, dir_code, caiss_code, montant, note||`Rechargement ${methode||'cash'} par caissier`]);
+    await client.query("INSERT INTO recharges (player_phone, dir_code, caiss_code, montant, methode, reference_id, statut) VALUES ($1,$2,$3,$4,$5,$6,'completed')", [player_phone, dir_code, caiss_code, montant, methode||'cash', `CASH_${Date.now()}`]);
     await client.query('COMMIT');
     const newSolde = (await pool.query("SELECT solde FROM players WHERE phone=$1",[player_phone])).rows[0].solde;
-    res.json({ success:true, newSolde:parseFloat(newSolde) });
+    res.json({ success: true, newSolde });
   } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
 });
 
@@ -1258,232 +1274,94 @@ app.post('/api/cashier/retrait', requireAuth, async (req, res) => {
   try {
     if (!['caissier','directeur','admin'].includes(req.session.role)) return res.status(403).json({ error: 'Non autorisé' });
     const { player_phone, montant, note } = req.body;
-    if (!player_phone || !montant || montant<=0) return res.status(400).json({ error: 'Données invalides' });
+    if (!player_phone || !montant || montant <= 0) return res.status(400).json({ error: 'Données invalides' });
     await client.query('BEGIN');
-    const pr = await client.query("SELECT solde,dir_code FROM players WHERE phone=$1 FOR UPDATE", [player_phone]);
+    const pr = await client.query("SELECT solde, dir_code FROM players WHERE phone=$1 FOR UPDATE", [player_phone]);
     if (!pr.rows.length) throw new Error('Joueur introuvable');
     if (parseFloat(pr.rows[0].solde) < montant) throw new Error('Solde insuffisant');
-    const caiss_code = req.session.role==='caissier' ? req.session.user_code : null;
+    let caiss_code = req.session.role === 'caissier' ? req.session.user_code : null;
+    const dir_code = pr.rows[0].dir_code;
     await client.query("UPDATE players SET solde=solde-$1 WHERE phone=$2", [montant, player_phone]);
-    await client.query("INSERT INTO transactions (player_phone,dir_code,caiss_code,type,montant,note) VALUES ($1,$2,$3,'retrait',$4,$5)",
-      [player_phone, pr.rows[0].dir_code, caiss_code, -montant, note||'Retrait cash bureau']);
+    await client.query("INSERT INTO transactions (player_phone, dir_code, caiss_code, type, montant, note) VALUES ($1,$2,$3,'retrait',$4,$5)", [player_phone, dir_code, caiss_code, -montant, note||'Retrait cash bureau']);
     await client.query('COMMIT');
     const newSolde = (await pool.query("SELECT solde FROM players WHERE phone=$1",[player_phone])).rows[0].solde;
-    res.json({ success:true, newSolde:parseFloat(newSolde) });
+    res.json({ success: true, newSolde });
   } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
 });
 
-// ── JEUX CASINO ───────────────────────────────────────────
-async function deductMise(client, phone, mise, type, note) {
-  const pr = await client.query("SELECT solde,dir_code FROM players WHERE phone=$1 FOR UPDATE", [phone]);
-  if (!pr.rows.length) throw new Error('Joueur introuvable');
-  if (parseFloat(pr.rows[0].solde) < mise) throw new Error('Solde insuffisant');
-  await client.query("UPDATE players SET solde=solde-$1 WHERE phone=$2", [mise, phone]);
-  await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'mise',$3,$4)",
-    [phone, pr.rows[0].dir_code, -mise, note]);
-  return pr.rows[0].dir_code;
-}
-async function creditGain(client, phone, dirCode, gain, note) {
-  if (gain<=0) return;
-  await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [gain, phone]);
-  await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'gain',$3,$4)",
-    [phone, dirCode, gain, note]);
-}
+// ── MATH VEDETTE (résultats borlette) ────────────────────
+// Table math_vedette
+(async () => {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS math_vedette (
+      id SERIAL PRIMARY KEY,
+      date_tirage DATE NOT NULL,
+      draw TEXT NOT NULL,
+      numero TEXT NOT NULL,
+      occurrences INTEGER DEFAULT 1,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+  `);
+})();
 
-// KENO
-app.post('/api/games/keno/play', requireAuth, async (req, res) => {
-  const client = await pool.connect();
+app.get('/api/borlette/math-vedette', requireAuth, async (req, res) => {
   try {
-    if (req.session.role!=='joueur') return res.status(403).json({ error: 'Joueurs seulement' });
-    const { numbers, mise } = req.body;
-    if (!numbers||!numbers.length||!mise||mise<=0) return res.status(400).json({ error: 'Données invalides' });
-    const phone = req.session.user_phone;
-    await client.query('BEGIN');
-    const dirCode = await deductMise(client, phone, mise, 'mise', `Keno ${numbers.length} numéros`);
-    const pool80 = Array.from({length:80},(_,i)=>i+1);
-    for (let i=pool80.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1));[pool80[i],pool80[j]]=[pool80[j],pool80[i]]; }
-    const winningNumbers = pool80.slice(0,20);
-    const hits = numbers.filter(n=>winningNumbers.includes(n)).length;
-    const payouts = {1:{1:3},2:{1:1,2:9},3:{2:2,3:16},4:{2:2,3:6,4:40},5:{3:4,4:12,5:75},
-      6:{3:3,4:8,5:25,6:150},7:{4:6,5:15,6:50,7:300},8:{4:5,5:10,6:30,7:100,8:700},
-      9:{4:4,5:6,6:20,7:60,8:250,9:2000},10:{5:5,6:15,7:40,8:150,9:500,10:5000}};
-    const mult = (payouts[numbers.length]||{})[hits]||0;
-    const gain = mise * mult;
-    if (gain>0) await creditGain(client, phone, dirCode, gain, `Gain Keno ${hits}/${numbers.length}`);
-    await client.query("INSERT INTO bets (player_phone,dir_code,game_type,mise,gain_potentiel,numeros_joues,numeros_tires,statut) VALUES ($1,$2,'keno',$3,$4,$5,$6,$7)",
-      [phone,dirCode,mise,gain,JSON.stringify(numbers),JSON.stringify(winningNumbers),gain>0?'gagne':'perdu']);
-    await client.query('COMMIT');
-    const newBalance = parseFloat((await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde);
-    res.json({ winningNumbers, hits, gain, newBalance, message: gain>0?`🎉 ${hits}/${numbers.length} hits — Gain: ${gain} Gd`:`😔 ${hits}/${numbers.length} hits — Perdu` });
-  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
+    // Calculer les numéros les plus fréquents des 30 derniers résultats
+    const r = await pool.query(`
+      SELECT lot1 as num, COUNT(*) as cnt FROM borlette_results WHERE lot1 IS NOT NULL GROUP BY lot1
+      UNION ALL
+      SELECT lot2, COUNT(*) FROM borlette_results WHERE lot2 IS NOT NULL AND lot2!='' GROUP BY lot2
+      UNION ALL
+      SELECT lot3, COUNT(*) FROM borlette_results WHERE lot3 IS NOT NULL AND lot3!='' GROUP BY lot3
+    `);
+    // Agréger par numéro
+    const counts = {};
+    r.rows.forEach(row => {
+      counts[row.num] = (counts[row.num]||0) + parseInt(row.cnt);
+    });
+    const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0,20).map(([num,cnt]) => ({ num, cnt }));
+    res.json({ vedette: sorted });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
-// LUCKY 6
-app.post('/api/games/lucky6/play', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    if (req.session.role!=='joueur') return res.status(403).json({ error: 'Joueurs seulement' });
-    const { numbers, mise } = req.body;
-    if (!numbers||numbers.length!==6||!mise||mise<=0) return res.status(400).json({ error: '6 numéros requis' });
-    const phone = req.session.user_phone;
-    await client.query('BEGIN');
-    const dirCode = await deductMise(client, phone, mise, 'mise', 'Lucky6 6 numéros');
-    const p48 = Array.from({length:48},(_,i)=>i+1);
-    for (let i=p48.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1));[p48[i],p48[j]]=[p48[j],p48[i]]; }
-    const winningNumbers = p48.slice(0,35);
-    let hits=0, lastPos=-1;
-    for (let i=0;i<winningNumbers.length;i++) {
-      if (numbers.includes(winningNumbers[i])) { hits++; lastPos=i; }
-      if (hits===6) break;
-    }
-    const gain = hits===6 ? Math.round(mise*Math.max(2,36-lastPos)) : 0;
-    if (gain>0) await creditGain(client, phone, dirCode, gain, `Gain Lucky6 pos.${lastPos+1}`);
-    await client.query("INSERT INTO bets (player_phone,dir_code,game_type,mise,gain_potentiel,numeros_joues,numeros_tires,statut) VALUES ($1,$2,'lucky6',$3,$4,$5,$6,$7)",
-      [phone,dirCode,mise,gain,JSON.stringify(numbers),JSON.stringify(winningNumbers),hits===6?'gagne':'perdu']);
-    await client.query('COMMIT');
-    const newBalance = parseFloat((await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde);
-    res.json({ winningNumbers, hits, gain, newBalance, message: hits===6?`🎉 Tous trouvés ! Gain: ${gain} Gd`:`😔 ${hits}/6 trouvés — Perdu` });
-  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
-});
-
-// COURSE AUTO
-app.post('/api/games/course/play', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    if (req.session.role!=='joueur') return res.status(403).json({ error: 'Joueurs seulement' });
-    const { carId, mise } = req.body;
-    if (!carId||!mise||mise<=0) return res.status(400).json({ error: 'Données invalides' });
-    const phone = req.session.user_phone;
-    await client.query('BEGIN');
-    const dirCode = await deductMise(client, phone, mise, 'mise', `Course voiture #${carId}`);
-    const cars = [1,2,3,4,5,6];
-    for (let i=cars.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1));[cars[i],cars[j]]=[cars[j],cars[i]]; }
-    const ranking = cars.map((id,pos)=>({id,position:pos+1}));
-    const gagne = ranking[0].id === parseInt(carId);
-    const gain = gagne ? Math.round(mise*3.5) : 0;
-    if (gain>0) await creditGain(client, phone, dirCode, gain, `Gain Course voiture #${carId}`);
-    await client.query("INSERT INTO bets (player_phone,dir_code,game_type,mise,gain_potentiel,numeros_joues,numeros_tires,statut) VALUES ($1,$2,'course',$3,$4,$5,$6,$7)",
-      [phone,dirCode,mise,gain,JSON.stringify([carId]),JSON.stringify(ranking.map(r=>r.id)),gagne?'gagne':'perdu']);
-    await client.query('COMMIT');
-    const newBalance = parseFloat((await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde);
-    const pos = ranking.findIndex(r=>r.id===parseInt(carId))+1;
-    res.json({ ranking, gagne, gain, newBalance, message: gagne?`🏆 Voiture #${carId} gagne ! +${gain} Gd`:`😔 Voiture #${carId} — ${pos}ème` });
-  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
-});
-
-// PENALTY
-app.post('/api/games/penalty/play', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    if (req.session.role!=='joueur') return res.status(403).json({ error: 'Joueurs seulement' });
-    const { direction, mise } = req.body;
-    if (!direction||!mise||mise<=0) return res.status(400).json({ error: 'Données invalides' });
-    const phone = req.session.user_phone;
-    await client.query('BEGIN');
-    const dirCode = await deductMise(client, phone, mise, 'mise', `Penalty ${direction}`);
-    const dirs = ['gauche','centre','droite'];
-    const goalieDir = dirs[Math.floor(Math.random()*3)];
-    const gagne = direction !== goalieDir;
-    const gain = gagne ? Math.round(mise*1.9) : 0;
-    if (gain>0) await creditGain(client, phone, dirCode, gain, `Gain Penalty BUT ${direction}`);
-    await client.query("INSERT INTO bets (player_phone,dir_code,game_type,mise,gain_potentiel,numeros_joues,numeros_tires,statut) VALUES ($1,$2,'penalty',$3,$4,$5,$6,$7)",
-      [phone,dirCode,mise,gain,JSON.stringify([direction]),JSON.stringify([goalieDir]),gagne?'gagne':'perdu']);
-    await client.query('COMMIT');
-    const newBalance = parseFloat((await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde);
-    res.json({ goalieDir, gagne, gain, newBalance, message: gagne?`⚽ BUT ! +${gain} Gd`:`🧤 Arrêté ! Gardien → ${goalieDir}` });
-  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
-});
-
-// ROULETTE
-app.post('/api/games/roulette/play', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    if (req.session.role!=='joueur') return res.status(403).json({ error: 'Joueurs seulement' });
-    const { betType, betValue, mise } = req.body;
-    if (!betType||betValue===undefined||!mise||mise<=0) return res.status(400).json({ error: 'Données invalides' });
-    const phone = req.session.user_phone;
-    await client.query('BEGIN');
-    const dirCode = await deductMise(client, phone, mise, 'mise', `Roulette ${betType}:${betValue}`);
-    const result = Math.floor(Math.random()*37);
-    const reds = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
-    const color = result===0?'vert':reds.includes(result)?'rouge':'noir';
-    const parity = result===0?'zero':result%2===0?'pair':'impair';
-    const dozen = result===0?0:result<=12?1:result<=24?2:3;
-    const column = result===0?0:(result%3===0?3:result%3);
-    let mult=0;
-    if (betType==='number'&&parseInt(betValue)===result) mult=36;
-    else if (betType==='color'&&betValue===color) mult=2;
-    else if (betType==='parity'&&betValue===parity) mult=2;
-    else if (betType==='dozen'&&parseInt(betValue)===dozen) mult=3;
-    else if (betType==='column'&&parseInt(betValue)===column) mult=3;
-    const gain = mult>0 ? Math.round(mise*mult) : 0;
-    if (gain>0) await creditGain(client, phone, dirCode, gain, `Gain Roulette ${result}(${color}) ×${mult}`);
-    await client.query("INSERT INTO bets (player_phone,dir_code,game_type,mise,gain_potentiel,numeros_joues,numeros_tires,statut) VALUES ($1,$2,'roulette',$3,$4,$5,$6,$7)",
-      [phone,dirCode,mise,gain,JSON.stringify([betValue]),JSON.stringify([result]),gain>0?'gagne':'perdu']);
-    await client.query('COMMIT');
-    const newBalance = parseFloat((await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde);
-    res.json({ result, color, parity, dozen, column, gain, newBalance, message: gain>0?`🎉 ${result} (${color}) — +${gain} Gd`:`😔 ${result} (${color}) — Perdu` });
-  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
-});
-
-// PARIS SPORTIFS
-app.post('/api/sports/bet', requireAuth, async (req, res) => {
-  const client = await pool.connect();
-  try {
-    if (req.session.role!=='joueur') return res.status(403).json({ error: 'Joueurs seulement' });
-    const { matchId, homeTeam, awayTeam, competition, prediction, cote, mise } = req.body;
-    if (!matchId||!prediction||!mise||mise<=0||!cote) return res.status(400).json({ error: 'Données invalides' });
-    const phone = req.session.user_phone;
-    await client.query('BEGIN');
-    const dirCode = await deductMise(client, phone, mise, 'mise', `Sport: ${homeTeam} vs ${awayTeam} → ${prediction}`);
-    const gainPotentiel = Math.round(mise*parseFloat(cote)*100)/100;
-    await client.query("INSERT INTO bets (player_phone,dir_code,game_type,mise,gain_potentiel,numeros_joues,statut,match_id,match_info) VALUES ($1,$2,'sport',$3,$4,$5,'en_attente',$6,$7)",
-      [phone,dirCode,mise,gainPotentiel,JSON.stringify([prediction]),matchId,JSON.stringify({homeTeam,awayTeam,competition,prediction,cote})]);
-    await client.query('COMMIT');
-    const newBalance = parseFloat((await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde);
-    res.json({ success:true, gainPotentiel, newBalance, message:`Paris enregistré — Gain potentiel: ${gainPotentiel} Gd` });
-  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
-});
-
+// ── RÉSOLUTION AUTOMATIQUE DES PARIS SPORTIFS ─────────────
 app.post('/api/bets/:id/resolve', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
     if (!['admin','directeur'].includes(req.session.role)) return res.status(403).json({ error: 'Non autorisé' });
-    const { statut } = req.body;
+    const { statut } = req.body; // 'gagne' ou 'perdu'
     if (!['gagne','perdu'].includes(statut)) return res.status(400).json({ error: 'Statut invalide' });
     await client.query('BEGIN');
     const br = await client.query("SELECT * FROM bets WHERE id=$1 AND statut='en_attente' FOR UPDATE", [req.params.id]);
-    if (!br.rows.length) throw new Error('Pari introuvable');
+    if (!br.rows.length) throw new Error('Pari introuvable ou déjà résolu');
     const bet = br.rows[0];
-    await client.query("UPDATE bets SET statut=$1,resolved_at=NOW() WHERE id=$2", [statut, bet.id]);
-    if (statut==='gagne') {
+    await client.query("UPDATE bets SET statut=$1, resolved_at=NOW() WHERE id=$2", [statut, bet.id]);
+    if (statut === 'gagne') {
       const gain = parseFloat(bet.gain_potentiel)||0;
-      if (gain>0) {
+      if (gain > 0) {
         await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [gain, bet.player_phone]);
-        await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'gain',$3,'Gain pari sportif')", [bet.player_phone, bet.dir_code, gain]);
+        await client.query("INSERT INTO transactions (player_phone, dir_code, type, montant, note) VALUES ($1,$2,'gain',$3,$4)", [bet.player_phone, bet.dir_code, gain, `Gain pari sportif résolu`]);
       }
     }
     await client.query('COMMIT');
-    res.json({ success:true });
+    res.json({ success: true });
   } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
 });
 
-// ── ADMIN ─────────────────────────────────────────────────
-app.get('/api/admin/stats', requireAdmin, async (req, res) => {
-  try {
-    const [players, bets, retraits] = await Promise.all([
-      pool.query("SELECT COUNT(*) as total, COALESCE(SUM(solde),0) as solde_total FROM players WHERE role='joueur'"),
-      pool.query("SELECT COUNT(*) as total, COALESCE(SUM(mise),0) as total_mise FROM bets WHERE created_at>NOW()-INTERVAL '24 hours'"),
-      pool.query("SELECT COUNT(*) as total FROM retraits WHERE statut='pending'"),
-    ]);
-    res.json({
-      players: { total:parseInt(players.rows[0].total), solde_total:parseFloat(players.rows[0].solde_total) },
-      bets_24h: { total:parseInt(bets.rows[0].total), total_mise:parseFloat(bets.rows[0].total_mise) },
-      retraits_pending: parseInt(retraits.rows[0].total),
-    });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+// ── JOUEUR: SOLDE ET PROFIL ────────────────────────────────
+app.get('/api/player/solde', requireAuth, async (req, res) => {
+  if (req.session.role !== 'joueur') return res.status(403).json({ error: 'Joueurs seulement' });
+  const r = await pool.query("SELECT solde FROM players WHERE phone=$1", [req.session.user_phone]);
+  res.json({ solde: parseFloat(r.rows[0]?.solde||0) });
 });
 
+// ── ADMIN: RETRAITS ────────────────────────────────────────
+app.get('/api/admin/retraits', requireAdmin, async (req, res) => {
+  const r = await pool.query("SELECT rt.*, p.name AS player_name FROM retraits rt LEFT JOIN players p ON rt.player_phone=p.phone ORDER BY rt.created_at DESC LIMIT 200");
+  res.json({ retraits: r.rows });
+});
+
+// ── ADMIN: CRÉDITER SOLDE JOUEUR ──────────────────────────
 app.post('/api/admin/players/:phone/credit', requireAdmin, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -1494,58 +1372,457 @@ app.post('/api/admin/players/:phone/credit', requireAdmin, async (req, res) => {
     const pr = await client.query("SELECT dir_code FROM players WHERE phone=$1 FOR UPDATE", [phone]);
     if (!pr.rows.length) throw new Error('Joueur introuvable');
     await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [montant, phone]);
-    await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'credit_admin',$3,$4)",
-      [phone, pr.rows[0].dir_code, montant, note||'Crédit administrateur']);
+    await client.query("INSERT INTO transactions (player_phone, dir_code, type, montant, note) VALUES ($1,$2,'credit_admin',$3,$4)", [phone, pr.rows[0].dir_code, montant, note||'Crédit administrateur']);
     await client.query('COMMIT');
-    const newSolde = (await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde;
-    res.json({ success:true, newSolde:parseFloat(newSolde) });
+    const ns = (await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde;
+    res.json({ success: true, newSolde: ns });
   } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
 });
 
-// ── TABLES AUTO-CREATE SUPPLÉMENTAIRES ────────────────────
+// ============================================================
+// ── ROUTES JEUX CASINO ──────────────────────────────────────
+// ============================================================
+
+// Helper: déduire mise + insérer transaction + MAJ solde
+async function deductAndRecord(client, phone, mise, gameType, detail) {
+  const pr = await client.query("SELECT solde, dir_code FROM players WHERE phone=$1 FOR UPDATE", [phone]);
+  if (!pr.rows.length) throw new Error('Joueur introuvable');
+  const solde = parseFloat(pr.rows[0].solde);
+  if (solde < mise) throw new Error('Solde insuffisant');
+  await client.query("UPDATE players SET solde=solde-$1 WHERE phone=$2", [mise, phone]);
+  await client.query("INSERT INTO transactions (player_phone, dir_code, type, montant, note) VALUES ($1,$2,$3,$4,$5)",
+    [phone, pr.rows[0].dir_code, 'mise', -mise, `${gameType}: ${detail}`]);
+  return { dirCode: pr.rows[0].dir_code, soldeBefore: solde };
+}
+
+// Helper: créditer gain
+async function creditGain(client, phone, dirCode, gain, gameType, detail) {
+  if (gain <= 0) return;
+  await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [gain, phone]);
+  await client.query("INSERT INTO transactions (player_phone, dir_code, type, montant, note) VALUES ($1,$2,'gain',$3,$4)",
+    [phone, dirCode, gain, `Gain ${gameType}: ${detail}`]);
+}
+
+// ── KENO ──────────────────────────────────────────────────
+app.post('/api/games/keno/play', requireAuth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    if (req.session.role !== 'joueur') return res.status(403).json({ error: 'Joueurs seulement' });
+    const phone = req.session.user_phone;
+    const { numbers, mise } = req.body;
+    if (!numbers || !numbers.length || !mise || mise <= 0) return res.status(400).json({ error: 'Données invalides' });
+    if (numbers.length < 1 || numbers.length > 10) return res.status(400).json({ error: '1 à 10 numéros' });
+
+    await client.query('BEGIN');
+    const { dirCode } = await deductAndRecord(client, phone, mise, 'Keno', `${numbers.length} numéros`);
+
+    // Tirage de 20 numéros parmi 80
+    const pool80 = Array.from({length:80},(_,i)=>i+1);
+    for (let i = pool80.length-1; i > 0; i--) {
+      const j = Math.floor(Math.random()*(i+1)); [pool80[i],pool80[j]]=[pool80[j],pool80[i]];
+    }
+    const winningNumbers = pool80.slice(0,20);
+    const hits = numbers.filter(n => winningNumbers.includes(n)).length;
+
+    // Table de gains Keno standard
+    const kenoPayouts = {1:{1:3},2:{1:1,2:9},3:{2:2,3:16},4:{2:2,3:6,4:40},
+      5:{3:4,4:12,5:75},6:{3:3,4:8,5:25,6:150},7:{4:6,5:15,6:50,7:300},
+      8:{4:5,5:10,6:30,7:100,8:700},9:{4:4,5:6,6:20,7:60,8:250,9:2000},
+      10:{5:5,6:15,7:40,8:150,9:500,10:5000}};
+    const multTable = kenoPayouts[numbers.length] || {};
+    const mult = multTable[hits] || 0;
+    const gain = mise * mult;
+
+    if (gain > 0) await creditGain(client, phone, dirCode, gain, 'Keno', `${hits}/${numbers.length} hits`);
+
+    // Enregistrer le jeu
+    await client.query("INSERT INTO bets (player_phone, dir_code, game_type, mise, gain_potentiel, numeros_joues, numeros_tires, statut) VALUES ($1,$2,'keno',$3,$4,$5,$6,$7)",
+      [phone, dirCode, mise, gain, JSON.stringify(numbers), JSON.stringify(winningNumbers), gain>0?'gagne':'perdu']);
+
+    await client.query('COMMIT');
+    const newBalance = parseFloat((await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde);
+    const message = gain > 0 ? `🎉 ${hits}/${numbers.length} hits — Gain: ${gain} Gd` : `😔 ${hits}/${numbers.length} hits — Perdu`;
+    res.json({ winningNumbers, hits, gain, newBalance, message });
+  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
+});
+
+// ── LUCKY 6 ───────────────────────────────────────────────
+app.post('/api/games/lucky6/play', requireAuth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    if (req.session.role !== 'joueur') return res.status(403).json({ error: 'Joueurs seulement' });
+    const phone = req.session.user_phone;
+    const { numbers, mise } = req.body;
+    if (!numbers || numbers.length !== 6 || !mise || mise <= 0) return res.status(400).json({ error: '6 numéros requis' });
+
+    await client.query('BEGIN');
+    const { dirCode } = await deductAndRecord(client, phone, mise, 'Lucky6', '6 numéros');
+
+    // Tirage parmi 48 numéros
+    const pool48 = Array.from({length:48},(_,i)=>i+1);
+    for (let i = pool48.length-1; i > 0; i--) {
+      const j = Math.floor(Math.random()*(i+1)); [pool48[i],pool48[j]]=[pool48[j],pool48[i]];
+    }
+    const winningNumbers = pool48.slice(0,35); // on tire 35 boules
+    let hits = 0, lastHitPos = -1;
+    for (let i = 0; i < winningNumbers.length; i++) {
+      if (numbers.includes(winningNumbers[i])) { hits++; lastHitPos = i; }
+      if (hits === 6) break;
+    }
+    // Gain: trouver les 6 = gain basé sur position du dernier tiré
+    const gain = hits === 6 ? Math.round(mise * Math.max(2, 36 - lastHitPos)) : 0;
+
+    if (gain > 0) await creditGain(client, phone, dirCode, gain, 'Lucky6', `6/6 pos.${lastHitPos+1}`);
+
+    await client.query("INSERT INTO bets (player_phone, dir_code, game_type, mise, gain_potentiel, numeros_joues, numeros_tires, statut) VALUES ($1,$2,'lucky6',$3,$4,$5,$6,$7)",
+      [phone, dirCode, mise, gain, JSON.stringify(numbers), JSON.stringify(winningNumbers), hits===6?'gagne':'perdu']);
+
+    await client.query('COMMIT');
+    const newBalance = parseFloat((await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde);
+    const message = hits===6 ? `🎉 Tous trouvés ! Gain: ${gain} Gd` : `😔 ${hits}/6 trouvés — Perdu`;
+    res.json({ winningNumbers, hits, gain, newBalance, message });
+  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
+});
+
+// ── COURSE AUTOMOBILE ─────────────────────────────────────
+app.post('/api/games/course/play', requireAuth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    if (req.session.role !== 'joueur') return res.status(403).json({ error: 'Joueurs seulement' });
+    const phone = req.session.user_phone;
+    const { carId, mise } = req.body;
+    if (!carId || !mise || mise <= 0) return res.status(400).json({ error: 'Données invalides' });
+
+    await client.query('BEGIN');
+    const { dirCode } = await deductAndRecord(client, phone, mise, 'Course Auto', `Voiture #${carId}`);
+
+    // Classement aléatoire des 6 voitures
+    const cars = [1,2,3,4,5,6];
+    for (let i = cars.length-1; i > 0; i--) {
+      const j = Math.floor(Math.random()*(i+1)); [cars[i],cars[j]]=[cars[j],cars[i]];
+    }
+    const ranking = cars.map((id,pos) => ({ id, position: pos+1 }));
+    const winnerPosition = ranking.findIndex(r => r.id === parseInt(carId)) + 1;
+    const gagne = winnerPosition === 1;
+    // Cotes selon position gagnante
+    const cotes = {1: 3.5, 2: 2.0, 3: 1.5};
+    const gain = gagne ? Math.round(mise * (cotes[1] || 3.5)) : 0;
+
+    if (gain > 0) await creditGain(client, phone, dirCode, gain, 'Course', `Voiture #${carId} 1ère place`);
+
+    await client.query("INSERT INTO bets (player_phone, dir_code, game_type, mise, gain_potentiel, numeros_joues, numeros_tires, statut) VALUES ($1,$2,'course',$3,$4,$5,$6,$7)",
+      [phone, dirCode, mise, gain, JSON.stringify([carId]), JSON.stringify(ranking.map(r=>r.id)), gagne?'gagne':'perdu']);
+
+    await client.query('COMMIT');
+    const newBalance = parseFloat((await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde);
+    res.json({ ranking, winnerPosition, gain, newBalance, gagne,
+      message: gagne ? `🏆 Voiture #${carId} gagne ! +${gain} Gd` : `😔 Voiture #${carId} — ${winnerPosition}ème place` });
+  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
+});
+
+// ── HÉLICOPTÈRE ───────────────────────────────────────────
+app.post('/api/games/helico/play', requireAuth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    if (req.session.role !== 'joueur') return res.status(403).json({ error: 'Joueurs seulement' });
+    const phone = req.session.user_phone;
+    const { choice, mise } = req.body; // choice: numéro 1-6
+    if (!choice || !mise || mise <= 0) return res.status(400).json({ error: 'Données invalides' });
+
+    await client.query('BEGIN');
+    const { dirCode } = await deductAndRecord(client, phone, mise, 'Hélicoptère', `Choix #${choice}`);
+
+    const result = Math.floor(Math.random()*6) + 1;
+    const gagne = parseInt(choice) === result;
+    const gain = gagne ? mise * 5 : 0;
+
+    if (gain > 0) await creditGain(client, phone, dirCode, gain, 'Hélicoptère', `#${choice} correct`);
+
+    await client.query("INSERT INTO bets (player_phone, dir_code, game_type, mise, gain_potentiel, numeros_joues, numeros_tires, statut) VALUES ($1,$2,'helico',$3,$4,$5,$6,$7)",
+      [phone, dirCode, mise, gain, JSON.stringify([choice]), JSON.stringify([result]), gagne?'gagne':'perdu']);
+
+    await client.query('COMMIT');
+    const newBalance = parseFloat((await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde);
+    res.json({ result, gagne, gain, newBalance,
+      message: gagne ? `🚁 Correct ! +${gain} Gd` : `😔 Résultat: #${result} — Perdu` });
+  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
+});
+
+// ── PENALTY ───────────────────────────────────────────────
+app.post('/api/games/penalty/play', requireAuth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    if (req.session.role !== 'joueur') return res.status(403).json({ error: 'Joueurs seulement' });
+    const phone = req.session.user_phone;
+    const { direction, mise } = req.body; // direction: 'gauche','centre','droite'
+    if (!direction || !mise || mise <= 0) return res.status(400).json({ error: 'Données invalides' });
+
+    await client.query('BEGIN');
+    const { dirCode } = await deductAndRecord(client, phone, mise, 'Penalty', direction);
+
+    const dirs = ['gauche','centre','droite'];
+    const goalieDir = dirs[Math.floor(Math.random()*3)];
+    const gagne = direction !== goalieDir; // marqué si gardien plonge ailleurs
+    const gain = gagne ? Math.round(mise * 1.9) : 0;
+
+    if (gain > 0) await creditGain(client, phone, dirCode, gain, 'Penalty', `But! ${direction} vs ${goalieDir}`);
+
+    await client.query("INSERT INTO bets (player_phone, dir_code, game_type, mise, gain_potentiel, numeros_joues, numeros_tires, statut) VALUES ($1,$2,'penalty',$3,$4,$5,$6,$7)",
+      [phone, dirCode, mise, gain, JSON.stringify([direction]), JSON.stringify([goalieDir]), gagne?'gagne':'perdu']);
+
+    await client.query('COMMIT');
+    const newBalance = parseFloat((await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde);
+    res.json({ goalieDir, gagne, gain, newBalance,
+      message: gagne ? `⚽ BUT ! +${gain} Gd` : `🧤 Arrêté par le gardien (${goalieDir})` });
+  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
+});
+
+// ── ROULETTE ──────────────────────────────────────────────
+app.post('/api/games/roulette/play', requireAuth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    if (req.session.role !== 'joueur') return res.status(403).json({ error: 'Joueurs seulement' });
+    const phone = req.session.user_phone;
+    const { betType, betValue, mise } = req.body;
+    // betType: 'number','color','parity','dozen','column'
+    if (!betType || betValue === undefined || !mise || mise <= 0) return res.status(400).json({ error: 'Données invalides' });
+
+    await client.query('BEGIN');
+    const { dirCode } = await deductAndRecord(client, phone, mise, 'Roulette', `${betType}:${betValue}`);
+
+    const result = Math.floor(Math.random()*37); // 0-36
+    const reds = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+    const color = result===0?'vert':reds.includes(result)?'rouge':'noir';
+    const parity = result===0?'zero':result%2===0?'pair':'impair';
+    const dozen = result===0?0:result<=12?1:result<=24?2:3;
+    const column = result===0?0:(result%3===0?3:result%3);
+
+    let mult = 0;
+    if (betType==='number' && parseInt(betValue)===result) mult = 36;
+    else if (betType==='color' && betValue===color) mult = 2;
+    else if (betType==='parity' && betValue===parity) mult = 2;
+    else if (betType==='dozen' && parseInt(betValue)===dozen) mult = 3;
+    else if (betType==='column' && parseInt(betValue)===column) mult = 3;
+
+    const gain = mult > 0 ? Math.round(mise * mult) : 0;
+    if (gain > 0) await creditGain(client, phone, dirCode, gain, 'Roulette', `${result}(${color}) mult×${mult}`);
+
+    await client.query("INSERT INTO bets (player_phone, dir_code, game_type, mise, gain_potentiel, numeros_joues, numeros_tires, statut) VALUES ($1,$2,'roulette',$3,$4,$5,$6,$7)",
+      [phone, dirCode, mise, gain, JSON.stringify([betValue]), JSON.stringify([result]), gain>0?'gagne':'perdu']);
+
+    await client.query('COMMIT');
+    const newBalance = parseFloat((await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde);
+    res.json({ result, color, parity, dozen, column, gain, newBalance,
+      message: gain>0 ? `🎉 ${result} (${color}) — Gain: ${gain} Gd` : `😔 ${result} (${color}) — Perdu` });
+  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
+});
+
+// ── BORLETTE: PLACER UN TICKET ────────────────────────────
+app.post('/api/borlette/bet', requireAuth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const phone = req.session.user_phone || req.session.user_code;
+    const { numeros, types, montants, draw } = req.body;
+    // numeros: ['12','34',...], types: ['bolet','mariage',...], montants: [50,100,...]
+    if (!numeros || !numeros.length) return res.status(400).json({ error: 'Numéros requis' });
+
+    await client.query('BEGIN');
+    const pr = await client.query("SELECT solde, dir_code FROM players WHERE phone=$1 FOR UPDATE", [phone]);
+    if (!pr.rows.length) throw new Error('Joueur introuvable');
+    const totalMise = montants.reduce((a,b)=>a+parseFloat(b),0);
+    if (parseFloat(pr.rows[0].solde) < totalMise) throw new Error('Solde insuffisant');
+
+    // Vérifier les numéros bloqués
+    for (const num of numeros) {
+      const bl = await client.query("SELECT id FROM borlette_blocked WHERE number=$1 AND (draw='' OR draw=$2)", [num.padStart(2,'0'), draw||'']);
+      if (bl.rows.length) throw new Error(`Numéro ${num} bloqué pour ce tirage`);
+    }
+    // Vérifier les limites
+    for (let i=0; i<numeros.length; i++) {
+      const lim = await client.query("SELECT max_amount FROM borlette_limits WHERE number=$1 AND (draw='' OR draw=$2)", [numeros[i].padStart(2,'0'), draw||'']);
+      if (lim.rows.length) {
+        const totalSurNum = await client.query("SELECT COALESCE(SUM(b.montant),0) as tot FROM borlette_bets b WHERE b.numero=$1 AND b.draw=$2 AND b.statut!='annule'", [numeros[i].padStart(2,'0'), draw||'']);
+        if (parseFloat(totalSurNum.rows[0].tot) + parseFloat(montants[i]) > parseFloat(lim.rows[0].max_amount))
+          throw new Error(`Limite atteinte pour le numéro ${numeros[i]}`);
+      }
+    }
+
+    await client.query("UPDATE players SET solde=solde-$1 WHERE phone=$2", [totalMise, phone]);
+    await client.query("INSERT INTO transactions (player_phone, dir_code, type, montant, note) VALUES ($1,$2,'mise',$3,$4)",
+      [phone, pr.rows[0].dir_code, -totalMise, `Borlette ${draw||''}: ${numeros.join(',')}`]);
+
+    const ticketRef = 'BOR'+Date.now().toString(36).toUpperCase();
+    const ticketId = (await client.query("INSERT INTO borlette_tickets (player_phone, dir_code, draw, ticket_ref, total_mise, statut) VALUES ($1,$2,$3,$4,$5,'actif') RETURNING id",
+      [phone, pr.rows[0].dir_code, draw||'', ticketRef, totalMise])).rows[0].id;
+
+    for (let i=0; i<numeros.length; i++) {
+      await client.query("INSERT INTO borlette_bets (ticket_id, player_phone, dir_code, numero, type_jeu, montant, draw) VALUES ($1,$2,$3,$4,$5,$6,$7)",
+        [ticketId, phone, pr.rows[0].dir_code, numeros[i].padStart(2,'0'), types[i]||'bolet', montants[i], draw||'']);
+    }
+
+    await client.query('COMMIT');
+    const newBalance = parseFloat((await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde);
+    res.json({ success: true, ticketRef, ticketId, newBalance });
+  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
+});
+
+// ── BORLETTE: RÉSOUDRE UN TIRAGE ─────────────────────────
+app.post('/api/borlette/resolve', requireAuth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    if (!['admin','directeur','caissier'].includes(req.session.role)) return res.status(403).json({ error: 'Non autorisé' });
+    const { draw, lot1, lot2, lot3 } = req.body;
+    if (!draw || !lot1) return res.status(400).json({ error: 'Tirage et lot1 requis' });
+
+    await client.query('BEGIN');
+    // Sauvegarder résultat
+    await client.query("INSERT INTO borlette_results (draw, lot1, lot2, lot3, resolved_by) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (draw) DO UPDATE SET lot1=$2,lot2=$3,lot3=$4,resolved_by=$5,updated_at=NOW()",
+      [draw, lot1.padStart(2,'0'), lot2?lot2.padStart(2,'0'):'', lot3?lot3.padStart(2,'0'):'', req.session.user_phone||req.session.user_code]);
+
+    // Multipliateurs standard borlette haïtienne
+    const MULTS = { bolet_lot1:50, bolet_lot2:25, bolet_lot3:10, mariage_lot1_lot2:375, mariage_lot1_lot3:250, mariage_lot2_lot3:150, loto3chif:500 };
+
+    // Récupérer tous les paris non résolus pour ce tirage
+    const bets = await client.query("SELECT bb.*, bt.player_phone, p.dir_code FROM borlette_bets bb JOIN borlette_tickets bt ON bb.ticket_id=bt.id JOIN players p ON bt.player_phone=p.phone WHERE bb.draw=$1 AND bb.statut='actif'", [draw]);
+
+    let totalPaid = 0;
+    for (const bet of bets.rows) {
+      let gain = 0;
+      const n = bet.numero;
+      if (bet.type_jeu === 'bolet') {
+        if (n === lot1) gain = parseFloat(bet.montant) * MULTS.bolet_lot1;
+        else if (n === lot2) gain = parseFloat(bet.montant) * MULTS.bolet_lot2;
+        else if (n === lot3) gain = parseFloat(bet.montant) * MULTS.bolet_lot3;
+      } else if (bet.type_jeu === 'mariage') {
+        // mariage = 2 numéros dans même ticket (traité par ticket)
+      }
+      if (gain > 0) {
+        await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [gain, bet.player_phone]);
+        await client.query("INSERT INTO transactions (player_phone, dir_code, type, montant, note) VALUES ($1,$2,'gain_borlette',$3,$4)",
+          [bet.player_phone, bet.dir_code, gain, `Gain borlette ${draw}: #${n}`]);
+        totalPaid += gain;
+      }
+      await client.query("UPDATE borlette_bets SET statut=$1, gain=$2 WHERE id=$3", [gain>0?'gagne':'perdu', gain, bet.id]);
+    }
+    // Clôturer les tickets
+    await client.query("UPDATE borlette_tickets SET statut='clos' WHERE draw=$1", [draw]);
+    await client.query('COMMIT');
+    res.json({ success: true, draw, lot1, lot2, lot3, totalPaid, betsResolved: bets.rows.length });
+  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
+});
+
+// ── PARIS SPORTIFS: PLACER UN PARI ────────────────────────
+app.post('/api/sports/bet', requireAuth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    if (req.session.role !== 'joueur') return res.status(403).json({ error: 'Joueurs seulement' });
+    const phone = req.session.user_phone;
+    const { matchId, homeTeam, awayTeam, competition, prediction, cote, mise } = req.body;
+    if (!matchId || !prediction || !mise || mise <= 0 || !cote) return res.status(400).json({ error: 'Données invalides' });
+
+    await client.query('BEGIN');
+    const { dirCode } = await deductAndRecord(client, phone, mise, 'Sport', `${homeTeam} vs ${awayTeam} → ${prediction}`);
+
+    const gainPotentiel = Math.round(mise * parseFloat(cote) * 100) / 100;
+    await client.query("INSERT INTO bets (player_phone, dir_code, game_type, mise, gain_potentiel, numeros_joues, statut, match_id, match_info) VALUES ($1,$2,'sport',$3,$4,$5,'en_attente',$6,$7)",
+      [phone, dirCode, mise, gainPotentiel, JSON.stringify([prediction]), matchId, JSON.stringify({homeTeam, awayTeam, competition, prediction, cote})]);
+
+    await client.query('COMMIT');
+    const newBalance = parseFloat((await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde);
+    res.json({ success: true, gainPotentiel, newBalance, message: `Paris enregistré — Gain potentiel: ${gainPotentiel} Gd` });
+  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
+});
+
+// ── JACKPOT: ÉTAT ET MISE À JOUR ──────────────────────────
+app.get('/api/jackpot', async (req, res) => {
+  try {
+    const r = await pool.query("SELECT * FROM jackpot ORDER BY id DESC LIMIT 1");
+    res.json({ jackpot: r.rows[0] || { montant: 0, last_winner: null } });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── STATS ADMIN ───────────────────────────────────────────
+app.get('/api/admin/stats', requireAdmin, async (req, res) => {
+  try {
+    const [players, bets, gains, retraits, pending] = await Promise.all([
+      pool.query("SELECT COUNT(*) as total, COALESCE(SUM(solde),0) as solde_total FROM players WHERE role='joueur'"),
+      pool.query("SELECT COUNT(*) as total, COALESCE(SUM(mise),0) as total_mise FROM bets WHERE created_at > NOW()-INTERVAL '24 hours'"),
+      pool.query("SELECT COALESCE(SUM(gain_potentiel),0) as total_gains FROM bets WHERE statut='gagne' AND created_at > NOW()-INTERVAL '24 hours'"),
+      pool.query("SELECT COUNT(*) as total, COALESCE(SUM(montant),0) as total_montant FROM retraits WHERE statut='approved' AND created_at > NOW()-INTERVAL '24 hours'"),
+      pool.query("SELECT COUNT(*) as total FROM retraits WHERE statut='pending'"),
+    ]);
+    res.json({
+      players: { total: parseInt(players.rows[0].total), solde_total: parseFloat(players.rows[0].solde_total) },
+      bets_24h: { total: parseInt(bets.rows[0].total), total_mise: parseFloat(bets.rows[0].total_mise) },
+      gains_24h: parseFloat(gains.rows[0].total_gains),
+      retraits_24h: { total: parseInt(retraits.rows[0].total), total_montant: parseFloat(retraits.rows[0].total_montant) },
+      retraits_pending: parseInt(pending.rows[0].total),
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── TABLES MANQUANTES (auto-create) ───────────────────────
 (async () => {
   try {
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS borlette_results (
-        id SERIAL PRIMARY KEY, draw TEXT NOT NULL, lotto3 TEXT,
-        lot1 TEXT NOT NULL, lot2 TEXT DEFAULT '', lot3 TEXT DEFAULT '',
-        resolved_by TEXT, updated_at TIMESTAMP, created_at TIMESTAMP DEFAULT NOW()
-      );
-      CREATE TABLE IF NOT EXISTS borlette_tickets (
-        id SERIAL PRIMARY KEY, player_phone TEXT, dir_code TEXT, draw TEXT,
-        ticket_ref TEXT UNIQUE, total_mise REAL, statut TEXT DEFAULT 'actif',
+      CREATE TABLE IF NOT EXISTS borlette_bets (
+        id SERIAL PRIMARY KEY,
+        ticket_id INTEGER REFERENCES borlette_tickets(id) ON DELETE CASCADE,
+        player_phone TEXT,
+        dir_code TEXT,
+        numero TEXT NOT NULL,
+        type_jeu TEXT DEFAULT 'bolet',
+        montant REAL NOT NULL,
+        gain REAL DEFAULT 0,
+        draw TEXT DEFAULT '',
+        statut TEXT DEFAULT 'actif',
         created_at TIMESTAMP DEFAULT NOW()
       );
-      CREATE TABLE IF NOT EXISTS borlette_bets (
-        id SERIAL PRIMARY KEY, ticket_id INTEGER, player_phone TEXT, dir_code TEXT,
-        numero TEXT NOT NULL, type_jeu TEXT DEFAULT 'bolet', montant REAL NOT NULL,
-        gain REAL DEFAULT 0, draw TEXT DEFAULT '', statut TEXT DEFAULT 'actif',
+      CREATE TABLE IF NOT EXISTS borlette_tickets (
+        id SERIAL PRIMARY KEY,
+        player_phone TEXT,
+        dir_code TEXT,
+        draw TEXT,
+        ticket_ref TEXT UNIQUE,
+        total_mise REAL,
+        total_gain REAL DEFAULT 0,
+        statut TEXT DEFAULT 'actif',
         created_at TIMESTAMP DEFAULT NOW()
       );
       CREATE TABLE IF NOT EXISTS borlette_blocked (
-        id SERIAL PRIMARY KEY, number TEXT NOT NULL, draw TEXT DEFAULT '',
-        created_at TIMESTAMP DEFAULT NOW(), UNIQUE(number,draw)
+        id SERIAL PRIMARY KEY,
+        number TEXT NOT NULL,
+        draw TEXT DEFAULT '',
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(number, draw)
       );
       CREATE TABLE IF NOT EXISTS borlette_limits (
-        id SERIAL PRIMARY KEY, number TEXT NOT NULL, draw TEXT DEFAULT '',
-        max_amount REAL NOT NULL, updated_at TIMESTAMP DEFAULT NOW(), UNIQUE(number,draw)
+        id SERIAL PRIMARY KEY,
+        number TEXT NOT NULL,
+        draw TEXT DEFAULT '',
+        max_amount REAL NOT NULL,
+        updated_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(number, draw)
       );
-      CREATE TABLE IF NOT EXISTS retraits (
-        id SERIAL PRIMARY KEY, player_phone TEXT, dir_code TEXT,
-        montant REAL NOT NULL, methode TEXT NOT NULL, numero_mobile TEXT,
-        statut TEXT DEFAULT 'pending', note TEXT,
-        created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP
+      CREATE TABLE IF NOT EXISTS jackpot (
+        id SERIAL PRIMARY KEY,
+        montant REAL DEFAULT 0,
+        last_winner TEXT,
+        updated_at TIMESTAMP DEFAULT NOW()
       );
     `);
-    console.log('✅ Tables supplémentaires OK');
-  } catch(e) { console.error('❌ Tables supplémentaires:', e.message); }
+    console.log('✅ Tables vérifiées/créées');
+  } catch(e) { console.error('❌ Erreur création tables:', e.message); }
 })();
 
-// ── CATCH-ALL SPA ─────────────────────────────────────────
+// ============================================================
+// ROUTE CATCH-ALL POUR LE FRONTEND (SPA) – À PLACER À LA FIN
+// ============================================================
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// ── DÉMARRAGE ────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`✅ Tonton Kondo API running on port ${PORT}`);
   console.log(`   Database: ${process.env.DATABASE_URL ? '✅ Connected' : '❌ DATABASE_URL missing'}`);
