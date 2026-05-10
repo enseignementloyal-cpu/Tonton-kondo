@@ -253,19 +253,59 @@ function getKenoMultiplier(hits, selectedCount) {
   return table[selectedCount]?.[hits] || 0;
 }
 
+// Fonction générique pour les appels PlopPlop entrants (dépôts)
 async function callPlopPlop(endpoint, body) {
+  const BASE = PLOPPLOP_BASE || 'https://plopplop.solutionip.app';
   const auth = Buffer.from(`${MERCHANT_CLIENT_ID}:${MERCHANT_SECRET_KEY}`).toString('base64');
-  const response = await fetch(`${PLOPPLOP_BASE}${endpoint}`, {
+  const response = await fetch(`${BASE}${endpoint}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Basic ${auth}`
-    },
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Basic ${auth}` },
     body: JSON.stringify(body)
   });
   const data = await response.json();
   if (!response.ok) throw new Error(data.message || `HTTP ${response.status}`);
   return data;
+}
+
+// Fonction retrait PlopPlop - flux 3 étapes obligatoires
+async function executerRetraitPlopPlop(montant, methode, recipient, reference) {
+  const BASE = PLOPPLOP_BASE || 'https://plopplop.solutionip.app';
+
+  // Étape 1: Authentification → AUTH_TOKEN
+  const authResp = await fetch(`${BASE}/api/auth/marchand`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ client_id: MERCHANT_CLIENT_ID, client_secret: MERCHANT_SECRET_KEY })
+  });
+  const authData = await authResp.json();
+  if (!authData.token) throw new Error(authData.message || 'Échec authentification PlopPlop');
+  const authToken = authData.token;
+
+  // Étape 2: Générer withdrawal-token avec les paramètres EXACTS
+  const wtResp = await fetch(`${BASE}/api/auth/marchand/withdrawal-token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+    body: JSON.stringify({ amount: montant, method: methode, recipient, reference })
+  });
+  const wtData = await wtResp.json();
+  if (!wtData.withdrawal_token) throw new Error(wtData.message || 'Échec génération token retrait');
+  const withdrawalToken = wtData.withdrawal_token;
+
+  // Étape 3: Exécuter le retrait avec les MÊMES paramètres exacts
+  const wResp = await fetch(`${BASE}/api/withdraw/marchand`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${withdrawalToken}` },
+    body: JSON.stringify({ amount: montant, method: methode, recipient, reference })
+  });
+  const wData = await wResp.json();
+  if (!wResp.ok || wData.success === false) {
+    const code = wData.error_code;
+    if (code === 'WITHDRAWAL_COOLDOWN') throw new Error(`Cooldown: attendez ${wData.remaining_seconds||60}s avant un autre retrait`);
+    if (code === 'TOKEN_ALREADY_USED') throw new Error('Token déjà utilisé, réessayez');
+    if (code === 'PARAMETER_MISMATCH') throw new Error('Erreur paramètres PlopPlop');
+    throw new Error(wData.message || 'Retrait PlopPlop échoué');
+  }
+  return wData;
 }
 
 // ============================================================
@@ -851,8 +891,18 @@ app.delete('/api/admin/directors/:code', requireAdmin, async (req, res) => {
 });
 
 app.get('/api/admin/cashiers', requireAdmin, async (req, res) => {
-  const r = await pool.query("SELECT c.*, d.name AS dir_name FROM cashiers c LEFT JOIN directors d ON c.dir_code=d.code ORDER BY c.created_at");
-  res.json({ cashiers: r.rows });
+  try {
+    const r = await pool.query("SELECT c.*,d.name AS dir_name FROM cashiers c LEFT JOIN directors d ON c.dir_code=d.code ORDER BY c.created_at DESC");
+    res.json({ cashiers: r.rows });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/cashiers/delete', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.body;
+    await pool.query("UPDATE cashiers SET active=FALSE WHERE id=$1", [id]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/admin/cashiers', requireAdmin, async (req, res) => {
@@ -1033,20 +1083,21 @@ app.post('/api/games/keno/play', requireAuth, async (req, res) => {
     const winningNumbers = [...tirageFavoris, ...tirageAutres].sort((a,b)=>a-b);
     // Compter les vrais hits
     const hits = playerNums.filter(n => winningNumbers.includes(n)).length;
-    // Table de gain basée sur les VRAIS hits
+    // Table de gain: le joueur gagne seulement si hits >= 70% des numéros joués
+    const seuilGain = Math.ceil(playerNums.length * 0.7); // ex: 10 boules → seuil 7
     const PAYTABLE = {
       1:{1:3},
-      2:{1:2,2:9},
-      3:{1:1,2:4,3:16},
-      4:{2:2,3:6,4:40},
-      5:{3:4,4:12,5:75},
-      6:{3:3,4:8,5:25,6:150},
-      7:{4:6,5:15,6:50,7:300},
-      8:{4:5,5:10,6:30,7:100,8:700},
-      9:{4:4,5:6,6:20,7:60,8:250,9:2000},
-      10:{5:5,6:15,7:40,8:150,9:500,10:5000}
+      2:{2:5},
+      3:{3:8},
+      4:{3:2, 4:20},
+      5:{4:3, 5:50},
+      6:{5:5, 6:100},
+      7:{5:3, 6:15, 7:200},
+      8:{6:5, 7:25, 8:400},
+      9:{7:8, 8:50, 9:800},
+      10:{7:3, 8:15, 9:100, 10:2000}
     };
-    const mult = (PAYTABLE[playerNums.length]||{})[hits] || 0;
+    const mult = hits >= seuilGain ? ((PAYTABLE[playerNums.length]||{})[hits] || 1) : 0;
     const gain = Math.round(mise * mult);
     // Transactions
     await client.query("UPDATE players SET solde=solde-$1 WHERE phone=$2", [mise, phone]);
@@ -1098,14 +1149,12 @@ app.post('/api/games/lucky6/play', requireAuth, async (req, res) => {
       if (playerNums.includes(winningNumbers[i])) { hits++; lastHitPos = i; }
     }
 
-    // Table de gains Lucky6 (basée sur vrais hits)
-    // 6/6 = jackpot selon position, 5/6 = très bon, 4/6 = bien, 3/6 = petit gain
+    // Gains Lucky6: seuil 70% = 4/6 minimum pour gagner
     let gain = 0;
     if (hits === 6) gain = Math.round(mise * Math.max(5, 200 - lastHitPos * 3));
     else if (hits === 5) gain = Math.round(mise * 50);
-    else if (hits === 4) gain = Math.round(mise * 10);
-    else if (hits === 3) gain = Math.round(mise * 2);
-    // hits < 3 = perdu
+    else if (hits === 4) gain = Math.round(mise * 8);
+    // hits < 4 = perdu (en dessous du seuil 70%)
 
     await client.query("UPDATE players SET solde=solde-$1 WHERE phone=$2", [mise, phone]);
     if (gain > 0) await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [gain, phone]);
@@ -1133,26 +1182,30 @@ app.post('/api/games/course/play', requireAuth, async (req, res) => {
     if (!player.rows.length) throw new Error('Joueur introuvable');
     if (parseFloat(player.rows[0].solde) < mise) throw new Error('Solde insuffisant');
     const dirCode = player.rows[0].dir_code;
-    const proba = await getWinProbability(dirCode, 'course');
-    const canWin = isWin(proba);
-    const odds = {1:2.10,2:1.75,3:2.50,4:3.20,5:4.00,6:5.50};
+    // Difficulté: % chance que la voiture choisie gagne
+    const difficulte = await getWinProbability(dirCode, 'course'); // 0-100
+    const rand = Math.random() * 100;
+    const gagne = rand <= difficulte;
+    const odds = {1:2.10, 2:1.75, 3:2.50, 4:3.20, 5:4.00, 6:5.50};
     const cote = odds[parseInt(carId)] || 2.0;
-    const gain = canWin ? Math.round(mise * cote) : 0;
-    // Classement
-    const ranking = [{id:1,name:"🔴 Ferrari SF-23"},{id:2,name:"🔵 Red Bull RB19"},{id:3,name:"⚫ Mercedes W14"},{id:4,name:"🟠 McLaren MCL60"},{id:5,name:"🟢 Aston Martin"},{id:6,name:"🩵 Alpine A523"}];
-    const winnerIdx = canWin ? ranking.findIndex(r=>r.id==carId) : Math.floor(Math.random()*ranking.length);
-    const winner = ranking.splice(winnerIdx,1)[0];
-    ranking.unshift(winner);
+    const gain = gagne ? Math.round(mise * cote) : 0;
+    // Classement visuel biaisé
+    const voitures = [1,2,3,4,5,6];
+    const autres = voitures.filter(v => v !== parseInt(carId));
+    for (let i=autres.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[autres[i],autres[j]]=[autres[j],autres[i]];}
+    const ranking = gagne
+      ? [parseInt(carId), ...autres]
+      : [autres[0], ...autres.slice(1).filter(v=>v!==parseInt(carId)), parseInt(carId)];
     await client.query("UPDATE players SET solde=solde-$1 WHERE phone=$2", [mise, phone]);
     if (gain > 0) await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [gain, phone]);
     await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'mise',$3,$4)", [phone,dirCode,-mise,`Mise Course voiture ${carId}`]);
-    if (gain > 0) await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'gain',$3,$4)", [phone,dirCode,gain,`Gain Course voiture ${carId} (cote ${cote})`]);
+    if (gain > 0) await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'gain',$3,$4)", [phone,dirCode,gain,`Gain Course voiture ${carId} ×${cote}`]);
     await client.query("INSERT INTO bets (player_phone,dir_code,type,selection,mise,cote,gain_potentiel,statut) VALUES ($1,$2,'course',$3,$4,$5,$6,$7)", [phone,dirCode,`Voiture ${carId}`,mise,cote,gain,gain>0?'gagne':'perdu']);
     if (dirCode) await client.query("INSERT INTO jackpots (dir_code,amount,week_sales) VALUES ($1,$2,$3) ON CONFLICT (dir_code) DO UPDATE SET amount=jackpots.amount+$2,week_sales=jackpots.week_sales+$3", [dirCode,mise*JACKPOT_PCT/100,mise]);
     await client.query('COMMIT');
     const nb = await pool.query("SELECT solde FROM players WHERE phone=$1",[phone]);
-    const newBalance = parseFloat(nb.rows[0].solde);
-    res.json({ success:true, ranking, gagne:canWin, gain, newBalance, message: canWin?`🏆 Voiture #${carId} gagne ! +${gain} Gd`:`😔 Voiture #${carId} n'a pas gagné` });
+    res.json({ success:true, ranking, gagne, gain, newBalance:parseFloat(nb.rows[0].solde),
+      message: gagne?`🏆 Voiture #${carId} gagne ! +${gain} Gd`:`😔 Voiture #${carId} n'a pas gagné` });
   } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
 });
 
@@ -1164,17 +1217,23 @@ app.post('/api/games/helico/start', requireAuth, async (req, res) => {
     const { mise } = req.body;
     const phone = req.session.user_phone;
     if (!mise || mise <= 0) throw new Error('Mise invalide');
-    const player = await client.query("SELECT solde, dir_code FROM players WHERE phone=$1 FOR UPDATE", [phone]);
+    const player = await client.query("SELECT solde,dir_code FROM players WHERE phone=$1 FOR UPDATE", [phone]);
     if (!player.rows.length) throw new Error('Joueur inconnu');
-    if (player.rows[0].solde < mise) throw new Error('Solde insuffisant');
-    await client.query("UPDATE players SET solde = solde - $1 WHERE phone = $2", [mise, phone]);
-    await client.query("INSERT INTO transactions (player_phone, dir_code, type, montant, note) VALUES ($1, $2, 'perte', $3, $4)", [phone, player.rows[0].dir_code, -mise, `Mise Hélicoptère`]);
+    if (parseFloat(player.rows[0].solde) < mise) throw new Error('Solde insuffisant');
     const dirCode = player.rows[0].dir_code;
-    const sessionId = crypto.randomBytes(16).toString('hex');
-    helicoSessions.set(sessionId, { phone, mise, dirCode, altitude: 0, crashed: false });
-    const newBalance = player.rows[0].solde - mise;
-    res.json({ success: true, sessionId, newBalance, message: 'Décollage ! Montez et encaissez avant le crash.' });
-  } catch (e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
+    // Difficulté: plus c'est haut, plus le crash est retardé (favorable au joueur)
+    const difficulte = await getWinProbability(dirCode, 'helico'); // 0-100
+    await client.query('BEGIN');
+    await client.query("UPDATE players SET solde=solde-$1 WHERE phone=$2", [mise, phone]);
+    await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'mise',$3,'Mise Hélicoptère')", [phone, dirCode, -mise]);
+    await client.query('COMMIT');
+    const sessionId = require('crypto').randomBytes(16).toString('hex');
+    // crashMultiplier: difficulte=50 → crash moyen à ×1.5, difficulte=80 → crash tard à ×2.5
+    const crashAt = 1.0 + (difficulte / 100) * 3.0 + Math.random() * 1.5;
+    helicoSessions.set(sessionId, { phone, mise, dirCode, altitude:0, crashed:false, crashAt });
+    const newBalance = parseFloat(player.rows[0].solde) - mise;
+    res.json({ success:true, sessionId, newBalance, message:'Décollage ! Encaissez avant le crash.' });
+  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
 });
 
 app.post('/api/games/helico/cashout', requireAuth, async (req, res) => {
@@ -1223,15 +1282,15 @@ app.post('/api/games/helico/update', requireAuth, async (req, res) => {
   const session = helicoSessions.get(sessionId);
   if (!session) return res.status(404).json({ error: 'Session introuvable' });
   if (session.crashed) return res.json({ crashed: true });
-  const crashProb = Math.min(0.8, altitude / 150);
-  const crash = Math.random() < crashProb;
+  session.altitude = altitude || session.altitude;
+  // Crash basé sur crashAt (multiplier courant vs seuil)
+  const currentMult = 1.0 + (session.altitude / 100);
+  const crash = currentMult >= session.crashAt;
   if (crash) {
     session.crashed = true;
     helicoSessions.delete(sessionId);
-    return res.json({ crashed: true, altitude: session.altitude });
   }
-  session.altitude = altitude;
-  res.json({ crashed: false, altitude: session.altitude });
+  res.json({ crashed: crash, altitude: session.altitude, crashAt: session.crashAt });
 });
 
 // ── AUTRES ROUTES API (bets, transactions, etc.) ──────────
@@ -1336,30 +1395,24 @@ app.post('/api/retraits/demande', requireAuth, async (req, res) => {
     let apiMsg = 'En attente de traitement';
 
     // Traitement automatique via API pour Moncash et Natcash
-    if ((methode === 'moncash' || methode === 'natcash') && MERCHANT_CLIENT_ID && numero_mobile) {
+    if ((methode === 'moncash' || methode === 'natcash') && MERCHANT_CLIENT_ID && MERCHANT_SECRET_KEY && numero_mobile) {
       try {
-        const plopResp = await callPlopPlop('/api/retrait-marchand', {
-          client_id: MERCHANT_CLIENT_ID,
-          telephone: numero_mobile,
-          montant: montant,
-          methode: methode === 'moncash' ? 'MONCASH' : 'NATCASH',
-          reference: `RET_${phone}_${Date.now()}`
-        });
-        if (plopResp && (plopResp.statut === 'success' || plopResp.status === 'success')) {
-          statut = 'approved';
-          apiRef = plopResp.reference_id || plopResp.refference_id || null;
-          apiMsg = `Retrait automatique envoyé via ${methode}`;
-        } else {
-          // API a répondu mais pas success → rembourser et rejeter
-          await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [montant, phone]);
-          await client.query('ROLLBACK');
-          return res.status(502).json({ error: plopResp?.message || `Échec envoi ${methode}` });
-        }
+        const reference = `TK_${phone.replace(/\D/g,'')}_${Date.now()}`;
+        const methodApi = methode === 'moncash' ? 'moncash' : 'natcash';
+        await executerRetraitPlopPlop(montant, methodApi, numero_mobile, reference);
+        statut = 'approved';
+        apiMsg = `✅ Retrait envoyé via ${methode} au ${numero_mobile}`;
       } catch(apiErr) {
         console.error('PlopPlop retrait error:', apiErr.message);
-        // Si API indisponible → mettre en pending (traitement manuel)
+        if (apiErr.message.includes('Cooldown')) {
+          // Rembourser et rejeter
+          await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [montant, phone]);
+          await client.query('ROLLBACK');
+          return res.status(429).json({ error: apiErr.message });
+        }
+        // Autres erreurs → pending pour traitement manuel
         statut = 'pending';
-        apiMsg = 'En attente de traitement manuel (API indisponible)';
+        apiMsg = `⏳ Retrait en attente (${apiErr.message})`;
       }
     }
 
@@ -1588,66 +1641,112 @@ app.post('/api/games/penalty/play', requireAuth, async (req, res) => {
   try {
     if (req.session.role !== 'joueur') return res.status(403).json({ error: 'Joueurs seulement' });
     const phone = req.session.user_phone;
-    const { direction, mise } = req.body; // direction: 'gauche','centre','droite'
+    const { direction, mise } = req.body;
     if (!direction || !mise || mise <= 0) return res.status(400).json({ error: 'Données invalides' });
-
     await client.query('BEGIN');
-    const { dirCode } = await deductAndRecord(client, phone, mise, 'Penalty', direction);
-
+    const player = await client.query("SELECT solde,dir_code FROM players WHERE phone=$1 FOR UPDATE", [phone]);
+    if (!player.rows.length) throw new Error('Joueur introuvable');
+    if (parseFloat(player.rows[0].solde) < mise) throw new Error('Solde insuffisant');
+    const dirCode = player.rows[0].dir_code;
+    // Difficulté: % de chance que le gardien plonge du MAUVAIS côté (joueur marque)
+    const difficulte = await getWinProbability(dirCode, 'penalty');
+    const rand = Math.random() * 100;
+    const gagne = rand <= difficulte;
     const dirs = ['gauche','centre','droite'];
-    const goalieDir = dirs[Math.floor(Math.random()*3)];
-    const gagne = direction !== goalieDir; // marqué si gardien plonge ailleurs
+    let goalieDir;
+    if (gagne) {
+      // Gardien plonge ailleurs
+      goalieDir = dirs.filter(d => d !== direction)[Math.floor(Math.random()*2)];
+    } else {
+      // Gardien plonge du bon côté
+      goalieDir = direction;
+    }
     const gain = gagne ? Math.round(mise * 1.9) : 0;
-
-    if (gain > 0) await creditGain(client, phone, dirCode, gain, 'Penalty', `But! ${direction} vs ${goalieDir}`);
-
-    await client.query("INSERT INTO bets (player_phone, dir_code, game_type, mise, gain_potentiel, numeros_joues, numeros_tires, statut) VALUES ($1,$2,'penalty',$3,$4,$5,$6,$7)",
-      [phone, dirCode, mise, gain, JSON.stringify([direction]), JSON.stringify([goalieDir]), gagne?'gagne':'perdu']);
-
+    await client.query("UPDATE players SET solde=solde-$1 WHERE phone=$2", [mise, phone]);
+    if (gain > 0) await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [gain, phone]);
+    await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'mise',$3,$4)", [phone,dirCode,-mise,`Mise Penalty ${direction}`]);
+    if (gain > 0) await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'gain',$3,$4)", [phone,dirCode,gain,`Gain Penalty BUT ${direction}`]);
+    await client.query("INSERT INTO bets (player_phone,dir_code,type,selection,mise,gain_potentiel,statut) VALUES ($1,$2,'penalty',$3,$4,$5,$6)", [phone,dirCode,direction,mise,gain,gain>0?'gagne':'perdu']);
+    if (dirCode) await client.query("INSERT INTO jackpots (dir_code,amount,week_sales) VALUES ($1,$2,$3) ON CONFLICT (dir_code) DO UPDATE SET amount=jackpots.amount+$2,week_sales=jackpots.week_sales+$3", [dirCode,mise*JACKPOT_PCT/100,mise]);
     await client.query('COMMIT');
-    const newBalance = parseFloat((await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde);
-    res.json({ goalieDir, gagne, gain, newBalance,
-      message: gagne ? `⚽ BUT ! +${gain} Gd` : `🧤 Arrêté par le gardien (${goalieDir})` });
+    const nb = await pool.query("SELECT solde FROM players WHERE phone=$1",[phone]);
+    res.json({ goalieDir, gagne, gain, newBalance:parseFloat(nb.rows[0].solde),
+      message: gagne ? `⚽ BUT ! +${gain} Gd` : `🧤 Arrêté ! Gardien → ${goalieDir}` });
   } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
 });
 
-// ── ROULETTE ──────────────────────────────────────────────
 app.post('/api/games/roulette/play', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
     if (req.session.role !== 'joueur') return res.status(403).json({ error: 'Joueurs seulement' });
     const phone = req.session.user_phone;
     const { betType, betValue, mise } = req.body;
-    // betType: 'number','color','parity','dozen','column'
     if (!betType || betValue === undefined || !mise || mise <= 0) return res.status(400).json({ error: 'Données invalides' });
-
     await client.query('BEGIN');
-    const { dirCode } = await deductAndRecord(client, phone, mise, 'Roulette', `${betType}:${betValue}`);
-
-    const result = Math.floor(Math.random()*37); // 0-36
+    const player = await client.query("SELECT solde,dir_code FROM players WHERE phone=$1 FOR UPDATE", [phone]);
+    if (!player.rows.length) throw new Error('Joueur introuvable');
+    if (parseFloat(player.rows[0].solde) < mise) throw new Error('Solde insuffisant');
+    const dirCode = player.rows[0].dir_code;
+    // Difficulté: % de chance que le résultat soit gagnant
+    const difficulte = await getWinProbability(dirCode, 'roulette');
+    const rand = Math.random() * 100;
+    const playerWins = rand <= difficulte;
     const reds = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+    let result;
+    if (playerWins) {
+      // Générer un résultat qui fait gagner le joueur
+      const allNums = Array.from({length:37},(_,i)=>i);
+      const winning = allNums.filter(n => {
+        const col = n===0?'vert':reds.includes(n)?'rouge':'noir';
+        const par = n===0?'zero':n%2===0?'pair':'impair';
+        const doz = n===0?0:n<=12?1:n<=24?2:3;
+        const c   = n===0?0:(n%3===0?3:n%3);
+        if (betType==='number') return parseInt(betValue)===n;
+        if (betType==='color')  return betValue===col;
+        if (betType==='parity') return betValue===par;
+        if (betType==='dozen')  return parseInt(betValue)===doz;
+        if (betType==='column') return parseInt(betValue)===c;
+        return false;
+      });
+      result = winning.length > 0 ? winning[Math.floor(Math.random()*winning.length)] : Math.floor(Math.random()*37);
+    } else {
+      // Générer un résultat perdant
+      const allNums = Array.from({length:37},(_,i)=>i);
+      const losing = allNums.filter(n => {
+        const col = n===0?'vert':reds.includes(n)?'rouge':'noir';
+        const par = n===0?'zero':n%2===0?'pair':'impair';
+        const doz = n===0?0:n<=12?1:n<=24?2:3;
+        const c   = n===0?0:(n%3===0?3:n%3);
+        if (betType==='number') return parseInt(betValue)!==n;
+        if (betType==='color')  return betValue!==col;
+        if (betType==='parity') return betValue!==par;
+        if (betType==='dozen')  return parseInt(betValue)!==doz;
+        if (betType==='column') return parseInt(betValue)!==c;
+        return true;
+      });
+      result = losing.length > 0 ? losing[Math.floor(Math.random()*losing.length)] : 0;
+    }
     const color = result===0?'vert':reds.includes(result)?'rouge':'noir';
     const parity = result===0?'zero':result%2===0?'pair':'impair';
     const dozen = result===0?0:result<=12?1:result<=24?2:3;
     const column = result===0?0:(result%3===0?3:result%3);
-
     let mult = 0;
-    if (betType==='number' && parseInt(betValue)===result) mult = 36;
-    else if (betType==='color' && betValue===color) mult = 2;
-    else if (betType==='parity' && betValue===parity) mult = 2;
-    else if (betType==='dozen' && parseInt(betValue)===dozen) mult = 3;
-    else if (betType==='column' && parseInt(betValue)===column) mult = 3;
-
+    if (betType==='number' && parseInt(betValue)===result) mult=36;
+    else if (betType==='color' && betValue===color) mult=2;
+    else if (betType==='parity' && betValue===parity) mult=2;
+    else if (betType==='dozen' && parseInt(betValue)===dozen) mult=3;
+    else if (betType==='column' && parseInt(betValue)===column) mult=3;
     const gain = mult > 0 ? Math.round(mise * mult) : 0;
-    if (gain > 0) await creditGain(client, phone, dirCode, gain, 'Roulette', `${result}(${color}) mult×${mult}`);
-
-    await client.query("INSERT INTO bets (player_phone, dir_code, game_type, mise, gain_potentiel, numeros_joues, numeros_tires, statut) VALUES ($1,$2,'roulette',$3,$4,$5,$6,$7)",
-      [phone, dirCode, mise, gain, JSON.stringify([betValue]), JSON.stringify([result]), gain>0?'gagne':'perdu']);
-
+    await client.query("UPDATE players SET solde=solde-$1 WHERE phone=$2", [mise, phone]);
+    if (gain > 0) await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [gain, phone]);
+    await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'mise',$3,$4)", [phone,dirCode,-mise,`Mise Roulette ${betType}:${betValue}`]);
+    if (gain > 0) await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'gain',$3,$4)", [phone,dirCode,gain,`Gain Roulette ${result}(${color}) ×${mult}`]);
+    await client.query("INSERT INTO bets (player_phone,dir_code,type,selection,mise,gain_potentiel,statut) VALUES ($1,$2,'roulette',$3,$4,$5,$6)", [phone,dirCode,`${betType}:${betValue}`,mise,gain,gain>0?'gagne':'perdu']);
+    if (dirCode) await client.query("INSERT INTO jackpots (dir_code,amount,week_sales) VALUES ($1,$2,$3) ON CONFLICT (dir_code) DO UPDATE SET amount=jackpots.amount+$2,week_sales=jackpots.week_sales+$3", [dirCode,mise*JACKPOT_PCT/100,mise]);
     await client.query('COMMIT');
-    const newBalance = parseFloat((await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde);
-    res.json({ result, color, parity, dozen, column, gain, newBalance,
-      message: gain>0 ? `🎉 ${result} (${color}) — Gain: ${gain} Gd` : `😔 ${result} (${color}) — Perdu` });
+    const nb = await pool.query("SELECT solde FROM players WHERE phone=$1",[phone]);
+    res.json({ result, color, parity, dozen, column, gain, newBalance:parseFloat(nb.rows[0].solde),
+      message: gain>0?`🎉 ${result} (${color}) — +${gain} Gd`:`😔 ${result} (${color}) — Perdu` });
   } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
 });
 

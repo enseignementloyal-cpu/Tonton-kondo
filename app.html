@@ -5473,109 +5473,137 @@ function refreshAdminComptes(){
    borlette admin, jackpot, paramètres, session restore
    ═══════════════════════════════════════════════════ */
 
-function refreshAdmin(){
+async function refreshAdmin(){
   loadAdminDiffs && loadAdminDiffs();
-  const j=gJ(),dirs=gDirs(),caiss=gCaiss(),bets=gB(),st=gSt(),at=gAT();
-  const tSol=Object.values(j).reduce((a,x)=>a+(x.solde||0),0);
-  const pending=bets.filter(b=>b.statut==='En attente');
-  const el=n=>document.getElementById(n);
+  const el = n => document.getElementById(n);
 
-  if(el('admin-stats'))el('admin-stats').innerHTML=[
-    {v:Object.keys(dirs).length,l:'Directeurs',c:'sblue'},
-    {v:Object.keys(caiss).length,l:'Caissiers',c:'spurp'},
-    {v:Object.keys(j).length,l:'Joueurs',c:'sgreen'},
-    {v:tSol+' Gd',l:'Solde joueurs',c:'sgold'},
-    {v:pending.length,l:'Paris en attente',c:'sblue'},
-  ].map(s=>`<div class="statcard"><div class="sv ${s.c}">${s.v}</div><div class="sl">${s.l}</div></div>`).join('');
+  try {
+    // Charger toutes les données depuis la DB
+    const [playersData, betsData, transData, statsData, caissData, dirsData] = await Promise.all([
+      apiGet('/api/admin/players').catch(()=>({players:[]})),
+      apiGet('/api/admin/bets').catch(()=>({bets:[]})),
+      apiGet('/api/transactions').catch(()=>({transactions:[]})),
+      apiGet('/api/admin/stats').catch(()=>({})),
+      apiGet('/api/admin/cashiers').catch(()=>({cashiers:[]})),
+      apiGet('/api/admin/directors').catch(()=>({directors:[]})),
+    ]);
 
-  // Performance par directeur
-  const pb=el('adm-dirs-perf');
-  if(pb)pb.innerHTML=Object.values(dirs).map(d=>{
-    const mc=Object.values(caiss).filter(c=>c.dirCode===d.code).length;
-    const mj=Object.values(j).filter(jj=>jj.dirCode===d.code).length;
-    const myAt=at.filter(t=>t.dirCode===d.code);
-    const dep=myAt.filter(t=>t.montant>0).reduce((a,t)=>a+t.montant,0);
-    const pay=myAt.filter(t=>t.montant<0).reduce((a,t)=>a+Math.abs(t.montant),0);
-    return`<tr><td><b>${d.name}</b></td><td>${d.zone}</td><td>${mc}</td><td>${mj}</td><td style="color:var(--green2)">${dep} Gd</td><td style="color:${dep-pay>=0?'var(--green2)':'var(--red)'}">${dep-pay} Gd</td></tr>`;
-  }).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:12px">Aucun directeur</td></tr>';
+    const players = playersData.players || [];
+    const bets    = betsData.bets || [];
+    const trans   = transData.transactions || [];
+    const caissiers = caissData.cashiers || [];
+    const directors = dirsData.directors || [];
 
-  // Directeurs table with reset MDP + diff
-  const db=el('adm-dirs-body');
-  if(db)db.innerHTML=Object.values(dirs).map(d=>{
-    const cnt=Object.values(caiss).filter(c=>c.dirCode===d.code).length;
-    return`<tr>
-      <td><b>${d.name}</b></td><td>${d.zone}</td>
+    // Stats
+    const tSol = players.reduce((a,p)=>a+(parseFloat(p.solde)||0),0);
+    const pending = bets.filter(b=>b.statut==='en_attente');
+    if(el('admin-stats')) el('admin-stats').innerHTML=[
+      {v:directors.length,  l:'Directeurs',     c:'sblue'},
+      {v:caissiers.length,  l:'Caissiers',       c:'spurp'},
+      {v:players.length,    l:'Joueurs',          c:'sgreen'},
+      {v:tSol.toLocaleString('fr-FR')+' Gd', l:'Solde joueurs', c:'sgold'},
+      {v:pending.length,    l:'Paris en attente', c:'sblue'},
+    ].map(s=>`<div class="statcard"><div class="sv ${s.c}">${s.v}</div><div class="sl">${s.l}</div></div>`).join('');
+
+    // Table directeurs
+    const db = el('adm-dirs-body');
+    if(db) db.innerHTML = directors.map(d=>`<tr>
+      <td><b>${d.name}</b></td><td>${d.zone||'—'}</td>
       <td><code style="color:var(--gold)">${d.code}</code></td>
       <td style="color:var(--muted)">${d.phone||'—'}</td>
-      <td><span style="filter:blur(3px);cursor:pointer" onclick="this.style.filter='none'">${d.pwd}</span></td>
-      <td>${cnt}</td>
+      <td>${caissiers.filter(c=>c.dir_code===d.code).length}</td>
       <td>
         <button class="tbtn b" onclick="resetMdpDir('${d.code}')">🔑 MdP</button>
         <button class="tbtn r" onclick="admSuppDir('${d.code}')">✕</button>
-      </td>
-    </tr>`;
-  }).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:12px">Aucun directeur</td></tr>';
+      </td></tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:12px">Aucun directeur</td></tr>';
 
-  // Caissiers table with reset MDP
-  const cb=el('adm-caiss-body');
-  if(cb)cb.innerHTML=Object.values(caiss).map(c=>{
-    const dir=Object.values(dirs).find(d=>d.code===c.dirCode);
-    return`<tr>
+    // Table caissiers
+    const cb = el('adm-caiss-body');
+    if(cb) cb.innerHTML = caissiers.map(c=>`<tr>
       <td><b>${c.name}</b></td>
       <td><code style="color:var(--gold)">${c.code}</code></td>
       <td style="color:var(--muted)">${c.phone||'—'}</td>
-      <td><span style="filter:blur(3px);cursor:pointer" onclick="this.style.filter='none'">${c.pwd}</span></td>
-      <td>${JEU_LABELS[c.jeu]||c.jeu}</td>
-      <td>${dir?dir.name:'—'}</td>
-      <td>${c.zone||'—'}</td>
+      <td>${c.jeu||'all'}</td>
+      <td>${c.dir_code||'—'}</td>
       <td>
         <button class="tbtn b" onclick="resetMdpCaiss('${c.code}')">🔑 MdP</button>
-        <button class="tbtn r" onclick="admSuppCaiss('${c.code}')">✕</button>
-      </td>
-    </tr>`;
-  }).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:12px">Aucun caissier</td></tr>';
+        <button class="tbtn r" onclick="admSuppCaissDB('${c.id}')">✕</button>
+      </td></tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:12px">Aucun caissier</td></tr>';
 
-  // Joueurs table with reset MDP
-  const jb=el('tadm-joueurs-body');
-  if(jb)jb.innerHTML=Object.values(j).map(jj=>{
-    const dir=Object.values(dirs).find(d=>d.code===jj.dirCode);
-    return`<tr>
-      <td>${jj.name}</td><td>${jj.phone}</td>
-      <td style="color:var(--gold)">${jj.solde||0} Gd</td>
-      <td style="font-size:10px">${jj.createdAt||'—'}</td>
-      <td>${dir?dir.name:'—'}</td>
-      <td><button class="tbtn b" onclick="resetMdpJoueur('${jj.phone}')">🔑 MdP</button></td>
-    </tr>`;
-  }).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--muted)">Aucun joueur</td></tr>';
+    // Table joueurs
+    const jb = el('tadm-joueurs-body');
+    if(jb) jb.innerHTML = players.map(p=>`<tr>
+      <td>${p.name}</td><td>${p.phone}</td>
+      <td style="color:var(--gold)">${parseFloat(p.solde||0).toLocaleString('fr-FR')} Gd</td>
+      <td style="font-size:10px">${p.created_at?new Date(p.created_at).toLocaleDateString('fr-FR'):'—'}</td>
+      <td>${p.dir_code||'—'}</td>
+      <td>
+        <button class="tbtn b" onclick="admCreditJoueur('${p.phone}')">💰</button>
+        <button class="tbtn b" onclick="resetMdpJoueur('${p.phone}')">🔑</button>
+      </td></tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--muted)">Aucun joueur</td></tr>';
 
-  // Bets
-  const tw=bets.reduce((a,b)=>a+b.mise,0);
-  const tp=bets.filter(b=>b.statut==='Gagné').reduce((a,b)=>a+b.gainPotentiel,0);
-  const bsEl=el('admin-bets-stats');
-  if(bsEl)bsEl.innerHTML=[{v:bets.length,l:'Total paris',c:'sblue'},{v:tw+' Gd',l:'Total misé',c:'sgold'},{v:tp+' Gd',l:'Gains payés',c:'sgreen'},{v:pending.length,l:'En attente',c:'spurp'}].map(s=>`<div class="statcard"><div class="sv ${s.c}">${s.v}</div><div class="sl">${s.l}</div></div>`).join('');
-  const bBody=el('tadm-bets-body');
-  if(bBody)bBody.innerHTML=bets.map(b=>`<tr>
-    <td style="font-size:10px">${b.date}</td><td><b>${b.joueurName}</b></td>
-    <td style="font-size:11px">${b.match}</td><td><b>${b.selection}</b></td>
-    <td style="color:var(--gold)">${b.odd?.toFixed(2)||'—'}</td><td>${b.mise} Gd</td>
-    <td style="color:var(--green2)">${b.gainPotentiel} Gd</td>
-    <td><span class="sbadge ${b.statut==='En attente'?'sbp':b.statut==='Gagné'?'sbw':'sbl'}">${b.statut}</span>
-    ${b.statut==='En attente'?`<br><button class="tbtn g" onclick="resoudrePari('${b.id}','Gagné')">✔</button><button class="tbtn r" onclick="resoudrePari('${b.id}','Perdu')">✘</button>`:''}
-    </td></tr>`).join('')||'<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:12px">Aucun pari</td></tr>';
+    // Table paris
+    const bBody = el('tadm-bets-body');
+    if(bBody) bBody.innerHTML = bets.slice(0,100).map(b=>{
+      const info = b.match_info ? (typeof b.match_info==='string'?JSON.parse(b.match_info):b.match_info) : {};
+      const date = b.created_at ? new Date(b.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+      return `<tr>
+        <td style="font-size:10px">${date}</td>
+        <td><b>${b.player_name||b.player_phone}</b></td>
+        <td style="font-size:11px">${b.type||b.game_type} ${info.homeTeam?info.homeTeam+' vs '+info.awayTeam:b.selection||''}</td>
+        <td>${parseFloat(b.mise)} Gd</td>
+        <td style="color:var(--green2)">${parseFloat(b.gain_potentiel||0)} Gd</td>
+        <td><span class="sbadge ${b.statut==='en_attente'?'sbp':b.statut==='gagne'?'sbw':'sbl'}">${b.statut}</span>
+        ${b.statut==='en_attente'?`<br><button class="tbtn g" onclick="resoudrePariDB(${b.id},'gagne')">✔</button><button class="tbtn r" onclick="resoudrePariDB(${b.id},'perdu')">✘</button>`:''}
+        </td></tr>`;
+    }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:12px">Aucun pari</td></tr>';
 
-  // Transactions
-  const tBody=el('tadm-trans-body');
-  if(tBody)tBody.innerHTML=at.slice(0,100).map(t=>`<tr>
-    <td style="font-size:10px">${t.date}</td><td><b>${t.joueurName}</b></td>
-    <td><span class="sbadge ${t.montant>0?'sbd':'sbr'}">${t.type}</span></td>
-    <td style="${t.montant>0?'color:var(--green2)':'color:var(--red)'}">${t.montant>0?'+':''}${t.montant} Gd</td>
-    <td>${t.soldeApres} Gd</td><td>${t.caissName||'—'}</td>
-  </tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:12px">Aucune transaction</td></tr>';
+    // Table transactions
+    const tBody = el('tadm-trans-body');
+    if(tBody) tBody.innerHTML = trans.slice(0,100).map(t=>{
+      const m = parseFloat(t.montant);
+      const date = t.created_at ? new Date(t.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+      return `<tr>
+        <td style="font-size:10px">${date}</td>
+        <td><b>${t.player_name||t.player_phone}</b></td>
+        <td><span class="sbadge ${m>=0?'sbd':'sbr'}">${t.type}</span></td>
+        <td style="${m>=0?'color:var(--green2)':'color:var(--red)'}">${m>=0?'+':''}${m.toLocaleString('fr-FR')} Gd</td>
+        <td>${t.note||'—'}</td></tr>`;
+    }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:12px">Aucune transaction</td></tr>';
 
-  refreshAdminComptes();
-  renderDirDiffList();
+  } catch(e) {
+    console.error('refreshAdmin error:', e);
+    showNotif('Erreur chargement dashboard: '+e.message,'err');
+  }
+  refreshAdminComptes && refreshAdminComptes();
+  renderDirDiffList && renderDirDiffList();
 }
 
+async function resoudrePariDB(id, statut){
+  try {
+    await apiPost(`/api/bets/${id}/resolve`, { statut });
+    showNotif(statut==='gagne'?'✅ Gain crédité':'❌ Pari perdu','ok');
+    refreshAdmin();
+  } catch(e){ showNotif('Erreur: '+e.message,'err'); }
+}
+
+async function admSuppCaissDB(id){
+  if(!confirm('Supprimer ce caissier ?')) return;
+  try {
+    await apiPost('/api/admin/cashiers/delete', { id });
+    showNotif('Caissier supprimé','ok'); refreshAdmin();
+  } catch(e){ showNotif('Erreur: '+e.message,'err'); }
+}
+
+async function admCreditJoueur(phone){
+  const montant = parseFloat(prompt('Montant à créditer (Gd):'));
+  if(!montant || montant<=0) return;
+  const note = prompt('Note (optionnel):') || 'Crédit administrateur';
+  try {
+    await apiPost(`/api/admin/players/${phone}/credit`, { montant, note });
+    showNotif(`✅ ${montant} Gd crédités`,'ok'); refreshAdmin();
+  } catch(e){ showNotif('Erreur: '+e.message,'err'); }
+}
 // ============================================================
 // PATCH: admSuppDir + admSuppCaiss
 // ============================================================
