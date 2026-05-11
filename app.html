@@ -1302,7 +1302,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
           <input type="tel" id="ret-numero" placeholder="Ex: 50912345678" style="width:100%;padding:11px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none;">
         </div>
         <button onclick="soumettreRetrait()" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--gold),#d4a800);color:#000;border:none;border-radius:8px;font-weight:900;font-size:15px;cursor:pointer;margin-top:4px;letter-spacing:1px;">💸 ENVOYER LA DEMANDE</button>
-        <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px">Le retrait sera traité dans les 24h par notre équipe.</p>
+        <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px">Moncash/Natcash: traitement automatique immédiat. Cash: traitement au bureau.</p>
       </div>
     </div>
     <div class="card">
@@ -1314,17 +1314,18 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
 
   <!-- HISTORIQUE -->
   <div class="asec" id="tab-historique">
-    <!-- Tabs dans historique -->
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 12px;overflow-x:auto;scrollbar-width:none;">
-      <button class="chip active" id="htab-depot" onclick="selHistTab('depot',this)">💵 Dépôts / Retraits</button>
-      <button class="chip" id="htab-lotto" onclick="selHistTab('lotto',this)">🎯 Lotterie</button>
-      <button class="chip" id="htab-casino" onclick="selHistTab('casino',this)">🎰 Autres Jeux</button>
-      <button class="chip" id="htab-sports" onclick="selHistTab('sports',this)">⚽ Paris Sportifs</button>
+      <button class="chip active" id="htab-depot"  onclick="selHistTab('depot',this)">💵 Dépôts/Retraits</button>
+      <button class="chip" id="htab-lotto"   onclick="selHistTab('lotto',this)">🎯 Lotterie</button>
+      <button class="chip" id="htab-casino"  onclick="selHistTab('casino',this)">🎰 Casino</button>
+      <button class="chip" id="htab-sports"  onclick="selHistTab('sports',this)">⚽ Paris Sportifs</button>
+      <button class="chip" id="htab-all"     onclick="selHistTab('all',this)">📋 Tout</button>
     </div>
-    <div class="card" id="hsec-depot"><h3>💵 Dépôts & Retraits</h3><div id="jhist-depot" class="hist"></div></div>
-    <div class="card" id="hsec-lotto" style="display:none"><h3>🎯 Jeux Lotterie</h3><div id="jhist-lotto" class="hist"></div></div>
-    <div class="card" id="hsec-casino" style="display:none"><h3>🎰 Autres Jeux (Keno, Course, Hélico)</h3><div id="jhist-casino" class="hist"></div></div>
-    <div class="card" id="hsec-sports" style="display:none"><h3>⚽ Mes Paris Sportifs</h3><div id="jbets"></div></div>
+    <div class="card" id="hsec-depot"  style="min-height:70vh;overflow-y:auto"><div id="jhist-depot" class="hist"></div></div>
+    <div class="card" id="hsec-lotto"  style="display:none;min-height:70vh;overflow-y:auto"><div id="jhist-lotto" class="hist"></div></div>
+    <div class="card" id="hsec-casino" style="display:none;min-height:70vh;overflow-y:auto"><div id="jhist-casino" class="hist"></div></div>
+    <div class="card" id="hsec-sports" style="display:none;min-height:70vh;overflow-y:auto"><div id="jbets"></div></div>
+    <div class="card" id="hsec-all"    style="display:none;min-height:70vh;overflow-y:auto"><div id="jhist-all" class="hist"></div></div>
   </div>
 
   </div><!-- end app-content -->
@@ -2555,29 +2556,39 @@ async function borSetLimitDraw() {
   alert('Limite appliquée');
 }
 async function borLoadTickets() {
-  const draw = document.getElementById('bor-ticket-draw').value;
-  const gain = document.getElementById('bor-ticket-gain').value;
-  let url = '/api/admin/bets?type=borlette&limit=100';
-  if (draw) url += `&draw=${draw}`;
+  const draw = document.getElementById('bor-ticket-draw')?.value || '';
+  const gain = document.getElementById('bor-ticket-gain')?.value || '';
+  // Les paris borlette peuvent avoir type 'bolet', 'lotto3', 'lotto2', 'mariage' ou 'borlette'
+  let url = '/api/admin/bets?limit=200';
+  if (draw) url += `&draw=${encodeURIComponent(draw)}`;
   try {
     const data = await apiGet(url);
-    let tickets = data.bets || [];
-    if (gain === 'win') tickets = tickets.filter(t => t.statut === 'gagne');
+    let tickets = (data.bets || []).filter(t => {
+      const tp = (t.type||t.game_type||'').toLowerCase();
+      return ['bolet','lotto3','lotto2','mariage','borlette','lucky6','keno'].includes(tp);
+    });
+    if (gain === 'win')   tickets = tickets.filter(t => t.statut === 'gagne');
     if (gain === 'nowin') tickets = tickets.filter(t => t.statut !== 'gagne');
     const container = document.getElementById('bor-tickets-list');
-    if (!tickets.length) { container.innerHTML = '<div class="empty-msg">Aucun ticket</div>'; return; }
-    container.innerHTML = `<div style="overflow-x:auto;"><table style="width:100%; font-size:12px;"><thead><tr><th>Date</th><th>Joueur</th><th>Numéro</th><th>Type</th><th>Mise</th><th>Gain</th><th>Statut</th></tr></thead><tbody>
+    if (!tickets.length) { container.innerHTML = '<div class="empty-msg">Aucun ticket trouvé</div>'; return; }
+    container.innerHTML = `<div style="overflow-x:auto;"><table style="width:100%;font-size:12px;"><thead><tr><th>Date</th><th>Joueur</th><th>Numéro/Sél.</th><th>Type</th><th>Tirage</th><th>Mise</th><th>Gain</th><th>Statut</th></tr></thead><tbody>
       ${tickets.map(t => `<tr>
-        <td>${new Date(t.created_at).toLocaleString()}</td>
-        <td>${t.player_name || t.player_phone}</td>
-        <td><strong>${t.selection}</strong></td>
-        <td>${t.sub_type || 'borlette'}</td>
-        <td>${parseFloat(t.mise).toLocaleString()} G</td>
-        <td>${t.gain_potentiel>0 ? t.gain_potentiel.toLocaleString()+' G' : '-'}</td>
-        <td><span class="sbadge ${t.statut==='gagne'?'sbw':'sbl'}">${t.statut}</span></td>
+        <td style="font-size:10px">${new Date(t.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>
+        <td>${t.player_name||t.player_phone||'?'}</td>
+        <td><strong>${t.selection||t.numeros_joues||'?'}</strong></td>
+        <td>${t.type||t.game_type||'?'}</td>
+        <td style="font-size:10px">${t.draw||'—'}</td>
+        <td>${parseFloat(t.mise||0).toLocaleString('fr-FR')} Gd</td>
+        <td style="color:${parseFloat(t.gain_potentiel||0)>0?'var(--green2)':'var(--muted)'}">
+          ${parseFloat(t.gain_potentiel||0)>0?parseFloat(t.gain_potentiel).toLocaleString('fr-FR')+' Gd':'—'}
+        </td>
+        <td><span class="sbadge ${t.statut==='gagne'?'sbw':t.statut==='perdu'?'sbl':'sbp'}">${t.statut||'?'}</span></td>
       </tr>`).join('')}
     </tbody></table></div>`;
-  } catch(e) { console.error(e); }
+  } catch(e) { 
+    const container = document.getElementById('bor-tickets-list');
+    if(container) container.innerHTML = '<div class="empty-msg" style="color:var(--red)">Erreur chargement: '+e.message+'</div>';
+  }
 }
 function initBorletteAdmin() {
   loadBorGlobalLimits();
@@ -2742,14 +2753,22 @@ function logoutJoueur(){
   window.location.href = 'index.html';
 }
 
-function accesAdminSecret(){
+async function accesAdminSecret(){
   const code = prompt('🔐 Code d\'accès administration:');
   if(!code) return;
-  if(code.trim() === 'TONTONKONDO12'){
-    refreshAdmin();
+  if(code.trim() !== 'TONTONKONDO12'){ showNotif('Code incorrect','err'); return; }
+  // Demander le mot de passe admin pour obtenir un vrai token
+  const pwd = prompt('🔑 Mot de passe administrateur:');
+  if(!pwd) return;
+  try {
+    const data = await apiPost('/api/auth/admin', { pwd });
+    setToken(data.token);
+    localStorage.setItem('tk_session_role','admin');
+    await refreshAdmin();
     goTo('sc-admin');
-  } else {
-    showNotif('Code incorrect','err');
+    showNotif('✅ Accès administration','ok');
+  } catch(e) {
+    showNotif('Mot de passe incorrect','err');
   }
 }
 
@@ -2841,14 +2860,12 @@ async function soumettreRetrait(){
   if(retraitMethod !== 'cash' && !numero){showNotif('Entrez votre numéro mobile','err');return;}
   try {
     const r = await apiPost('/api/retraits/demande', { montant, methode: retraitMethod, numero_mobile: numero||CJ.phone });
-    // Mettre à jour le solde local
-    const j=gJ();
-    if(j[CJ.phone]) j[CJ.phone].solde = r.newSolde;
-    localStorage.setItem('tk_player_cache', JSON.stringify(j));
-    CJ.solde = r.newSolde;
-    updateAppBar();
-    document.getElementById('retrait-solde-display').textContent = r.newSolde.toLocaleString('fr-FR')+' Gd';
-    showNotif('✅ Demande envoyée ! Traitement sous 24h.','ok');
+    applySoldeFromAPI(r.newSolde);
+    document.getElementById('retrait-solde-display').textContent = parseFloat(r.newSolde).toLocaleString('fr-FR')+' Gd';
+    const msg = r.statut === 'approved'
+      ? `✅ Retrait de ${montant} Gd envoyé sur votre ${retraitMethod} !`
+      : `⏳ Retrait de ${montant} Gd en cours de traitement.`;
+    showNotif(msg, r.statut === 'approved' ? 'ok' : 'info');
     document.getElementById('ret-montant').value='';
     chargerMesRetraits();
   } catch(e){ showNotif(e.message||'Erreur','err'); }
@@ -3746,47 +3763,47 @@ async function demarrerHelico(){
   if(mise<=0||mise>sol){showNotif('Mise invalide ou solde insuffisant','err');return;}
 
   helicoMise=mise; helicoAlt=0; helicoCote=1.0; helicoCrashed=false;
+
+  // Appel serveur pour déduire la mise ET obtenir crashAt basé sur la difficulté DB
+  let sessionId=null, serverCrashAt=null;
+  try {
+    const startResp = await apiPost('/api/games/helico/start', { mise });
+    applySoldeFromAPI(startResp.newBalance);
+    sessionId = startResp.sessionId;
+    serverCrashAt = startResp.crashAt; // multiplicateur de crash décidé par le serveur
+  } catch(e) {
+    showNotif(e.message||'Erreur serveur','err');
+    return;
+  }
+
   helicoRunning=true; helicoY=220; helicoVY=-1.5;
-
-  deduireJ(mise,'Mise Casino','Hélicoptère');
-  let st=gSt();st.dep+=mise;sSt(st);
-
   document.getElementById('helico-start').style.display='none';
   document.getElementById('helico-cash').style.display='inline-flex';
   document.getElementById('helico-cash').disabled=false;
-  document.getElementById('helico-status').textContent='🚁 En vol ! Encaissez au bon moment !';
+  document.getElementById('helico-status').textContent='🚁 En vol ! Encaissez avant le crash !';
   document.getElementById('helico-crash-msg').style.display='none';
   HELICO_LEVELS.forEach(l=>document.getElementById('hlv-'+l.alt)?.classList.remove('reached','active'));
-
-  // Difficulté — détermine hauteur max avant crash probable
-  const diff=getGameDiff('helico');
-  const maxAltMap={easy:1200,medium:700,hard:400,veryhard:200};
-  const maxAlt=maxAltMap[diff]||700;
-  // Crash aléatoire entre 50% et 100% de maxAlt
-  const crashAlt=maxAlt*(0.5+Math.random()*0.5);
 
   requestAnimationFrame(drawHelico);
 
   helicoTimer=setInterval(()=>{
     if(!helicoRunning) return;
 
-    // Montée progressive avec accélération
     helicoAlt+=8+Math.floor(helicoAlt/100);
     helicoCote=parseFloat((1+helicoAlt/200).toFixed(2));
-
-    // Déplacer hélico visuellement vers le haut
     helicoY=Math.max(40, 220-(helicoAlt/2000)*180);
 
     document.getElementById('helico-alt').textContent=helicoAlt+'m';
     document.getElementById('helico-cote').textContent=helicoCote.toFixed(2)+'x';
 
-    // Barre de danger
-    const danger=Math.min(100,Math.round((helicoAlt/crashAlt)*100));
+    // Crash basé sur le seuil serveur (crashAt = multiplicateur)
+    // crashAt=1.5 → crash à ×1.5, soit helicoAlt=100*(1.5-1)*200=100m
+    const crashAltFromServer = serverCrashAt ? (serverCrashAt - 1.0) * 200 : 700;
+    const danger=Math.min(100,Math.round((helicoAlt/crashAltFromServer)*100));
     document.getElementById('helico-danger-bar').style.width=danger+'%';
     document.getElementById('helico-danger-bar').style.background=
       danger<50?'var(--green)':danger<80?'var(--gold)':'var(--red)';
 
-    // Mettre à jour paliers
     HELICO_LEVELS.forEach(l=>{
       const el=document.getElementById('hlv-'+l.alt);
       if(!el) return;
@@ -3796,8 +3813,8 @@ async function demarrerHelico(){
     const nextLv=HELICO_LEVELS.find(l=>helicoAlt<l.alt);
     if(nextLv) document.getElementById('hlv-'+nextLv.alt)?.classList.add('active');
 
-    // CRASH ?
-    if(helicoAlt>=crashAlt){
+    // CRASH quand on atteint le seuil serveur
+    if(helicoAlt>=crashAltFromServer){
       crashHelico();
     }
   },300);
@@ -4763,7 +4780,7 @@ function enregistrerPariCaisse(){
 
 // ==================== HISTORIQUE PAR CATÉGORIE ====================
 function selHistTab(tab, el){
-  ['depot','lotto','casino','sports'].forEach(t=>{
+  ['depot','lotto','casino','sports','all'].forEach(t=>{
     const sec=document.getElementById('hsec-'+t);
     const btn=document.getElementById('htab-'+t);
     if(sec) sec.style.display = t===tab ? '' : 'none';
