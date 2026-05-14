@@ -263,7 +263,8 @@ th{background:var(--blue);color:#fff;font-size:12px;font-weight:700;}
 .keno-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin:10px 0;}
 .kbtn{aspect-ratio:1;background:var(--bg2);border:1px solid var(--border);color:#fff;border-radius:5px;cursor:pointer;font-weight:700;font-size:12px;width:100%;transition:.15s;}
 .kbtn.sel{background:var(--blue);border-color:var(--gold);color:var(--gold);}
-.kbtn.win{background:var(--green2);color:#fff;border-color:var(--green2);}
+.kbtn.win{background:var(--gold);color:#000;border-color:var(--gold);box-shadow:0 0 12px var(--gold);transform:scale(1.1);}
+@keyframes ballPop{0%{transform:scale(0) rotate(-15deg);opacity:0;}60%{transform:scale(1.3) rotate(5deg);}100%{transform:scale(1);opacity:1;}}
 
 /* ===== LUCKY6 ===== */
 .l6-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin:10px 0;}
@@ -1238,15 +1239,20 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
       <h3>💳 Recharger mon compte</h3>
       <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Choisissez votre méthode de recharge</p>
       <div class="recharge-methods">
-        <div class="rm-card" onclick="initRecharge('moncash')">
+        <div class="rm-card" onclick="initRecharge('moncash')" id="rm-moncash">
           <div class="rm-ic">📱</div>
           <div class="rm-name" style="color:#ff9800">MonCash</div>
           <div class="rm-sub">Dépôt mobile instantané</div>
         </div>
-        <div class="rm-card" onclick="initRecharge('natcash')">
+        <div class="rm-card" onclick="initRecharge('natcash')" id="rm-natcash">
           <div class="rm-ic">💳</div>
           <div class="rm-name" style="color:#5b8ef5">NatCash</div>
           <div class="rm-sub">Transfert bancaire rapide</div>
+        </div>
+        <div class="rm-card" onclick="initRecharge('paym')" id="rm-paym" style="grid-column:span 2">
+          <div class="rm-ic">💰</div>
+          <div class="rm-name" style="color:var(--green2)">Pay'M</div>
+          <div class="rm-sub">Paiement mobile Pay'M</div>
         </div>
       </div>
       <div id="recharge-form" style="display:none">
@@ -3301,24 +3307,55 @@ async function jouerKeno(){
     drawBox.innerHTML = '';
     statusEl.textContent = '🎱 Tirage en cours...';
 
-    // Animation boule par boule — 1500ms × 20 boules = 30 secondes
+    // Couleurs des boules comme un vrai Keno
+    const BALL_COLORS = [
+      '#e74c3c','#e67e22','#f1c40f','#2ecc71','#1abc9c',
+      '#3498db','#9b59b6','#e91e63','#ff5722','#00bcd4',
+      '#8bc34a','#ff9800','#673ab7','#009688','#f44336',
+      '#2196f3','#4caf50','#ff4081','#7c4dff','#00e5ff'
+    ];
+
+    // Durée totale ~25s pour 20 boules = 1250ms par boule
+    const DELAY = 1250;
     let hits = 0;
+
     for(let i = 0; i < winNums.length; i++){
-      await new Promise(res => setTimeout(res, 1500));
+      await new Promise(res => setTimeout(res, DELAY));
       const num = winNums[i];
       const isHit = kenoSel.includes(num);
       if(isHit) hits++;
 
-      // Boule dans le tableau de tirage
-      const span = document.createElement('span');
-      span.textContent = num;
-      span.style.cssText = `display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:11px;font-weight:900;border:2px solid ${isHit?'var(--green2)':'var(--border)'};background:${isHit?'var(--green2)':'var(--bg)'};color:${isHit?'#000':'#666'};`;
-      drawBox.appendChild(span);
+      // Créer la boule animée
+      const ball = document.createElement('div');
+      const color = isHit ? '#f1c40f' : BALL_COLORS[i % BALL_COLORS.length];
+      ball.innerHTML = num;
+      ball.style.cssText = `
+        display:inline-flex;align-items:center;justify-content:center;
+        width:34px;height:34px;border-radius:50%;
+        font-size:12px;font-weight:900;
+        background:${color};
+        color:${isHit?'#000':'#fff'};
+        box-shadow:0 3px 8px rgba(0,0,0,0.4)${isHit?',0 0 12px '+color:''},inset 0 -3px 6px rgba(0,0,0,0.2);
+        border:${isHit?'2px solid #fff':'2px solid rgba(255,255,255,0.2)'};
+        animation:ballPop .35s ease-out;
+        transform-origin:center;
+        margin:2px;
+      `;
+      drawBox.appendChild(ball);
 
-      // Allumer/assombrir le bouton dans la grille
+      // Allumer le bouton dans la grille
       const btn = document.getElementById('kn'+num);
-      if(btn){ if(isHit) btn.classList.add('win'); else btn.style.opacity='0.35'; }
-
+      if(btn){
+        if(isHit){
+          btn.classList.add('win');
+          btn.style.background = '#f1c40f';
+          btn.style.color = '#000';
+          btn.style.transform = 'scale(1.15)';
+          btn.style.boxShadow = '0 0 10px #f1c40f';
+        } else {
+          btn.style.opacity = '0.35';
+        }
+      }
       statusEl.textContent = `🎱 Boule ${i+1}/20 — ${hits}/${kenoSel.length} trouvé${hits>1?'s':''}`;
     }
 
@@ -3418,20 +3455,25 @@ async function jouerLucky6(){
 
   try {
     const r = await apiPost('/api/games/lucky6/play', { numbers: l6sel, mise });
-    // Afficher animation avec les vrais numéros gagnants
     const winNums = r.winningNumbers||[];
     let found=0;
+    const L6C = ['#e74c3c','#e67e22','#f1c40f','#2ecc71','#1abc9c','#3498db','#9b59b6','#e91e63',
+      '#ff5722','#00bcd4','#8bc34a','#ff9800','#673ab7','#009688','#f44336','#2196f3',
+      '#4caf50','#ff4081','#7c4dff','#00e5ff','#ffeb3b','#76ff03','#ff6e40','#40c4ff',
+      '#ea80fc','#b9f6ca','#ffd740','#40c4ff','#ff6d00','#aeea00','#69f0ae','#18ffff','#ff4081','#e040fb','#ff6e40'];
     for(let i=0;i<winNums.length;i++){
-      await new Promise(res=>setTimeout(res,857)); // 857ms × 35 boules ≈ 30 secondes
+      await new Promise(res=>setTimeout(res,857));
       const num=winNums[i];
       const isHit=l6sel.includes(num);
       if(isHit)found++;
-      const dn=document.createElement('span');
-      dn.className='dn '+(isHit?'hit':'miss');
-      dn.textContent=num;
-      box.appendChild(dn);
-      prog.textContent=`boule ${i+1} / ${winNums.length}`;
-      hitsEl.textContent=`${found} / 6 trouvés`;
+      const color = isHit ? '#f1c40f' : L6C[i%L6C.length];
+      const ball = document.createElement('div');
+      ball.textContent = num;
+      ball.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;font-size:11px;font-weight:900;background:'+color+';color:'+(isHit?'#000':'#fff')+';box-shadow:0 3px 8px rgba(0,0,0,.4)'+(isHit?',0 0 14px '+color:'')+',inset 0 -3px 5px rgba(0,0,0,.2);border:'+(isHit?'2px solid #fff':'2px solid rgba(255,255,255,.15)')+';animation:ballPop .3s ease-out;margin:2px;'+(isHit?'transform:scale(1.18);position:relative;z-index:1;':'');
+      box.appendChild(ball);
+      prog.textContent='boule '+(i+1)+' / '+winNums.length;
+      hitsEl.textContent=found+' / 6 trouvés';
+      hitsEl.style.color=found>0?'var(--green2)':'var(--gold)';
       if(found===6){prog.textContent='✅ Tous trouvés !';break;}
     }
     document.getElementById('lucky6-status').textContent = r.message;
@@ -3764,13 +3806,13 @@ async function demarrerHelico(){
 
   helicoMise=mise; helicoAlt=0; helicoCote=1.0; helicoCrashed=false;
 
-  // Appel serveur pour déduire la mise ET obtenir crashAt basé sur la difficulté DB
-  let sessionId=null, serverCrashAt=null;
+  // Appel serveur pour déduire la mise ET décider du crash (côté serveur)
+  let sessionId=null;
   try {
     const startResp = await apiPost('/api/games/helico/start', { mise });
     applySoldeFromAPI(startResp.newBalance);
     sessionId = startResp.sessionId;
-    serverCrashAt = startResp.crashAt; // multiplicateur de crash décidé par le serveur
+    // crashAt est SECRET côté serveur, le client ne le connaît pas
   } catch(e) {
     showNotif(e.message||'Erreur serveur','err');
     return;
@@ -3786,7 +3828,7 @@ async function demarrerHelico(){
 
   requestAnimationFrame(drawHelico);
 
-  helicoTimer=setInterval(()=>{
+  helicoTimer=setInterval(async ()=>{
     if(!helicoRunning) return;
 
     helicoAlt+=8+Math.floor(helicoAlt/100);
@@ -3796,13 +3838,11 @@ async function demarrerHelico(){
     document.getElementById('helico-alt').textContent=helicoAlt+'m';
     document.getElementById('helico-cote').textContent=helicoCote.toFixed(2)+'x';
 
-    // Crash basé sur le seuil serveur (crashAt = multiplicateur)
-    // crashAt=1.5 → crash à ×1.5, soit helicoAlt=100*(1.5-1)*200=100m
-    const crashAltFromServer = serverCrashAt ? (serverCrashAt - 1.0) * 200 : 700;
-    const danger=Math.min(100,Math.round((helicoAlt/crashAltFromServer)*100));
+    // Barre de danger visuelle progressive — SANS révéler le moment du crash
+    const danger=Math.min(95, Math.round((helicoCote-1.0)*35));
     document.getElementById('helico-danger-bar').style.width=danger+'%';
     document.getElementById('helico-danger-bar').style.background=
-      danger<50?'var(--green)':danger<80?'var(--gold)':'var(--red)';
+      danger<40?'var(--green)':danger<70?'var(--gold)':'var(--red)';
 
     HELICO_LEVELS.forEach(l=>{
       const el=document.getElementById('hlv-'+l.alt);
@@ -3813,9 +3853,12 @@ async function demarrerHelico(){
     const nextLv=HELICO_LEVELS.find(l=>helicoAlt<l.alt);
     if(nextLv) document.getElementById('hlv-'+nextLv.alt)?.classList.add('active');
 
-    // CRASH quand on atteint le seuil serveur
-    if(helicoAlt>=crashAltFromServer){
-      crashHelico();
+    // LE SERVEUR DÉCIDE DU CRASH — pas le client
+    if(sessionId){
+      try {
+        const upd = await apiPost('/api/games/helico/update', { sessionId, altitude: helicoAlt });
+        if(upd && upd.crashed){ crashHelico(); return; }
+      } catch(e){ /* continue en cas d'erreur réseau */ }
     }
   },300);
 }
@@ -4236,12 +4279,21 @@ function resetRechargeUI() {
 
 function initRecharge(method) {
   resetRechargeUI();
+  // Surligner la carte sélectionnée
+  ['moncash','natcash','paym'].forEach(m => {
+    const el = document.getElementById('rm-'+m);
+    if(el) el.style.border = m===method ? '2px solid var(--gold)' : '';
+  });
+  const labels = { moncash:'MonCash', natcash:'NatCash', paym:"Pay'M" };
+  const icons  = { moncash:'📱', natcash:'💳', paym:'💰' };
   document.getElementById('recharge-form').style.display = 'block';
-  document.getElementById('rch-method-name').textContent = method === 'moncash' ? 'MonCash' : (method === 'natcash' ? 'NatCash' : 'Kashpaw');
-  document.getElementById('rch-ref-label').textContent = 'Méthode';
+  document.getElementById('rch-method-name').textContent = labels[method] || method;
+  document.getElementById('rch-ref-label').textContent = labels[method];
   document.getElementById('rch-ref').dataset.method = method;
   document.getElementById('rch-ref').placeholder = 'Cliquez sur "Payer maintenant"';
   document.getElementById('rch-ref').readOnly = true;
+  const instrEl = document.getElementById('rch-instructions');
+  if(instrEl) instrEl.innerHTML = icons[method]+' Entrez le montant et cliquez sur <b>Payer maintenant</b> pour être redirigé vers '+labels[method]+'.';
   document.getElementById('rch-amount').focus();
 }
 
@@ -4273,6 +4325,30 @@ async function checkPaymentStatus(refId) {
   } catch (e) { console.warn(e); return false; }
 }
 
+async function verifierPaiementManuel(){
+  const refId = currentRechargeRef || sessionStorage.getItem('last_reference_id');
+  if (!refId) { showNotif('Aucun paiement en cours','err'); return; }
+  const btn = document.querySelector('#retour-paiement-btn button');
+  if(btn){ btn.disabled=true; btn.textContent='⏳ Vérification...'; }
+  const done = await checkPaymentStatus(refId);
+  if (!done) {
+    showNotif('❌ Paiement non encore confirmé. Attendez quelques secondes et réessayez.','err');
+    if(btn){ btn.disabled=false; btn.textContent='✅ J\'ai payé — Vérifier mon dépôt'; }
+  } else {
+    // Cacher le bouton retour
+    const rd = document.getElementById('retour-paiement-btn');
+    if(rd) rd.style.display='none';
+  }
+}
+
+function annulerRecharge(){
+  resetRechargeUI();
+  const rd = document.getElementById('retour-paiement-btn');
+  if(rd) rd.style.display='none';
+  document.getElementById('recharge-form').style.display='none';
+  showNotif('Recharge annulée','info');
+}
+
 function startPolling(refId) {
   if (pollingInterval) clearInterval(pollingInterval);
   pollingInterval = setInterval(() => checkPaymentStatus(refId), 5000);
@@ -4284,7 +4360,8 @@ async function soumettreRecharge() {
     showNotif('Une recharge est déjà en cours', 'info'); return;
   }
   const amt = parseInt(document.getElementById('rch-amount').value) || 0;
-  const method = document.getElementById('rch-ref').dataset.method;
+  const method = document.getElementById('rch-ref').dataset.method || '';
+  if (!method) { showNotif('⚠️ Veuillez choisir un moyen de paiement (MonCash, NatCash ou Pay\'M)', 'err'); return; }
   if (amt < 20) { showNotif('Minimum 20 Gourdes', 'err'); return; }
   const btn = document.querySelector('#recharge-form button');
   try {
@@ -4301,6 +4378,24 @@ async function soumettreRecharge() {
 
     btn.textContent = '⏳ En attente du paiement...';
     showNotif('🔗 Fenêtre de paiement ouverte. Complétez le paiement puis revenez ici.', 'info');
+
+    // Afficher un bouton "J'ai payé / Retour" visible
+    let retourDiv = document.getElementById('retour-paiement-btn');
+    if (!retourDiv) {
+      retourDiv = document.createElement('div');
+      retourDiv.id = 'retour-paiement-btn';
+      retourDiv.style.cssText = 'margin-top:12px;text-align:center;';
+      retourDiv.innerHTML = `
+        <p style="font-size:12px;color:var(--muted);margin-bottom:8px">Après avoir payé sur MonCash/NatCash :</p>
+        <button onclick="verifierPaiementManuel()" style="padding:11px 22px;background:linear-gradient(135deg,var(--green2),#1a8a3a);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;width:100%;">
+          ✅ J'ai payé — Vérifier mon dépôt
+        </button>
+        <button onclick="annulerRecharge()" style="margin-top:8px;padding:8px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer;width:100%;">
+          ✕ Annuler
+        </button>`;
+      document.getElementById('recharge-form').appendChild(retourDiv);
+    }
+    retourDiv.style.display = 'block';
 
     // Détecter quand le popup se ferme
     const popupWatcher = setInterval(() => {
@@ -7038,41 +7133,4 @@ function jackpotCheckURLParam(){
       CDir = dirs[me.user_code] || { name:me.name, code:me.user_code, zone:me.zone, pct:me.pct };
       if (document.getElementById('dir-zone-name')) document.getElementById('dir-zone-name').textContent = CDir.zone || '';
       refreshDir(); goTo('sc-dir');
-      setTimeout(async () => {
-        const jk = await loadJackpotData();
-        const djk = jk[me.user_code];
-        const el = document.getElementById('jackpot-display-dir');
-        const amt = document.getElementById('jackpot-amount-dir');
-        if (el && djk && djk.amount > 0) { el.style.display='block'; if(amt) amt.textContent = djk.amount.toLocaleString('fr-FR')+' Gd'; }
-      }, 400);
-    } else if (me.role === 'caissier') {
-      await refreshAllCaches();
-      const caiss = gCaiss();
-      CCaiss = caiss[me.user_code] || { name:me.name, code:me.user_code, dirCode:me.dir_code, jeu:me.jeu };
-      if (document.getElementById('caiss-name-display')) document.getElementById('caiss-name-display').textContent = CCaiss.name || '';
-      if (document.getElementById('caiss-jeu-label')) document.getElementById('caiss-jeu-label').textContent = JEU_LABELS[CCaiss.jeu]||CCaiss.jeu||'';
-      goTo('sc-sec');
-    } else {
-      clearToken(); window.location.href='index.html';
-    }
-  } catch(e) {
-    console.error('Session restore failed:', e.message);
-    clearToken();
-    window.location.href='index.html';
-  }
-  // Tab click handlers
-  document.querySelectorAll('.atab[data-tab]').forEach(tab => {
-    tab.addEventListener('click', () => {
-      if(tab.dataset.tab==='roulette') setTimeout(initRoulette, 100);
-      if(tab.dataset.tab==='penalty') { setTimeout(initPenaltyGame, 100); setTimeout(updatePenaltyWallet, 200); }
-      if(tab.dataset.tab==='sports') loadMatches();
-    });
-  });
-})();
-
-
-
-
-</script>
-</body>
-</html>
+      setTimeout(async ()
