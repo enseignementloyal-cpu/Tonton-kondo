@@ -4281,57 +4281,33 @@ function startPolling(refId) {
 async function soumettreRecharge() {
   if (!CJ) { showNotif("Connectez-vous d'abord", 'err'); return; }
   if (sessionStorage.getItem('recharge_in_progress') === 'true') {
-    showNotif('Une recharge est déjà en cours', 'info'); return;
+    showNotif('Une recharge est déjà en cours', 'info');
+    return;
   }
+
   const amt = parseInt(document.getElementById('rch-amount').value) || 0;
   const method = document.getElementById('rch-ref').dataset.method;
   if (amt < 20) { showNotif('Minimum 20 Gourdes', 'err'); return; }
+
   const btn = document.querySelector('#recharge-form button');
   try {
-    btn.disabled = true; btn.textContent = '⏳ Création...';
+    btn.disabled = true;
+    btn.textContent = '⏳ Création...';
     sessionStorage.setItem('recharge_in_progress', 'true');
+
     const res = await apiPost('/api/recharges/initiate', { montant: amt, methode: method });
     if (!res.success) throw new Error(res.error || 'Erreur API');
+
     currentRechargeRef = res.reference_id;
     sessionStorage.setItem('last_reference_id', currentRechargeRef);
-
-    // Ouvrir dans un popup (pas window.location.href qui quitte le site)
-    const pw = window.open(res.url, 'plopplop_payment',
-      `width=480,height=680,left=${Math.round(screen.width/2-240)},top=${Math.round(screen.height/2-340)}`);
-
-    btn.textContent = '⏳ En attente du paiement...';
-    showNotif('🔗 Fenêtre de paiement ouverte. Complétez le paiement puis revenez ici.', 'info');
-
-    // Détecter quand le popup se ferme
-    const popupWatcher = setInterval(() => {
-      if (pw && pw.closed) {
-        clearInterval(popupWatcher);
-        // Vérifier le statut dès que le popup se ferme
-        checkPaymentStatus(currentRechargeRef).then(done => {
-          if (!done) startPolling(currentRechargeRef);
-        });
-      }
-    }, 500);
-
-    // Polling de sécurité en parallèle
     startPolling(currentRechargeRef);
+
+    window.location.href = res.url;
   } catch (e) {
     showNotif(e.message || 'Erreur lors de la création du paiement', 'err');
     resetRechargeUI();
   }
 }
-
-// Détecter retour depuis PlopPlop via l'URL (?recharge_ref=...)
-(function detectRetourPaiement() {
-  const params = new URLSearchParams(window.location.search);
-  const ref = params.get('recharge_ref');
-  if (ref) {
-    sessionStorage.setItem('recharge_in_progress', 'true');
-    sessionStorage.setItem('last_reference_id', ref);
-    // Nettoyer l'URL sans recharger la page
-    window.history.replaceState({}, document.title, window.location.pathname);
-  }
-})();
 
 // Au démarrage de l'application (dans la fonction de restauration de session)
 // Après avoir restauré CJ, ajouter :
@@ -4859,32 +4835,16 @@ async function renderJBets(){
   el.innerHTML='<div style="color:var(--muted);font-size:13px;padding:8px;text-align:center">⏳ Chargement...</div>';
   try {
     const data = await apiGet('/api/bets');
-    const bets = (data.bets||[]).filter(b=>{
-      const t = (b.game_type||b.type||'').toLowerCase();
-      return t === 'sport' || t === 'sports';
-    });
-    if(!bets.length){ el.innerHTML='<p style="color:var(--muted);font-size:13px;padding:12px">Aucun pari sportif enregistré.</p>'; return; }
-    el.innerHTML=`<div style="overflow-x:auto"><table style="font-size:11px;min-width:100%;width:100%;border-collapse:collapse;"><thead style="background:var(--bg2)"><tr>
-      <th style="padding:8px 6px;text-align:left">Date</th>
-      <th style="padding:8px 6px;text-align:left">Match</th>
-      <th style="padding:8px 6px">Mise</th>
-      <th style="padding:8px 6px">Gain pot.</th>
-      <th style="padding:8px 6px">Statut</th>
-    </tr></thead><tbody>
+    const bets = (data.bets||[]).filter(b=>b.game_type==='sport');
+    if(!bets.length){ el.innerHTML='<p style="color:var(--muted);font-size:13px">Aucun pari sportif.</p>'; return; }
+    el.innerHTML=`<div style="overflow-x:auto"><table style="font-size:11px;min-width:360px;width:100%"><thead><tr><th>Date</th><th>Match</th><th>Mise</th><th>Gain pot.</th><th>Statut</th></tr></thead><tbody>
     ${bets.map(b=>{
       const info = b.match_info ? (typeof b.match_info==='string'?JSON.parse(b.match_info):b.match_info) : {};
       const date = new Date(b.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-      const matchStr = info.homeTeam ? `${info.homeTeam} vs ${info.awayTeam}` : (b.selection||'?');
-      return `<tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:6px;font-size:10px;color:var(--muted)">${date}</td>
-        <td style="padding:6px"><b>${matchStr}</b>${info.prediction?`<br><small style="color:var(--gold)">${info.prediction} @ ${info.cote||'?'}</small>`:''}</td>
-        <td style="padding:6px;text-align:center">${parseFloat(b.mise)} Gd</td>
-        <td style="padding:6px;text-align:center;color:var(--green2)">${parseFloat(b.gain_potentiel||0)} Gd</td>
-        <td style="padding:6px;text-align:center"><span class="sbadge ${b.statut==='en_attente'?'sbp':b.statut==='gagne'?'sbw':'sbl'}">${b.statut==='en_attente'?'⏳':b.statut==='gagne'?'✅ Gagné':'❌ Perdu'}</span></td>
-      </tr>`;
+      return `<tr><td style="font-size:10px">${date}</td><td>${info.homeTeam||'?'} vs ${info.awayTeam||'?'}<br><small style="color:var(--gold)">${info.prediction||'?'} @ ${info.cote||'?'}</small></td><td>${parseFloat(b.mise)} Gd</td><td style="color:var(--green2)">${parseFloat(b.gain_potentiel)} Gd</td><td><span class="sbadge ${b.statut==='en_attente'?'sbp':b.statut==='gagne'?'sbw':'sbl'}">${b.statut==='en_attente'?'⏳':b.statut==='gagne'?'✅':'❌'} ${b.statut}</span></td></tr>`;
     }).join('')}
     </tbody></table></div>`;
-  } catch(e){ el.innerHTML='<div style="color:var(--red);font-size:13px;padding:8px">Erreur: '+e.message+'</div>'; }
+  } catch(e){ el.innerHTML='<div style="color:var(--red);font-size:13px;padding:8px">Erreur chargement.</div>'; }
 }
 
 // Patch renderJHist to use new async system
@@ -5503,35 +5463,21 @@ function getMaisonStats(){
   return {totalMC,totalNC,totalCash,totalDepots,misesPerdues,gainsPaies,beneficeMaison};
 }
 
-async function refreshAdminComptes(){
-  try {
-    const data = await apiGet('/api/admin/transactions');
-    const trans = data.transactions || [];
-    const rdata = await apiGet('/api/admin/recharges').catch(()=>({recharges:[]}));
-    const rch = rdata.recharges || [];
-
-    const totalMC   = rch.filter(r=>r.methode==='moncash'  && r.statut==='completed').reduce((s,r)=>s+parseFloat(r.montant),0);
-    const totalNC   = rch.filter(r=>r.methode==='natcash'  && r.statut==='completed').reduce((s,r)=>s+parseFloat(r.montant),0);
-    const totalCash = rch.filter(r=>r.methode==='cash'     && r.statut==='completed').reduce((s,r)=>s+parseFloat(r.montant),0);
-    const totalDepots = totalMC + totalNC + totalCash;
-    const misesPerdues = trans.filter(t=>t.type==='mise').reduce((s,t)=>s+Math.abs(parseFloat(t.montant)),0);
-    const gainsPaies  = trans.filter(t=>t.type==='gain').reduce((s,t)=>s+parseFloat(t.montant),0);
-    const beneficeMaison = misesPerdues - gainsPaies;
-
-    const el = n => document.getElementById(n);
-    if(el('adm-moncash-total'))  el('adm-moncash-total').textContent  = totalMC.toLocaleString('fr-FR')+' Gd';
-    if(el('adm-natcash-total'))  el('adm-natcash-total').textContent  = totalNC.toLocaleString('fr-FR')+' Gd';
-    if(el('adm-cash-total'))     el('adm-cash-total').textContent     = totalCash.toLocaleString('fr-FR')+' Gd';
-    if(el('adm-total-encaisse')) el('adm-total-encaisse').textContent = totalDepots.toLocaleString('fr-FR')+' Gd';
-    if(el('adm-mises-perdues'))  el('adm-mises-perdues').textContent  = misesPerdues.toLocaleString('fr-FR')+' Gd';
-    if(el('adm-gains-paies'))    el('adm-gains-paies').textContent    = gainsPaies.toLocaleString('fr-FR')+' Gd';
-    if(el('adm-benefice')) {
-      el('adm-benefice').textContent = beneficeMaison.toLocaleString('fr-FR')+' Gd';
-      el('adm-benefice').style.color = beneficeMaison>=0?'var(--green2)':'var(--red)';
-    }
-    // Aussi charger les recharges dans l'onglet recharges
-    admRefreshRechargesFromAPI && admRefreshRechargesFromAPI();
-  } catch(e) { console.warn('refreshAdminComptes:', e.message); }
+function refreshAdminComptes(){
+  const stats = getMaisonStats();
+  const el = n => document.getElementById(n);
+  // Comptes recharge
+  if(el('adm-moncash-total')) el('adm-moncash-total').textContent=stats.totalMC.toLocaleString('fr-FR')+' Gd';
+  if(el('adm-natcash-total')) el('adm-natcash-total').textContent=stats.totalNC.toLocaleString('fr-FR')+' Gd';
+  if(el('adm-cash-total'))    el('adm-cash-total').textContent=stats.totalCash.toLocaleString('fr-FR')+' Gd';
+  if(el('adm-total-encaisse'))el('adm-total-encaisse').textContent=stats.totalDepots.toLocaleString('fr-FR')+' Gd';
+  // Gains maison
+  if(el('adm-mises-perdues')) el('adm-mises-perdues').textContent=stats.misesPerdues.toLocaleString('fr-FR')+' Gd';
+  if(el('adm-gains-paies'))   el('adm-gains-paies').textContent=stats.gainsPaies.toLocaleString('fr-FR')+' Gd';
+  if(el('adm-benefice')){
+    el('adm-benefice').textContent=stats.beneficeMaison.toLocaleString('fr-FR')+' Gd';
+    el('adm-benefice').style.color=stats.beneficeMaison>=0?'var(--green2)':'var(--red)';
+  }
 }
 
 // ============================================================

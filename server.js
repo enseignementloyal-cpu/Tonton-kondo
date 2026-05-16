@@ -495,22 +495,19 @@ function formatMatch(match, compCode) {
   const status = match.status;
   const isLive = ['IN_PLAY','PAUSED'].includes(status);
   const score = match.score?.fullTime || match.score?.halfTime || {home:null,away:null};
-  const [h,d,a] = calculateOdds(home, away, compCode);
-  // Marchés étendus: 1X2 + BTTS + Plus/Moins 2.5 buts
-  const bttsYes = +(1.7  + Math.random()*0.5).toFixed(2);
-  const bttsNo  = +(1.9  + Math.random()*0.4).toFixed(2);
-  const over25  = +(1.65 + Math.random()*0.5).toFixed(2);
-  const under25 = +(2.10 + Math.random()*0.6).toFixed(2);
   return {
     id: match.id,
     lk: compCode.toLowerCase(),
     lg: COMP_LABELS[compCode] || compCode,
-    t1: home, t2: away,
-    s1: score.home ?? null, s2: score.away ?? null,
-    time: isLive ? 'LIVE' : (match.utcDate ? new Date(match.utcDate).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',timeZone:'America/Port-au-Prince'}) : ''),
-    live: isLive, status, utcDate: match.utcDate,
-    odds: [h, d, a],
-    markets: { btts:[bttsYes,bttsNo], goals:[over25,under25] },
+    t1: home,
+    t2: away,
+    s1: score.home ?? null,
+    s2: score.away ?? null,
+    time: isLive ? 'LIVE' : (match.utcDate ? new Date(match.utcDate).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : ''),
+    live: isLive,
+    status: status,
+    utcDate: match.utcDate,
+    odds: calculateOdds(home, away, compCode),
     mkt: 12
   };
 }
@@ -523,7 +520,7 @@ app.get('/api/matches', async (req, res) => {
     }
     const allMatches = [];
     const today = new Date().toISOString().split('T')[0];
-    const in7days = new Date(Date.now()+14*86400000).toISOString().split('T')[0];
+    const in7days = new Date(Date.now()+7*86400000).toISOString().split('T')[0];
     for (const comp of COMPETITIONS) {
       try {
         // Matchs en cours et à venir
@@ -554,7 +551,7 @@ app.get('/api/matches/:comp', async (req, res) => {
   try {
     const comp = req.params.comp.toUpperCase();
     const today = new Date().toISOString().split('T')[0];
-    const in7days = new Date(Date.now()+14*86400000).toISOString().split('T')[0];
+    const in7days = new Date(Date.now()+7*86400000).toISOString().split('T')[0];
     const r = await fetch(`https://api.football-data.org/v4/competitions/${comp}/matches?dateFrom=${today}&dateTo=${in7days}`, {
       headers: { 'X-Auth-Token': FOOTBALL_API_KEY }
     });
@@ -670,15 +667,11 @@ app.post('/api/recharges/initiate', requireAuth, async (req, res) => {
     const player = await pool.query("SELECT phone, name FROM players WHERE phone=$1", [phone]);
     if (!player.rows.length) return res.status(404).json({ error: 'Joueur introuvable' });
     const reference_id = `TK_${phone}_${Date.now()}_${Math.random().toString(36).substr(2,6)}`;
-    const callbackUrl = `${req.protocol}://${req.get('host')}/api/recharges/callback`;
-    const returnUrl   = `${req.protocol}://${req.get('host')}/?recharge_ref=${reference_id}`;
     const plopData = await callPlopPlop('/api/paiement-marchand', {
       client_id: MERCHANT_CLIENT_ID,
       refference_id: reference_id,
       montant: montant,
-      payment_method: methode.toUpperCase(), // MONCASH, NATCASH, KASHPAW
-      callback_url: callbackUrl,
-      return_url: returnUrl
+      payment_method: methode
     });
     if (!plopData.status) throw new Error(plopData.message || 'Erreur paiement');
     await pool.query(
@@ -692,56 +685,6 @@ app.post('/api/recharges/initiate', requireAuth, async (req, res) => {
   }
 });
 
-// ── CALLBACK PLOPPLOP (webhook automatique après paiement) ─
-app.post('/api/recharges/callback', async (req, res) => {
-  try {
-    const { refference_id, trans_status, montant } = req.body;
-    if (!refference_id) return res.status(400).json({ error: 'ref manquante' });
-    const recharge = await pool.query("SELECT * FROM recharges WHERE reference_id=$1", [refference_id]);
-    if (!recharge.rows.length) return res.status(404).json({ error: 'Recharge non trouvée' });
-    const r = recharge.rows[0];
-    if (r.statut === 'completed') return res.json({ ok: true }); // déjà traité
-    if (trans_status === 'ok' || trans_status === 'success') {
-      const client = await pool.connect();
-      try {
-        await client.query('BEGIN');
-        await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [r.montant, r.player_phone]);
-        await client.query("UPDATE recharges SET statut='completed', updated_at=NOW() WHERE id=$1", [r.id]);
-        await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'depot',$3,$4)",
-          [r.player_phone, r.dir_code, r.montant, `Recharge ${r.methode} via PlopPlop (auto)`]);
-        await client.query('COMMIT');
-      } catch(e) { await client.query('ROLLBACK'); throw e; } finally { client.release(); }
-    }
-    res.json({ ok: true });
-  } catch(e) { console.error('callback error:', e.message); res.status(500).json({ error: e.message }); }
-});
-
-// ── RETURN URL: joueur revient sur le site après paiement ─
-app.get('/', async (req, res, next) => {
-  const ref = req.query.recharge_ref;
-  if (!ref) return next();
-  // Vérifier le statut et créditer si nécessaire
-  try {
-    const recharge = await pool.query("SELECT * FROM recharges WHERE reference_id=$1", [ref]);
-    if (recharge.rows.length && recharge.rows[0].statut !== 'completed') {
-      const r = recharge.rows[0];
-      const verifyData = await callPlopPlop('/api/paiement-verify', { client_id: MERCHANT_CLIENT_ID, refference_id: ref });
-      if (verifyData.trans_status === 'ok') {
-        const client = await pool.connect();
-        try {
-          await client.query('BEGIN');
-          await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [r.montant, r.player_phone]);
-          await client.query("UPDATE recharges SET statut='completed', updated_at=NOW() WHERE id=$1", [r.id]);
-          await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'depot',$3,$4)",
-            [r.player_phone, r.dir_code, r.montant, `Recharge ${r.methode} confirmée`]);
-          await client.query('COMMIT');
-        } catch(e) { await client.query('ROLLBACK'); } finally { client.release(); }
-      }
-    }
-  } catch(e) { console.error('return url error:', e.message); }
-  // Rediriger vers l'app
-  res.redirect(`/index.html?recharge_ref=${ref}`);
-});
 app.get('/api/recharges/status/:referenceId', requireAuth, async (req, res) => {
   try {
     const { referenceId } = req.params;
@@ -751,20 +694,18 @@ app.get('/api/recharges/status/:referenceId', requireAuth, async (req, res) => {
     if (req.session.role === 'joueur' && r.player_phone !== req.session.user_phone) return res.status(403).json({ error: 'Non autorisé' });
     if (r.statut === 'completed') return res.json({ status: 'completed', montant: r.montant });
     if (r.statut === 'failed') return res.json({ status: 'failed' });
-    // Vérifier auprès de PlopPlop
     const verifyData = await callPlopPlop('/api/paiement-verify', { client_id: MERCHANT_CLIENT_ID, refference_id: referenceId });
     if (verifyData.trans_status === 'ok') {
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
-        await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [r.montant, r.player_phone]);
+        await client.query("UPDATE players SET solde = solde + $1 WHERE phone = $2", [r.montant, r.player_phone]);
         await client.query("UPDATE recharges SET statut='completed', updated_at=NOW() WHERE id=$1", [r.id]);
-        await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'depot',$3,$4)", [r.player_phone, r.dir_code, r.montant, `Recharge ${r.methode} confirmée`]);
+        await client.query("INSERT INTO transactions (player_phone, type, montant, note) VALUES ($1, 'depot', $2, $3)", [r.player_phone, r.montant, `Recharge ${r.methode} via Plop Plop`]);
         await client.query('COMMIT');
-        return res.json({ status: 'completed', montant: r.montant });
+        res.json({ status: 'completed', montant: r.montant });
       } catch(err) { await client.query('ROLLBACK'); throw err; } finally { client.release(); }
-    }
-    res.json({ status: 'pending' });
+    } else res.json({ status: 'pending' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
