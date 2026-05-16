@@ -3764,13 +3764,13 @@ async function demarrerHelico(){
 
   helicoMise=mise; helicoAlt=0; helicoCote=1.0; helicoCrashed=false;
 
-  // Appel serveur pour déduire la mise ET décider du crash (côté serveur)
-  let sessionId=null;
+  // Appel serveur pour déduire la mise ET obtenir crashAt basé sur la difficulté DB
+  let sessionId=null, serverCrashAt=null;
   try {
     const startResp = await apiPost('/api/games/helico/start', { mise });
     applySoldeFromAPI(startResp.newBalance);
     sessionId = startResp.sessionId;
-    // crashAt est SECRET côté serveur, le client ne le connaît pas
+    serverCrashAt = startResp.crashAt; // multiplicateur de crash décidé par le serveur
   } catch(e) {
     showNotif(e.message||'Erreur serveur','err');
     return;
@@ -3786,7 +3786,7 @@ async function demarrerHelico(){
 
   requestAnimationFrame(drawHelico);
 
-  helicoTimer=setInterval(async ()=>{
+  helicoTimer=setInterval(()=>{
     if(!helicoRunning) return;
 
     helicoAlt+=8+Math.floor(helicoAlt/100);
@@ -3796,11 +3796,13 @@ async function demarrerHelico(){
     document.getElementById('helico-alt').textContent=helicoAlt+'m';
     document.getElementById('helico-cote').textContent=helicoCote.toFixed(2)+'x';
 
-    // Barre de danger visuelle progressive — SANS révéler le moment du crash
-    const danger=Math.min(95, Math.round((helicoCote-1.0)*35));
+    // Crash basé sur le seuil serveur (crashAt = multiplicateur)
+    // crashAt=1.5 → crash à ×1.5, soit helicoAlt=100*(1.5-1)*200=100m
+    const crashAltFromServer = serverCrashAt ? (serverCrashAt - 1.0) * 200 : 700;
+    const danger=Math.min(100,Math.round((helicoAlt/crashAltFromServer)*100));
     document.getElementById('helico-danger-bar').style.width=danger+'%';
     document.getElementById('helico-danger-bar').style.background=
-      danger<40?'var(--green)':danger<70?'var(--gold)':'var(--red)';
+      danger<50?'var(--green)':danger<80?'var(--gold)':'var(--red)';
 
     HELICO_LEVELS.forEach(l=>{
       const el=document.getElementById('hlv-'+l.alt);
@@ -3811,12 +3813,9 @@ async function demarrerHelico(){
     const nextLv=HELICO_LEVELS.find(l=>helicoAlt<l.alt);
     if(nextLv) document.getElementById('hlv-'+nextLv.alt)?.classList.add('active');
 
-    // LE SERVEUR DÉCIDE DU CRASH — pas le client
-    if(sessionId){
-      try {
-        const upd = await apiPost('/api/games/helico/update', { sessionId, altitude: helicoAlt });
-        if(upd && upd.crashed){ crashHelico(); return; }
-      } catch(e){ /* continue en cas d'erreur réseau */ }
+    // CRASH quand on atteint le seuil serveur
+    if(helicoAlt>=crashAltFromServer){
+      crashHelico();
     }
   },300);
 }
@@ -4274,30 +4273,6 @@ async function checkPaymentStatus(refId) {
   } catch (e) { console.warn(e); return false; }
 }
 
-async function verifierPaiementManuel(){
-  const refId = currentRechargeRef || sessionStorage.getItem('last_reference_id');
-  if (!refId) { showNotif('Aucun paiement en cours','err'); return; }
-  const btn = document.querySelector('#retour-paiement-btn button');
-  if(btn){ btn.disabled=true; btn.textContent='⏳ Vérification...'; }
-  const done = await checkPaymentStatus(refId);
-  if (!done) {
-    showNotif('❌ Paiement non encore confirmé. Attendez quelques secondes et réessayez.','err');
-    if(btn){ btn.disabled=false; btn.textContent='✅ J\'ai payé — Vérifier mon dépôt'; }
-  } else {
-    // Cacher le bouton retour
-    const rd = document.getElementById('retour-paiement-btn');
-    if(rd) rd.style.display='none';
-  }
-}
-
-function annulerRecharge(){
-  resetRechargeUI();
-  const rd = document.getElementById('retour-paiement-btn');
-  if(rd) rd.style.display='none';
-  document.getElementById('recharge-form').style.display='none';
-  showNotif('Recharge annulée','info');
-}
-
 function startPolling(refId) {
   if (pollingInterval) clearInterval(pollingInterval);
   pollingInterval = setInterval(() => checkPaymentStatus(refId), 5000);
@@ -4326,24 +4301,6 @@ async function soumettreRecharge() {
 
     btn.textContent = '⏳ En attente du paiement...';
     showNotif('🔗 Fenêtre de paiement ouverte. Complétez le paiement puis revenez ici.', 'info');
-
-    // Afficher un bouton "J'ai payé / Retour" visible
-    let retourDiv = document.getElementById('retour-paiement-btn');
-    if (!retourDiv) {
-      retourDiv = document.createElement('div');
-      retourDiv.id = 'retour-paiement-btn';
-      retourDiv.style.cssText = 'margin-top:12px;text-align:center;';
-      retourDiv.innerHTML = `
-        <p style="font-size:12px;color:var(--muted);margin-bottom:8px">Après avoir payé sur MonCash/NatCash :</p>
-        <button onclick="verifierPaiementManuel()" style="padding:11px 22px;background:linear-gradient(135deg,var(--green2),#1a8a3a);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;width:100%;">
-          ✅ J'ai payé — Vérifier mon dépôt
-        </button>
-        <button onclick="annulerRecharge()" style="margin-top:8px;padding:8px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer;width:100%;">
-          ✕ Annuler
-        </button>`;
-      document.getElementById('recharge-form').appendChild(retourDiv);
-    }
-    retourDiv.style.display = 'block';
 
     // Détecter quand le popup se ferme
     const popupWatcher = setInterval(() => {

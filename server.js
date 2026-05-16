@@ -1115,68 +1115,61 @@ app.post('/api/games/keno/play', requireAuth, async (req, res) => {
     if (req.session.role !== 'joueur') return res.status(403).json({ error: 'Joueurs seulement' });
     const { numbers, mise } = req.body;
     const phone = req.session.user_phone;
-    if (!numbers || !numbers.length || numbers.length > 10 || !mise || mise <= 0)
-      return res.status(400).json({ error: 'Données invalides' });
+    if (!numbers || !numbers.length || numbers.length > 10 || !mise || mise <= 0) return res.status(400).json({ error: 'Données invalides' });
     const playerNums = numbers.map(Number);
     await client.query('BEGIN');
-    const player = await client.query("SELECT solde,dir_code FROM players WHERE phone=$1 FOR UPDATE", [phone]);
+    const player = await client.query("SELECT solde, dir_code FROM players WHERE phone=$1 FOR UPDATE", [phone]);
     if (!player.rows.length) throw new Error('Joueur introuvable');
     if (parseFloat(player.rows[0].solde) < mise) throw new Error('Solde insuffisant');
     const dirCode = player.rows[0].dir_code;
 
-    // Difficulté depuis la DB (0-100)
-    // diff=20 → très difficile (peu de boules joués sortent)
-    // diff=80 → facile (beaucoup de boules joués sortent)
-    const diff = await getWinProbability(dirCode, 'keno');
-    // Probabilité qu'une boule JOUÉE soit dans le tirage
-    const pHit = diff / 100; // 0.0 à 1.0
-    // Probabilité qu'une boule NON JOUÉE soit dans le tirage
-    // On s'assure d'avoir exactement 20 boules au total en ajustant
-    const all80 = Array.from({length:80},(_,i)=>i+1);
-    const autresAll = all80.filter(n => !playerNums.includes(n)); // 80 - N boules
-    // 1. Pour chaque boule jouée: inclure avec proba pHit (indépendant)
-    const tirage = [];
-    for (const n of playerNums) {
-      if (Math.random() < pHit) tirage.push(n);
-    }
-    // 2. Compléter avec des boules non jouées mélangées jusqu'à 20
-    for (let i=autresAll.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[autresAll[i],autresAll[j]]=[autresAll[j],autresAll[i]];}
-    for (const n of autresAll) {
-      if (tirage.length >= 20) break;
-      if (!tirage.includes(n)) tirage.push(n);
-    }
-    // 3. Mélanger le tirage final
-    for (let i=tirage.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[tirage[i],tirage[j]]=[tirage[j],tirage[i]];}
-    const winningNumbers = tirage.slice(0, 20).sort((a,b)=>a-b);
-
+    // Difficulté = % de chance que le tirage "favorise" le joueur
+    // Elle biaise la construction du pool, pas bloque le résultat
+    const difficulte = await getWinProbability(dirCode, 'keno'); // 0-100
+    const pool80 = Array.from({length:80}, (_,i) => i+1);
+    // Séparer numéros joués et non joués
+    const joues = pool80.filter(n => playerNums.includes(n));
+    const autres = pool80.filter(n => !playerNums.includes(n));
+    // Shuffle les deux groupes
+    for (let i=joues.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[joues[i],joues[j]]=[joues[j],joues[i]];}
+    for (let i=autres.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[autres[i],autres[j]]=[autres[j],autres[i]];}
+    // Difficulté 50% = équitable, >50% = plus favorable, <50% = moins favorable
+    // On place dans les 20 tirés: proportionnellement plus/moins de numéros joués
+    const maxJoues = playerNums.length;
+    const nbJouesDansTirage = Math.round((difficulte / 100) * maxJoues); // ex: diff=70 → 70% des joués dans le tirage
+    const tirageFavoris = joues.slice(0, nbJouesDansTirage);
+    const tirageAutres = autres.slice(0, 20 - tirageFavoris.length);
+    const winningNumbers = [...tirageFavoris, ...tirageAutres].sort((a,b)=>a-b);
+    // Compter les vrais hits
     const hits = playerNums.filter(n => winningNumbers.includes(n)).length;
-    // Seuil 70%: ex. 10 boules → seuil 7
-    const seuil = Math.ceil(playerNums.length * 0.7);
+    // Table de gain: le joueur gagne seulement si hits >= 70% des numéros joués
+    const seuilGain = Math.ceil(playerNums.length * 0.7); // ex: 10 boules → seuil 7
     const PAYTABLE = {
       1:{1:3},
       2:{2:5},
       3:{3:8},
-      4:{3:2,4:20},
-      5:{4:3,5:50},
-      6:{5:5,6:100},
-      7:{5:3,6:15,7:200},
-      8:{6:5,7:25,8:400},
-      9:{7:8,8:50,9:800},
-      10:{7:3,8:15,9:100,10:2000}
+      4:{3:2, 4:20},
+      5:{4:3, 5:50},
+      6:{5:5, 6:100},
+      7:{5:3, 6:15, 7:200},
+      8:{6:5, 7:25, 8:400},
+      9:{7:8, 8:50, 9:800},
+      10:{7:3, 8:15, 9:100, 10:2000}
     };
-    const mult = hits >= seuil ? ((PAYTABLE[playerNums.length]||{})[hits] || 1) : 0;
+    const mult = hits >= seuilGain ? ((PAYTABLE[playerNums.length]||{})[hits] || 1) : 0;
     const gain = Math.round(mise * mult);
-
+    // Transactions
     await client.query("UPDATE players SET solde=solde-$1 WHERE phone=$2", [mise, phone]);
     if (gain > 0) await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [gain, phone]);
     await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'mise',$3,'Mise Keno')", [phone,dirCode,-mise]);
-    if (gain > 0) await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'gain',$3,$4)", [phone,dirCode,gain,`Gain Keno ${hits}/${playerNums.length}`]);
+    if (gain > 0) await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'gain',$3,$4)", [phone,dirCode,gain,`Gain Keno ${hits}/${playerNums.length} hits`]);
     await client.query("INSERT INTO bets (player_phone,dir_code,type,selection,mise,gain_potentiel,statut) VALUES ($1,$2,'keno',$3,$4,$5,$6)", [phone,dirCode,playerNums.join(','),mise,gain,gain>0?'gagne':'perdu']);
     if (dirCode) await client.query("INSERT INTO jackpots (dir_code,amount,week_sales) VALUES ($1,$2,$3) ON CONFLICT (dir_code) DO UPDATE SET amount=jackpots.amount+$2,week_sales=jackpots.week_sales+$3", [dirCode,mise*JACKPOT_PCT/100,mise]);
     await client.query('COMMIT');
     const nb = await pool.query("SELECT solde FROM players WHERE phone=$1",[phone]);
-    res.json({ success:true, winningNumbers, hits, gain, newBalance:parseFloat(nb.rows[0].solde),
-      message: gain>0 ? `🎉 ${hits}/${playerNums.length} hits — +${gain} Gd` : `😔 ${hits}/${playerNums.length} hits — Perdu` });
+    const newBalance = parseFloat(nb.rows[0].solde);
+    res.json({ success:true, winningNumbers, hits, gain, newBalance,
+      message: gain>0 ? `🎉 ${hits}/${playerNums.length} hits — Gain: ${gain} Gd` : `😔 ${hits}/${playerNums.length} hits — Perdu` });
   } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
 });
 
@@ -1194,38 +1187,33 @@ app.post('/api/games/lucky6/play', requireAuth, async (req, res) => {
     if (parseFloat(player.rows[0].solde) < mise) throw new Error('Solde insuffisant');
     const dirCode = player.rows[0].dir_code;
 
-    // diff=20 → difficile, diff=80 → facile
-    // pHit = probabilité que chacune des 6 boules jouées soit dans les 35 tirées
-    const diff = await getWinProbability(dirCode, 'lucky6');
-    const pHit = diff / 100;
-    const autresAll = Array.from({length:48},(_,i)=>i+1).filter(n=>!playerNums.includes(n));
+    // Difficulté biaise le pool (comme Keno)
+    const difficulte = await getWinProbability(dirCode, 'lucky6');
+    const pool48 = Array.from({length:48},(_,i)=>i+1);
+    const joues = pool48.filter(n => playerNums.includes(n));
+    const autres = pool48.filter(n => !playerNums.includes(n));
+    for (let i=joues.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[joues[i],joues[j]]=[joues[j],joues[i]];}
+    for (let i=autres.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[autres[i],autres[j]]=[autres[j],autres[i]];}
+    // Nombre de numéros joués qui entrent dans le tirage (35 boules tirées)
+    const nbJouesDans35 = Math.round((difficulte / 100) * 6); // 0-6
+    const jouesDansTirage = joues.slice(0, nbJouesDans35);
+    const autresDansTirage = autres.slice(0, 35 - jouesDansTirage.length);
+    // Mélanger les 35 boules finales
+    const winningNumbers = [...jouesDansTirage, ...autresDansTirage];
+    for (let i=winningNumbers.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[winningNumbers[i],winningNumbers[j]]=[winningNumbers[j],winningNumbers[i]];}
 
-    // 1. Chaque boule jouée entre dans le tirage selon sa probabilité
-    const tirage = [];
-    for (const n of playerNums) {
-      if (Math.random() < pHit) tirage.push(n);
-    }
-    // 2. Compléter avec des boules non jouées (mélangées) jusqu'à 35
-    for (let i=autresAll.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[autresAll[i],autresAll[j]]=[autresAll[j],autresAll[i]];}
-    for (const n of autresAll) {
-      if (tirage.length >= 35) break;
-      tirage.push(n);
-    }
-    // 3. Mélanger le tirage final de 35 boules
-    for (let i=tirage.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[tirage[i],tirage[j]]=[tirage[j],tirage[i]];}
-    const winningNumbers = tirage.slice(0,35);
-
+    // Compter les vrais hits et la position du dernier trouvé
     let hits = 0, lastHitPos = -1;
     for (let i=0; i<winningNumbers.length; i++) {
       if (playerNums.includes(winningNumbers[i])) { hits++; lastHitPos = i; }
     }
 
-    // Seuil 70% → 4/6 pour gagner
+    // Gains Lucky6: seuil 70% = 4/6 minimum pour gagner
     let gain = 0;
     if (hits === 6) gain = Math.round(mise * Math.max(5, 200 - lastHitPos * 3));
     else if (hits === 5) gain = Math.round(mise * 50);
     else if (hits === 4) gain = Math.round(mise * 8);
-    // hits < 4 = perdu
+    // hits < 4 = perdu (en dessous du seuil 70%)
 
     await client.query("UPDATE players SET solde=solde-$1 WHERE phone=$2", [mise, phone]);
     if (gain > 0) await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [gain, phone]);
@@ -1235,8 +1223,9 @@ app.post('/api/games/lucky6/play', requireAuth, async (req, res) => {
     if (dirCode) await client.query("INSERT INTO jackpots (dir_code,amount,week_sales) VALUES ($1,$2,$3) ON CONFLICT (dir_code) DO UPDATE SET amount=jackpots.amount+$2,week_sales=jackpots.week_sales+$3", [dirCode,mise*JACKPOT_PCT/100,mise]);
     await client.query('COMMIT');
     const nb = await pool.query("SELECT solde FROM players WHERE phone=$1",[phone]);
-    const msg = hits===6?`🎉 6/6 JACKPOT ! +${gain} Gd`:hits===5?`🎉 5/6 — +${gain} Gd`:hits===4?`✅ 4/6 — +${gain} Gd`:`😔 ${hits}/6 — Perdu`;
-    res.json({ success:true, winningNumbers, hits, gain, newBalance:parseFloat(nb.rows[0].solde), message:msg });
+    const newBalance = parseFloat(nb.rows[0].solde);
+    const msg = hits===6?`🎉 6/6 JACKPOT ! +${gain} Gd`:hits===5?`🎉 5/6 — +${gain} Gd`:hits===4?`✅ 4/6 — +${gain} Gd`:hits===3?`✅ 3/6 — +${gain} Gd`:`😔 ${hits}/6 — Perdu`;
+    res.json({ success:true, winningNumbers, hits, gain, newBalance, message: msg });
   } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
 });
 
@@ -1298,15 +1287,11 @@ app.post('/api/games/helico/start', requireAuth, async (req, res) => {
     await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'mise',$3,'Mise Hélicoptère')", [phone, dirCode, -mise]);
     await client.query('COMMIT');
     const sessionId = require('crypto').randomBytes(16).toString('hex');
-    // diff=20 → crash très tôt (×1.1 à ×1.5), diff=80 → crash tard (×2.5 à ×5.0)
-    // La valeur exacte est SECRÈTE côté serveur — le client ne la connaît pas
-    const minCrash = 1.05 + (diff / 100) * 1.5;  // diff=20→1.35, diff=80→1.65
-    const maxCrash = minCrash + (diff / 100) * 3.5; // diff=20→1.42, diff=80→3.45
-    const crashAt = minCrash + Math.random() * (maxCrash - minCrash);
+    // crashMultiplier: difficulte=50 → crash moyen à ×1.5, difficulte=80 → crash tard à ×2.5
+    const crashAt = 1.0 + (difficulte / 100) * 3.0 + Math.random() * 1.5;
     helicoSessions.set(sessionId, { phone, mise, dirCode, altitude:0, crashed:false, crashAt });
     const newBalance = parseFloat(player.rows[0].solde) - mise;
-    // NE PAS retourner crashAt au client
-    res.json({ success:true, sessionId, newBalance, message:'Décollage !' });
+    res.json({ success:true, sessionId, newBalance, message:'Décollage ! Encaissez avant le crash.' });
   } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
 });
 
@@ -1356,17 +1341,15 @@ app.post('/api/games/helico/update', requireAuth, async (req, res) => {
   const session = helicoSessions.get(sessionId);
   if (!session) return res.status(404).json({ error: 'Session introuvable' });
   if (session.crashed) return res.json({ crashed: true });
-  session.altitude = parseFloat(altitude) || session.altitude;
-  // Multiplicateur courant: alt=0→×1.0, alt=200→×2.0, alt=400→×3.0
-  const currentMult = 1.0 + (session.altitude / 200);
+  session.altitude = altitude || session.altitude;
+  // Crash basé sur crashAt (multiplier courant vs seuil)
+  const currentMult = 1.0 + (session.altitude / 100);
   const crash = currentMult >= session.crashAt;
   if (crash) {
     session.crashed = true;
     helicoSessions.delete(sessionId);
-    return res.json({ crashed: true, altitude: session.altitude });
   }
-  // NE PAS exposer crashAt
-  res.json({ crashed: false, altitude: session.altitude });
+  res.json({ crashed: crash, altitude: session.altitude, crashAt: session.crashAt });
 });
 
 // ── AUTRES ROUTES API (bets, transactions, etc.) ──────────
