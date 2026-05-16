@@ -1123,34 +1123,60 @@ app.post('/api/games/keno/play', requireAuth, async (req, res) => {
     if (!player.rows.length) throw new Error('Joueur introuvable');
     if (parseFloat(player.rows[0].solde) < mise) throw new Error('Solde insuffisant');
     const dirCode = player.rows[0].dir_code;
-    // Difficulté = seuil de hits pour gagner. diff=20 difficile, diff=80 facile
+
+    // Difficulté depuis la DB (0-100)
+    // diff=20 → très difficile (peu de boules joués sortent)
+    // diff=80 → facile (beaucoup de boules joués sortent)
     const diff = await getWinProbability(dirCode, 'keno');
-    const seuilPct = 0.9 - (diff / 100) * 0.3;
-    const seuil = Math.ceil(playerNums.length * seuilPct);
-    // Tirage VRAIMENT ALÉATOIRE — 20 boules parmi 80
-    const pool80 = Array.from({length:80},(_,i)=>i+1);
-    for(let i=pool80.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool80[i],pool80[j]]=[pool80[j],pool80[i]];}
-    const winningNumbers = pool80.slice(0,20).sort((a,b)=>a-b);
+    // Probabilité qu'une boule JOUÉE soit dans le tirage
+    const pHit = diff / 100; // 0.0 à 1.0
+    // Probabilité qu'une boule NON JOUÉE soit dans le tirage
+    // On s'assure d'avoir exactement 20 boules au total en ajustant
+    const all80 = Array.from({length:80},(_,i)=>i+1);
+    const autresAll = all80.filter(n => !playerNums.includes(n)); // 80 - N boules
+    // 1. Pour chaque boule jouée: inclure avec proba pHit (indépendant)
+    const tirage = [];
+    for (const n of playerNums) {
+      if (Math.random() < pHit) tirage.push(n);
+    }
+    // 2. Compléter avec des boules non jouées mélangées jusqu'à 20
+    for (let i=autresAll.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[autresAll[i],autresAll[j]]=[autresAll[j],autresAll[i]];}
+    for (const n of autresAll) {
+      if (tirage.length >= 20) break;
+      if (!tirage.includes(n)) tirage.push(n);
+    }
+    // 3. Mélanger le tirage final
+    for (let i=tirage.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[tirage[i],tirage[j]]=[tirage[j],tirage[i]];}
+    const winningNumbers = tirage.slice(0, 20).sort((a,b)=>a-b);
+
     const hits = playerNums.filter(n => winningNumbers.includes(n)).length;
+    // Seuil 70%: ex. 10 boules → seuil 7
+    const seuil = Math.ceil(playerNums.length * 0.7);
     const PAYTABLE = {
-      1:{1:3}, 2:{2:9}, 3:{2:2,3:23}, 4:{2:1,3:4,4:60},
-      5:{3:3,4:15,5:210}, 6:{3:2,4:6,5:35,6:500},
-      7:{4:4,5:18,6:80,7:720}, 8:{4:3,5:10,6:40,7:200,8:1500},
-      9:{4:2,5:6,6:22,7:80,8:360,9:4000},
-      10:{5:5,6:15,7:50,8:200,9:800,10:10000}
+      1:{1:3},
+      2:{2:5},
+      3:{3:8},
+      4:{3:2,4:20},
+      5:{4:3,5:50},
+      6:{5:5,6:100},
+      7:{5:3,6:15,7:200},
+      8:{6:5,7:25,8:400},
+      9:{7:8,8:50,9:800},
+      10:{7:3,8:15,9:100,10:2000}
     };
-    const mult = hits >= seuil ? ((PAYTABLE[playerNums.length]||{})[hits] || 0) : 0;
+    const mult = hits >= seuil ? ((PAYTABLE[playerNums.length]||{})[hits] || 1) : 0;
     const gain = Math.round(mise * mult);
+
     await client.query("UPDATE players SET solde=solde-$1 WHERE phone=$2", [mise, phone]);
     if (gain > 0) await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [gain, phone]);
     await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'mise',$3,'Mise Keno')", [phone,dirCode,-mise]);
-    if (gain > 0) await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'gain',$3,$4)", [phone,dirCode,gain,'Gain Keno '+hits+'/'+playerNums.length+' x'+mult]);
+    if (gain > 0) await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'gain',$3,$4)", [phone,dirCode,gain,`Gain Keno ${hits}/${playerNums.length}`]);
     await client.query("INSERT INTO bets (player_phone,dir_code,type,selection,mise,gain_potentiel,statut) VALUES ($1,$2,'keno',$3,$4,$5,$6)", [phone,dirCode,playerNums.join(','),mise,gain,gain>0?'gagne':'perdu']);
     if (dirCode) await client.query("INSERT INTO jackpots (dir_code,amount,week_sales) VALUES ($1,$2,$3) ON CONFLICT (dir_code) DO UPDATE SET amount=jackpots.amount+$2,week_sales=jackpots.week_sales+$3", [dirCode,mise*JACKPOT_PCT/100,mise]);
     await client.query('COMMIT');
     const nb = await pool.query("SELECT solde FROM players WHERE phone=$1",[phone]);
-    const msg = gain>0 ? '🎉 '+hits+'/'+playerNums.length+' hits — +'+gain+' Gd' : '😔 '+hits+'/'+playerNums.length+' hits (min: '+seuil+') — Perdu';
-    res.json({ success:true, winningNumbers, hits, gain, seuil, newBalance:parseFloat(nb.rows[0].solde), message:msg });
+    res.json({ success:true, winningNumbers, hits, gain, newBalance:parseFloat(nb.rows[0].solde),
+      message: gain>0 ? `🎉 ${hits}/${playerNums.length} hits — +${gain} Gd` : `😔 ${hits}/${playerNums.length} hits — Perdu` });
   } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
 });
 
@@ -1167,36 +1193,50 @@ app.post('/api/games/lucky6/play', requireAuth, async (req, res) => {
     if (!player.rows.length) throw new Error('Joueur introuvable');
     if (parseFloat(player.rows[0].solde) < mise) throw new Error('Solde insuffisant');
     const dirCode = player.rows[0].dir_code;
-    // Difficulté = seuil minimum de hits pour gagner
-    // diff=20 difficile: seuil=5/6, diff=80 facile: seuil=3/6
+
+    // diff=20 → difficile, diff=80 → facile
+    // pHit = probabilité que chacune des 6 boules jouées soit dans les 35 tirées
     const diff = await getWinProbability(dirCode, 'lucky6');
-    const seuil = diff >= 70 ? 3 : diff >= 50 ? 4 : diff >= 30 ? 5 : 5;
-    // Tirage VRAIMENT ALÉATOIRE — 35 boules parmi 48 (standard Lucky6)
-    const pool48 = Array.from({length:48},(_,i)=>i+1);
-    for(let i=pool48.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool48[i],pool48[j]]=[pool48[j],pool48[i]];}
-    const winningNumbers = pool48.slice(0,35);
+    const pHit = diff / 100;
+    const autresAll = Array.from({length:48},(_,i)=>i+1).filter(n=>!playerNums.includes(n));
+
+    // 1. Chaque boule jouée entre dans le tirage selon sa probabilité
+    const tirage = [];
+    for (const n of playerNums) {
+      if (Math.random() < pHit) tirage.push(n);
+    }
+    // 2. Compléter avec des boules non jouées (mélangées) jusqu'à 35
+    for (let i=autresAll.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[autresAll[i],autresAll[j]]=[autresAll[j],autresAll[i]];}
+    for (const n of autresAll) {
+      if (tirage.length >= 35) break;
+      tirage.push(n);
+    }
+    // 3. Mélanger le tirage final de 35 boules
+    for (let i=tirage.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[tirage[i],tirage[j]]=[tirage[j],tirage[i]];}
+    const winningNumbers = tirage.slice(0,35);
+
     let hits = 0, lastHitPos = -1;
-    for(let i=0;i<winningNumbers.length;i++){
-      if(playerNums.includes(winningNumbers[i])){hits++;lastHitPos=i;}
+    for (let i=0; i<winningNumbers.length; i++) {
+      if (playerNums.includes(winningNumbers[i])) { hits++; lastHitPos = i; }
     }
-    // Gains selon hits et seuil
+
+    // Seuil 70% → 4/6 pour gagner
     let gain = 0;
-    if (hits >= seuil) {
-      if (hits === 6) gain = Math.round(mise * Math.max(8, 250 - lastHitPos * 4));
-      else if (hits === 5) gain = Math.round(mise * 60);
-      else if (hits === 4) gain = Math.round(mise * 12);
-      else if (hits === 3) gain = Math.round(mise * 3);
-    }
+    if (hits === 6) gain = Math.round(mise * Math.max(5, 200 - lastHitPos * 3));
+    else if (hits === 5) gain = Math.round(mise * 50);
+    else if (hits === 4) gain = Math.round(mise * 8);
+    // hits < 4 = perdu
+
     await client.query("UPDATE players SET solde=solde-$1 WHERE phone=$2", [mise, phone]);
     if (gain > 0) await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [gain, phone]);
     await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'mise',$3,'Mise Lucky6')", [phone,dirCode,-mise]);
-    if (gain > 0) await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'gain',$3,$4)", [phone,dirCode,gain,'Gain Lucky6 '+hits+'/6']);
+    if (gain > 0) await client.query("INSERT INTO transactions (player_phone,dir_code,type,montant,note) VALUES ($1,$2,'gain',$3,$4)", [phone,dirCode,gain,`Gain Lucky6 ${hits}/6`]);
     await client.query("INSERT INTO bets (player_phone,dir_code,type,selection,mise,gain_potentiel,statut) VALUES ($1,$2,'lucky6',$3,$4,$5,$6)", [phone,dirCode,playerNums.join(','),mise,gain,gain>0?'gagne':'perdu']);
     if (dirCode) await client.query("INSERT INTO jackpots (dir_code,amount,week_sales) VALUES ($1,$2,$3) ON CONFLICT (dir_code) DO UPDATE SET amount=jackpots.amount+$2,week_sales=jackpots.week_sales+$3", [dirCode,mise*JACKPOT_PCT/100,mise]);
     await client.query('COMMIT');
     const nb = await pool.query("SELECT solde FROM players WHERE phone=$1",[phone]);
-    const msg = hits===6?'🎉 6/6 JACKPOT ! +'+gain+' Gd':hits===5?'🎉 5/6 — +'+gain+' Gd':hits===4?'✅ 4/6 — +'+gain+' Gd':hits===3&&gain>0?'✅ 3/6 — +'+gain+' Gd':'😔 '+hits+'/6 (min: '+seuil+') — Perdu';
-    res.json({ success:true, winningNumbers, hits, gain, seuil, newBalance:parseFloat(nb.rows[0].solde), message:msg });
+    const msg = hits===6?`🎉 6/6 JACKPOT ! +${gain} Gd`:hits===5?`🎉 5/6 — +${gain} Gd`:hits===4?`✅ 4/6 — +${gain} Gd`:`😔 ${hits}/6 — Perdu`;
+    res.json({ success:true, winningNumbers, hits, gain, newBalance:parseFloat(nb.rows[0].solde), message:msg });
   } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
 });
 
@@ -1860,4 +1900,140 @@ app.post('/api/borlette/resolve', requireAuth, async (req, res) => {
       const n = bet.numero;
       if (bet.type_jeu === 'bolet') {
         if (n === lot1) gain = parseFloat(bet.montant) * MULTS.bolet_lot1;
- 
+        else if (n === lot2) gain = parseFloat(bet.montant) * MULTS.bolet_lot2;
+        else if (n === lot3) gain = parseFloat(bet.montant) * MULTS.bolet_lot3;
+      } else if (bet.type_jeu === 'mariage') {
+        // mariage = 2 numéros dans même ticket (traité par ticket)
+      }
+      if (gain > 0) {
+        await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [gain, bet.player_phone]);
+        await client.query("INSERT INTO transactions (player_phone, dir_code, type, montant, note) VALUES ($1,$2,'gain_borlette',$3,$4)",
+          [bet.player_phone, bet.dir_code, gain, `Gain borlette ${draw}: #${n}`]);
+        totalPaid += gain;
+      }
+      await client.query("UPDATE borlette_bets SET statut=$1, gain=$2 WHERE id=$3", [gain>0?'gagne':'perdu', gain, bet.id]);
+    }
+    // Clôturer les tickets
+    await client.query("UPDATE borlette_tickets SET statut='clos' WHERE draw=$1", [draw]);
+    await client.query('COMMIT');
+    res.json({ success: true, draw, lot1, lot2, lot3, totalPaid, betsResolved: bets.rows.length });
+  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
+});
+
+// ── PARIS SPORTIFS: PLACER UN PARI ────────────────────────
+app.post('/api/sports/bet', requireAuth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    if (req.session.role !== 'joueur') return res.status(403).json({ error: 'Joueurs seulement' });
+    const phone = req.session.user_phone;
+    const { matchId, homeTeam, awayTeam, competition, prediction, cote, mise } = req.body;
+    if (!matchId || !prediction || !mise || mise <= 0 || !cote) return res.status(400).json({ error: 'Données invalides' });
+
+    await client.query('BEGIN');
+    const { dirCode } = await deductAndRecord(client, phone, mise, 'Sport', `${homeTeam} vs ${awayTeam} → ${prediction}`);
+
+    const gainPotentiel = Math.round(mise * parseFloat(cote) * 100) / 100;
+    await client.query("INSERT INTO bets (player_phone, dir_code, game_type, mise, gain_potentiel, numeros_joues, statut, match_id, match_info) VALUES ($1,$2,'sport',$3,$4,$5,'en_attente',$6,$7)",
+      [phone, dirCode, mise, gainPotentiel, JSON.stringify([prediction]), matchId, JSON.stringify({homeTeam, awayTeam, competition, prediction, cote})]);
+
+    await client.query('COMMIT');
+    const newBalance = parseFloat((await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde);
+    res.json({ success: true, gainPotentiel, newBalance, message: `Paris enregistré — Gain potentiel: ${gainPotentiel} Gd` });
+  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
+});
+
+// ── JACKPOT: ÉTAT ET MISE À JOUR ──────────────────────────
+app.get('/api/jackpot', async (req, res) => {
+  try {
+    const r = await pool.query("SELECT * FROM jackpot ORDER BY id DESC LIMIT 1");
+    res.json({ jackpot: r.rows[0] || { montant: 0, last_winner: null } });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── STATS ADMIN ───────────────────────────────────────────
+app.get('/api/admin/stats', requireAdmin, async (req, res) => {
+  try {
+    const [players, bets, gains, retraits, pending] = await Promise.all([
+      pool.query("SELECT COUNT(*) as total, COALESCE(SUM(solde),0) as solde_total FROM players WHERE role='joueur'"),
+      pool.query("SELECT COUNT(*) as total, COALESCE(SUM(mise),0) as total_mise FROM bets WHERE created_at > NOW()-INTERVAL '24 hours'"),
+      pool.query("SELECT COALESCE(SUM(gain_potentiel),0) as total_gains FROM bets WHERE statut='gagne' AND created_at > NOW()-INTERVAL '24 hours'"),
+      pool.query("SELECT COUNT(*) as total, COALESCE(SUM(montant),0) as total_montant FROM retraits WHERE statut='approved' AND created_at > NOW()-INTERVAL '24 hours'"),
+      pool.query("SELECT COUNT(*) as total FROM retraits WHERE statut='pending'"),
+    ]);
+    res.json({
+      players: { total: parseInt(players.rows[0].total), solde_total: parseFloat(players.rows[0].solde_total) },
+      bets_24h: { total: parseInt(bets.rows[0].total), total_mise: parseFloat(bets.rows[0].total_mise) },
+      gains_24h: parseFloat(gains.rows[0].total_gains),
+      retraits_24h: { total: parseInt(retraits.rows[0].total), total_montant: parseFloat(retraits.rows[0].total_montant) },
+      retraits_pending: parseInt(pending.rows[0].total),
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── TABLES MANQUANTES (auto-create) ───────────────────────
+(async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS borlette_bets (
+        id SERIAL PRIMARY KEY,
+        ticket_id INTEGER REFERENCES borlette_tickets(id) ON DELETE CASCADE,
+        player_phone TEXT,
+        dir_code TEXT,
+        numero TEXT NOT NULL,
+        type_jeu TEXT DEFAULT 'bolet',
+        montant REAL NOT NULL,
+        gain REAL DEFAULT 0,
+        draw TEXT DEFAULT '',
+        statut TEXT DEFAULT 'actif',
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+      CREATE TABLE IF NOT EXISTS borlette_tickets (
+        id SERIAL PRIMARY KEY,
+        player_phone TEXT,
+        dir_code TEXT,
+        draw TEXT,
+        ticket_ref TEXT UNIQUE,
+        total_mise REAL,
+        total_gain REAL DEFAULT 0,
+        statut TEXT DEFAULT 'actif',
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+      CREATE TABLE IF NOT EXISTS borlette_blocked (
+        id SERIAL PRIMARY KEY,
+        number TEXT NOT NULL,
+        draw TEXT DEFAULT '',
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(number, draw)
+      );
+      CREATE TABLE IF NOT EXISTS borlette_limits (
+        id SERIAL PRIMARY KEY,
+        number TEXT NOT NULL,
+        draw TEXT DEFAULT '',
+        max_amount REAL NOT NULL,
+        updated_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(number, draw)
+      );
+      CREATE TABLE IF NOT EXISTS jackpot (
+        id SERIAL PRIMARY KEY,
+        montant REAL DEFAULT 0,
+        last_winner TEXT,
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    console.log('✅ Tables vérifiées/créées');
+  } catch(e) { console.error('❌ Erreur création tables:', e.message); }
+})();
+
+// ============================================================
+// ROUTE CATCH-ALL POUR LE FRONTEND (SPA) – À PLACER À LA FIN
+// ============================================================
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// ── DÉMARRAGE ────────────────────────────────────────────
+app.listen(PORT, () => {
+  console.log(`✅ Tonton Kondo API running on port ${PORT}`);
+  console.log(`   Database: ${process.env.DATABASE_URL ? '✅ Connected' : '❌ DATABASE_URL missing'}`);
+  console.log(`   Football API: ${FOOTBALL_API_KEY ? '✅ Set' : '❌ Missing'}`);
+});
