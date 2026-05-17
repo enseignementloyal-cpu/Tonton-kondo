@@ -1890,4 +1890,155 @@ app.post('/api/borlette/resolve', requireAuth, async (req, res) => {
 
     await client.query('BEGIN');
     // Sauvegarder résultat
-    await client.query("INSERT INTO borlette_results (draw, lot1, lot2, lo
+    await client.query("INSERT INTO borlette_results (draw, lot1, lot2, lot3, resolved_by) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (draw) DO UPDATE SET lot1=$2,lot2=$3,lot3=$4,resolved_by=$5,updated_at=NOW()",
+      [draw, lot1.padStart(2,'0'), lot2?lot2.padStart(2,'0'):'', lot3?lot3.padStart(2,'0'):'', req.session.user_phone||req.session.user_code]);
+
+    // Multipliateurs standard borlette haïtienne
+    const MULTS = { bolet_lot1:50, bolet_lot2:25, bolet_lot3:10, mariage_lot1_lot2:375, mariage_lot1_lot3:250, mariage_lot2_lot3:150, loto3chif:500 };
+
+    // Récupérer tous les paris non résolus pour ce tirage
+    const bets = await client.query("SELECT bb.*, bt.player_phone, p.dir_code FROM borlette_bets bb JOIN borlette_tickets bt ON bb.ticket_id=bt.id JOIN players p ON bt.player_phone=p.phone WHERE bb.draw=$1 AND bb.statut='actif'", [draw]);
+
+    let totalPaid = 0;
+    for (const bet of bets.rows) {
+      let gain = 0;
+      const n = bet.numero;
+      if (bet.type_jeu === 'bolet') {
+        if (n === lot1) gain = parseFloat(bet.montant) * MULTS.bolet_lot1;
+        else if (n === lot2) gain = parseFloat(bet.montant) * MULTS.bolet_lot2;
+        else if (n === lot3) gain = parseFloat(bet.montant) * MULTS.bolet_lot3;
+      } else if (bet.type_jeu === 'mariage') {
+        // mariage = 2 numéros dans même ticket (traité par ticket)
+      }
+      if (gain > 0) {
+        await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [gain, bet.player_phone]);
+        await client.query("INSERT INTO transactions (player_phone, dir_code, type, montant, note) VALUES ($1,$2,'gain_borlette',$3,$4)",
+          [bet.player_phone, bet.dir_code, gain, `Gain borlette ${draw}: #${n}`]);
+        totalPaid += gain;
+      }
+      await client.query("UPDATE borlette_bets SET statut=$1, gain=$2 WHERE id=$3", [gain>0?'gagne':'perdu', gain, bet.id]);
+    }
+    // Clôturer les tickets
+    await client.query("UPDATE borlette_tickets SET statut='clos' WHERE draw=$1", [draw]);
+    await client.query('COMMIT');
+    res.json({ success: true, draw, lot1, lot2, lot3, totalPaid, betsResolved: bets.rows.length });
+  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
+});
+
+// ── PARIS SPORTIFS: PLACER UN PARI ────────────────────────
+app.post('/api/sports/bet', requireAuth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    if (req.session.role !== 'joueur') return res.status(403).json({ error: 'Joueurs seulement' });
+    const phone = req.session.user_phone;
+    const { matchId, homeTeam, awayTeam, competition, prediction, cote, mise } = req.body;
+    if (!matchId || !prediction || !mise || mise <= 0 || !cote) return res.status(400).json({ error: 'Données invalides' });
+
+    await client.query('BEGIN');
+    const { dirCode } = await deductAndRecord(client, phone, mise, 'Sport', `${homeTeam} vs ${awayTeam} → ${prediction}`);
+
+    const gainPotentiel = Math.round(mise * parseFloat(cote) * 100) / 100;
+    await client.query("INSERT INTO bets (player_phone, dir_code, game_type, mise, gain_potentiel, numeros_joues, statut, match_id, match_info) VALUES ($1,$2,'sport',$3,$4,$5,'en_attente',$6,$7)",
+      [phone, dirCode, mise, gainPotentiel, JSON.stringify([prediction]), matchId, JSON.stringify({homeTeam, awayTeam, competition, prediction, cote})]);
+
+    await client.query('COMMIT');
+    const newBalance = parseFloat((await pool.query("SELECT solde FROM players WHERE phone=$1",[phone])).rows[0].solde);
+    res.json({ success: true, gainPotentiel, newBalance, message: `Paris enregistré — Gain potentiel: ${gainPotentiel} Gd` });
+  } catch(e) { await client.query('ROLLBACK'); res.status(500).json({ error: e.message }); } finally { client.release(); }
+});
+
+// ── JACKPOT: ÉTAT ET MISE À JOUR ──────────────────────────
+app.get('/api/jackpot', async (req, res) => {
+  try {
+    const r = await pool.query("SELECT * FROM jackpot ORDER BY id DESC LIMIT 1");
+    res.json({ jackpot: r.rows[0] || { montant: 0, last_winner: null } });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── STATS ADMIN ───────────────────────────────────────────
+app.get('/api/admin/stats', requireAdmin, async (req, res) => {
+  try {
+    const [players, bets, gains, retraits, pending] = await Promise.all([
+      pool.query("SELECT COUNT(*) as total, COALESCE(SUM(solde),0) as solde_total FROM players WHERE role='joueur'"),
+      pool.query("SELECT COUNT(*) as total, COALESCE(SUM(mise),0) as total_mise FROM bets WHERE created_at > NOW()-INTERVAL '24 hours'"),
+      pool.query("SELECT COALESCE(SUM(gain_potentiel),0) as total_gains FROM bets WHERE statut='gagne' AND created_at > NOW()-INTERVAL '24 hours'"),
+      pool.query("SELECT COUNT(*) as total, COALESCE(SUM(montant),0) as total_montant FROM retraits WHERE statut='approved' AND created_at > NOW()-INTERVAL '24 hours'"),
+      pool.query("SELECT COUNT(*) as total FROM retraits WHERE statut='pending'"),
+    ]);
+    res.json({
+      players: { total: parseInt(players.rows[0].total), solde_total: parseFloat(players.rows[0].solde_total) },
+      bets_24h: { total: parseInt(bets.rows[0].total), total_mise: parseFloat(bets.rows[0].total_mise) },
+      gains_24h: parseFloat(gains.rows[0].total_gains),
+      retraits_24h: { total: parseInt(retraits.rows[0].total), total_montant: parseFloat(retraits.rows[0].total_montant) },
+      retraits_pending: parseInt(pending.rows[0].total),
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── TABLES MANQUANTES (auto-create) ───────────────────────
+(async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS borlette_bets (
+        id SERIAL PRIMARY KEY,
+        ticket_id INTEGER REFERENCES borlette_tickets(id) ON DELETE CASCADE,
+        player_phone TEXT,
+        dir_code TEXT,
+        numero TEXT NOT NULL,
+        type_jeu TEXT DEFAULT 'bolet',
+        montant REAL NOT NULL,
+        gain REAL DEFAULT 0,
+        draw TEXT DEFAULT '',
+        statut TEXT DEFAULT 'actif',
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+      CREATE TABLE IF NOT EXISTS borlette_tickets (
+        id SERIAL PRIMARY KEY,
+        player_phone TEXT,
+        dir_code TEXT,
+        draw TEXT,
+        ticket_ref TEXT UNIQUE,
+        total_mise REAL,
+        total_gain REAL DEFAULT 0,
+        statut TEXT DEFAULT 'actif',
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+      CREATE TABLE IF NOT EXISTS borlette_blocked (
+        id SERIAL PRIMARY KEY,
+        number TEXT NOT NULL,
+        draw TEXT DEFAULT '',
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(number, draw)
+      );
+      CREATE TABLE IF NOT EXISTS borlette_limits (
+        id SERIAL PRIMARY KEY,
+        number TEXT NOT NULL,
+        draw TEXT DEFAULT '',
+        max_amount REAL NOT NULL,
+        updated_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(number, draw)
+      );
+      CREATE TABLE IF NOT EXISTS jackpot (
+        id SERIAL PRIMARY KEY,
+        montant REAL DEFAULT 0,
+        last_winner TEXT,
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    console.log('✅ Tables vérifiées/créées');
+  } catch(e) { console.error('❌ Erreur création tables:', e.message); }
+})();
+
+// ============================================================
+// ROUTE CATCH-ALL POUR LE FRONTEND (SPA) – À PLACER À LA FIN
+// ============================================================
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// ── DÉMARRAGE ────────────────────────────────────────────
+app.listen(PORT, () => {
+  console.log(`✅ Tonton Kondo API running on port ${PORT}`);
+  console.log(`   Database: ${process.env.DATABASE_URL ? '✅ Connected' : '❌ DATABASE_URL missing'}`);
+  console.log(`   Football API: ${FOOTBALL_API_KEY ? '✅ Set' : '❌ Missing'}`);
+});
