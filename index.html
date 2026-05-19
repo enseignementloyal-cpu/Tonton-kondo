@@ -34,7 +34,7 @@ body{background:#061a2e;color:#fff;font-family:'Barlow',sans-serif;min-height:10
 }
 .tb-left{
   display:table-cell;
-  width:46px;
+  width:50px;
   vertical-align:middle;
   padding-right:8px;
 }
@@ -48,7 +48,6 @@ body{background:#061a2e;color:#fff;font-family:'Barlow',sans-serif;min-height:10
 .tb-mid{
   display:table-cell;
   vertical-align:middle;
-  overflow:hidden;
 }
 .tb-name{
   font-family:"Barlow Condensed",sans-serif;
@@ -75,7 +74,7 @@ body{background:#061a2e;color:#fff;font-family:'Barlow',sans-serif;min-height:10
 }
 .tb-right{
   display:table-cell;
-  width:40px;
+  width:80px;
   vertical-align:middle;
   text-align:right;
   white-space:nowrap;
@@ -359,39 +358,11 @@ body{background:#061a2e;color:#fff;font-family:'Barlow',sans-serif;min-height:10
 <!-- MATCHES -->
 <div class="matches-section">
   <div class="sec-title">⚽ Matchs an vedèt</div>
-  <div class="match-row">
-    <div class="mcard" onclick="goPlay('sports')">
-      <div class="mc-league">🇫🇷 Ligue 1</div>
-      <div class="mc-teams">PSG<span class="mc-vs">VS</span>Monaco</div>
-      <div class="mc-time"><span class="live-dot"></span> LIVE·67'</div>
-      <div class="mc-odds">
-        <div class="mc-odd"><div class="mc-odd-l">1</div><div class="mc-odd-v">1.45</div></div>
-        <div class="mc-odd"><div class="mc-odd-l">X</div><div class="mc-odd-v">4.20</div></div>
-        <div class="mc-odd"><div class="mc-odd-l">2</div><div class="mc-odd-v">6.50</div></div>
-      </div>
-    </div>
-    <div class="mcard" onclick="goPlay('sports')">
-      <div class="mc-league">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League</div>
-      <div class="mc-teams">Arsenal<span class="mc-vs">VS</span>Man City</div>
-      <div class="mc-time"><span class="live-dot"></span> LIVE·43'</div>
-      <div class="mc-odds">
-        <div class="mc-odd"><div class="mc-odd-l">1</div><div class="mc-odd-v">2.80</div></div>
-        <div class="mc-odd"><div class="mc-odd-l">X</div><div class="mc-odd-v">3.15</div></div>
-        <div class="mc-odd"><div class="mc-odd-l">2</div><div class="mc-odd-v">2.50</div></div>
-      </div>
-    </div>
-    <div class="mcard" onclick="goPlay('sports')">
-      <div class="mc-league">🇪🇸 La Liga</div>
-      <div class="mc-teams">Real<span class="mc-vs">VS</span>Barça</div>
-      <div class="mc-time">📅 Ce soir 20:00</div>
-      <div class="mc-odds">
-        <div class="mc-odd"><div class="mc-odd-l">1</div><div class="mc-odd-v">2.10</div></div>
-        <div class="mc-odd"><div class="mc-odd-l">X</div><div class="mc-odd-v">3.30</div></div>
-        <div class="mc-odd"><div class="mc-odd-l">2</div><div class="mc-odd-v">3.60</div></div>
-      </div>
-    </div>
+  <div class="match-row" id="matches-vedette-row">
+    <div style="color:rgba(255,255,255,.4);font-size:12px;padding:8px">⏳ Chargement matchs...</div>
   </div>
 </div>
+
 
 <div class="spacer-bot"></div>
 
@@ -854,9 +825,57 @@ function loadAdminMessages(){
 /* NOTIF */
 function showN(msg,type){const n=document.getElementById('notif-login');n.textContent=msg;n.className='notif '+type+' on';setTimeout(()=>n.classList.remove('on'),3000);}
 
+/* MATCHS VEDETTE depuis API */
+async function loadMatchesVedette(){
+  const row = document.getElementById('matches-vedette-row');
+  if(!row) return;
+  try {
+    const API_URL = (typeof CONFIG !== 'undefined') ? CONFIG.SERVER_URL : '';
+    const r = await fetch(API_URL + '/api/matches');
+    if(!r.ok) throw new Error('API error');
+    const data = await r.json();
+    const matches = (data.matches || []).slice(0,6);
+    if(!matches.length){
+      row.innerHTML='<div style="color:rgba(255,255,255,.4);font-size:12px;padding:8px">Aucun match disponible.</div>';
+      return;
+    }
+    const LEAGUE_FLAGS = {
+      'Premier League':'🏴󠁧󠁢󠁥󠁮󠁧󠁿','Ligue 1':'🇫🇷','La Liga':'🇪🇸','Serie A':'🇮🇹',
+      'Bundesliga':'🇩🇪','Champions League':'🏆','Ligue des champions':'🏆',
+      'MLS':'🇺🇸','Copa Libertadores':'🌎','Eredivisie':'🇳🇱'
+    };
+    row.innerHTML = matches.map(m => {
+      const flag = LEAGUE_FLAGS[m.competition] || '⚽';
+      const isLive = m.status === 'IN_PLAY' || m.status === 'PAUSED';
+      const isFinished = m.status === 'FINISHED';
+      const timeStr = isLive
+        ? `<span class="live-dot"></span> LIVE ${m.minute ? '· '+m.minute+"'" : ''}`
+        : isFinished
+          ? `✅ Fini · ${m.score || ''}`
+          : `📅 ${m.time || m.utcDate ? new Date(m.utcDate||m.time).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : 'À venir'}`;
+      const o1 = m.odds ? (m.odds.home||'—') : '—';
+      const oX = m.odds ? (m.odds.draw||'—') : '—';
+      const o2 = m.odds ? (m.odds.away||'—') : '—';
+      return `<div class="mcard" onclick="goPlay('sports')">
+        <div class="mc-league">${flag} ${m.competition||''}</div>
+        <div class="mc-teams">${m.homeTeam||'?'}<span class="mc-vs">VS</span>${m.awayTeam||'?'}</div>
+        <div class="mc-time">${timeStr}</div>
+        <div class="mc-odds">
+          <div class="mc-odd"><div class="mc-odd-l">1</div><div class="mc-odd-v">${o1}</div></div>
+          <div class="mc-odd"><div class="mc-odd-l">X</div><div class="mc-odd-v">${oX}</div></div>
+          <div class="mc-odd"><div class="mc-odd-l">2</div><div class="mc-odd-v">${o2}</div></div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    row.innerHTML='<div style="color:rgba(255,255,255,.4);font-size:12px;padding:8px">Matchs indisponibles.</div>';
+  }
+}
+
 /* INIT */
 loadAdminMessages();
 buildSlides();
+loadMatchesVedette();
 </script>
 </body>
 </html>

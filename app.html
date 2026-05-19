@@ -246,7 +246,7 @@ th{background:var(--blue);color:#fff;font-size:12px;font-weight:700;}
 .csolde{font-size:21px;font-weight:900;color:var(--gold);margin-top:3px;}
 .arow{display:flex;gap:7px;flex-wrap:wrap;align-items:center;}
 .arow input{width:110px;padding:8px;background:var(--bg);color:#fff;border:1px solid var(--border);border-radius:6px;font-size:13px;}
-.hist{max-height:160px;overflow-y:auto;background:var(--bg);padding:8px;border-radius:5px;font-size:12px;margin-top:7px;}
+.hist{overflow-y:auto;background:var(--bg);padding:8px;border-radius:5px;font-size:12px;margin-top:7px;}
 .hist div{padding:4px 0;border-bottom:1px solid var(--border);color:var(--muted);}
 
 /* ===== APP CONTENT ===== */
@@ -2375,7 +2375,11 @@ async function apiCall(method, path, body) {
   if (body) opts.body = JSON.stringify(body);
   const r = await fetch(API + path, opts);
   const data = await r.json();
-  if (!r.ok) throw new Error(data.error || 'Erreur serveur');
+  if (!r.ok) {
+    const err = new Error(data.error || 'Erreur serveur');
+    err.status = r.status;
+    throw err;
+  }
   return data;
 }
 const apiGet  = (p)    => apiCall('GET',    p);
@@ -2924,7 +2928,7 @@ document.querySelectorAll('.atab[data-tab]').forEach(tab=>{
       // Sync le solde depuis la DB chaque fois qu'on ouvre l'onglet recharge
       apiGet('/api/player/solde').then(d => { if(d&&d.solde!==undefined) applySoldeFromAPI(d.solde); }).catch(()=>{});
       // Vérifier si un paiement en attente est complété
-      const pendRef = sessionStorage.getItem('last_reference_id');
+      const pendRef = localStorage.getItem('tk_recharge_ref_id');
       if (pendRef) checkPaymentStatus(pendRef);
     }
     if(tab.dataset.tab!=='sports'){document.getElementById('cpbar').classList.remove('on');document.getElementById('cppanel').classList.remove('on');}
@@ -4324,8 +4328,8 @@ function resetRechargeUI() {
     btn.disabled = false;
     btn.textContent = '✅ Payer maintenant';
   }
-  sessionStorage.removeItem('recharge_in_progress');
-  sessionStorage.removeItem('last_reference_id');
+  localStorage.removeItem('tk_recharge_in_progress');
+  localStorage.removeItem('tk_recharge_ref_id');
   if (pollingInterval) clearInterval(pollingInterval);
   pollingInterval = null;
 }
@@ -4377,7 +4381,7 @@ function startPolling(refId) {
 
 async function soumettreRecharge() {
   if (!CJ) { showNotif("Connectez-vous d'abord", 'err'); return; }
-  if (sessionStorage.getItem('recharge_in_progress') === 'true') {
+  if (localStorage.getItem('tk_recharge_in_progress') === 'true') {
     showNotif('Une recharge est déjà en cours', 'info');
     return;
   }
@@ -4390,13 +4394,13 @@ async function soumettreRecharge() {
   try {
     btn.disabled = true;
     btn.textContent = '⏳ Création...';
-    sessionStorage.setItem('recharge_in_progress', 'true');
+    localStorage.setItem('tk_recharge_in_progress', 'true');
 
     const res = await apiPost('/api/recharges/initiate', { montant: amt, methode: method });
     if (!res.success) throw new Error(res.error || 'Erreur API');
 
     currentRechargeRef = res.reference_id;
-    sessionStorage.setItem('last_reference_id', currentRechargeRef);
+    localStorage.setItem('tk_recharge_ref_id', currentRechargeRef);
     startPolling(currentRechargeRef);
 
     window.location.href = res.url;
@@ -4409,8 +4413,8 @@ async function soumettreRecharge() {
 // Au démarrage de l'application: vérifier si un paiement était en cours
 // et synchroniser le solde depuis la DB
 (function checkPendingRecharge() {
-  const refId = sessionStorage.getItem('last_reference_id');
-  if (refId && sessionStorage.getItem('recharge_in_progress') === 'true') {
+  const refId = localStorage.getItem('tk_recharge_ref_id');
+  if (refId && localStorage.getItem('tk_recharge_in_progress') === 'true') {
     // Attendre que CJ soit chargé puis vérifier le statut
     setTimeout(async () => {
       try {
@@ -4421,8 +4425,8 @@ async function soumettreRecharge() {
           showNotif(`✅ Recharge de ${res.montant} Gd confirmée !`, 'ok');
         }
       } catch(e) {}
-      sessionStorage.removeItem('recharge_in_progress');
-      sessionStorage.removeItem('last_reference_id');
+      localStorage.removeItem('tk_recharge_in_progress');
+      localStorage.removeItem('tk_recharge_ref_id');
       startPolling(refId); // Continuer le polling pour être sûr
     }, 2000);
   }
@@ -4922,18 +4926,33 @@ async function renderJHistCat(cat){
       remboursement:'↩️ Remboursement', credit_admin:'🎁 Crédit admin',
       mise:'🎲 Mise', gain:'🏆 Gain', gain_borlette:'🎯 Gain Borlette',
       mise_borlette:'🎯 Mise Borlette', recharge:'💳 Recharge' };
-    el.innerHTML = filtered.map(t=>{
+    const rows = filtered.map(t=>{
       const m = parseFloat(t.montant);
       const date = new Date(t.created_at||t.date).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
       const label = typeLabel[t.type]||t.type;
-      return `<div style="padding:7px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-        <div>
+      const color = m>=0 ? 'var(--green2)' : 'var(--red)';
+      const montantStr = (m>=0?'+':'')+m.toLocaleString('fr-FR')+' Gd';
+      return `<tr>
+        <td style="padding:8px 6px;font-size:11px;color:var(--muted);white-space:nowrap">${date}</td>
+        <td style="padding:8px 6px;">
           <div style="font-size:12px;font-weight:700">${label}</div>
-          <div style="font-size:10px;color:var(--muted)">${date}${t.note?' · '+t.note:''}</div>
-        </div>
-        <div style="font-size:14px;font-weight:900;color:${m>=0?'var(--green2)':'var(--red)'}">${m>=0?'+':''}${m.toLocaleString('fr-FR')} Gd</div>
-      </div>`;
+          ${t.note?`<div style="font-size:10px;color:var(--muted)">${t.note}</div>`:''}
+        </td>
+        <td style="padding:8px 6px;text-align:right;font-size:13px;font-weight:900;color:${color};white-space:nowrap">${montantStr}</td>
+      </tr>`;
     }).join('');
+    el.innerHTML = `<div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;min-width:280px">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border)">
+            <th style="padding:6px;font-size:10px;color:var(--muted);font-weight:700;text-align:left">DATE</th>
+            <th style="padding:6px;font-size:10px;color:var(--muted);font-weight:700;text-align:left">TYPE</th>
+            <th style="padding:6px;font-size:10px;color:var(--muted);font-weight:700;text-align:right">MONTANT</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
   } catch(e){
     el.innerHTML='<div style="color:var(--red);font-size:13px;padding:8px">Erreur chargement. Réessayez.</div>';
   }
@@ -7115,9 +7134,17 @@ function jackpotCheckURLParam(){
       clearToken(); window.location.href='index.html';
     }
   } catch(e) {
-    console.error('Session restore failed:', e.message);
-    clearToken();
-    window.location.href='index.html';
+    console.error('Session restore failed:', e.message, 'status:', e.status);
+    // Déconnecter seulement sur vraie erreur d'auth (401/403)
+    // Pas sur erreur réseau temporaire (ex: retour après paiement externe)
+    if (e.status === 401 || e.status === 403) {
+      clearToken();
+      window.location.href='index.html';
+    } else {
+      console.warn('Erreur temporaire — session conservée, rechargement...');
+      showNotif('⚠️ Connexion instable. Rechargement...', 'info');
+      setTimeout(() => window.location.reload(), 3000);
+    }
   }
   // Tab click handlers
   document.querySelectorAll('.atab[data-tab]').forEach(tab => {
