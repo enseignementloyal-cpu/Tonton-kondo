@@ -594,8 +594,8 @@ th{background:var(--blue);color:#fff;font-size:12px;font-weight:700;}
       <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
         <div style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">Recharger mon compte</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <button onclick="showRechargeModal('moncash')" style="padding:10px;background:rgba(255,152,0,.1);border:1px solid rgba(255,152,0,.4);border-radius:8px;color:#ff9800;font-weight:700;font-size:12px;cursor:pointer;">📱 MonCash</button>
-          <button onclick="showRechargeModal('natcash')" style="padding:10px;background:rgba(26,58,143,.1);border:1px solid rgba(26,58,143,.5);border-radius:8px;color:#5b8ef5;font-weight:700;font-size:12px;cursor:pointer;">💳 NatCash</button>
+          <button onclick="showRechargeModal('moncash')" style="padding:8px 10px;background:rgba(255,152,0,.1);border:1px solid rgba(255,152,0,.4);border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:6px;"><img src="mon.png" style="width:22px;height:22px;object-fit:contain;border-radius:4px" onerror="this.style.display='none'"><span style="color:#ff9800;font-weight:700;font-size:12px">MonCash</span></button>
+          <button onclick="showRechargeModal('natcash')" style="padding:8px 10px;background:rgba(26,58,143,.1);border:1px solid rgba(26,58,143,.5);border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:6px;"><img src="natcash.png" style="width:22px;height:22px;object-fit:contain;border-radius:4px" onerror="this.style.display='none'"><span style="color:#5b8ef5;font-weight:700;font-size:12px">NatCash</span></button>
         </div>
       </div>
     </div>
@@ -1239,12 +1239,12 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
       <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Choisissez votre méthode de recharge</p>
       <div class="recharge-methods">
         <div class="rm-card" onclick="initRecharge('moncash')">
-          <div class="rm-ic">📱</div>
+          <div class="rm-ic"><img src="mon.png" style="width:40px;height:40px;object-fit:contain;border-radius:8px" onerror="this.outerHTML='📱'"></div>
           <div class="rm-name" style="color:#ff9800">MonCash</div>
           <div class="rm-sub">Dépôt mobile instantané</div>
         </div>
         <div class="rm-card" onclick="initRecharge('natcash')">
-          <div class="rm-ic">💳</div>
+          <div class="rm-ic"><img src="natcash.png" style="width:40px;height:40px;object-fit:contain;border-radius:8px" onerror="this.outerHTML='💳'"></div>
           <div class="rm-name" style="color:#5b8ef5">NatCash</div>
           <div class="rm-sub">Transfert bancaire rapide</div>
         </div>
@@ -1284,11 +1284,11 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
         <label>Méthode de retrait</label>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
           <div class="rm-card" id="ret-mc" onclick="selRetraitMethod('moncash')" style="border:2px solid var(--border);cursor:pointer;padding:12px;border-radius:10px;text-align:center;transition:.2s;">
-            <div style="font-size:1.5em;margin-bottom:4px">📱</div>
+            <div style="margin-bottom:4px"><img src="mon.png" style="width:36px;height:36px;object-fit:contain;border-radius:6px" onerror="this.outerHTML='<span style=font-size:1.5em>📱</span>'"></div>
             <div style="font-size:11px;font-weight:700;color:#ff9800">MonCash</div>
           </div>
           <div class="rm-card" id="ret-nc" onclick="selRetraitMethod('natcash')" style="border:2px solid var(--border);cursor:pointer;padding:12px;border-radius:10px;text-align:center;transition:.2s;">
-            <div style="font-size:1.5em;margin-bottom:4px">💳</div>
+            <div style="margin-bottom:4px"><img src="natcash.png" style="width:36px;height:36px;object-fit:contain;border-radius:6px" onerror="this.outerHTML='<span style=font-size:1.5em>💳</span>'"></div>
             <div style="font-size:11px;font-weight:700;color:#5b8ef5">NatCash</div>
           </div>
           <div class="rm-card" id="ret-cash" onclick="selRetraitMethod('cash')" style="border:2px solid var(--border);cursor:pointer;padding:12px;border-radius:10px;text-align:center;transition:.2s;">
@@ -3326,39 +3326,54 @@ async function jouerKeno(){
       const st = document.createElement('style');
       st.id = 'keno-anim-style';
       st.textContent = `
-        @keyframes kenoBasketSpin {0%{transform:rotate(-12deg) scale(1)}25%{transform:rotate(12deg) scale(1.1)}50%{transform:rotate(-12deg) scale(1)}75%{transform:rotate(12deg) scale(1.1)}100%{transform:rotate(-12deg) scale(1)}}
-        @keyframes kenoBallPop {0%{transform:scale(0) translateY(0);opacity:0}40%{transform:scale(1.3) translateY(-12px);opacity:1}70%{transform:scale(0.95) translateY(2px)}100%{transform:scale(1) translateY(0);opacity:1}}
-        .keno-ball-anim{animation:kenoBallPop 0.5s cubic-bezier(.34,1.56,.64,1) both;}`;
+        @keyframes kenoBasketIdle {0%{transform:rotate(-8deg) scale(1)}50%{transform:rotate(8deg) scale(1.05)}100%{transform:rotate(-8deg) scale(1)}}
+        @keyframes kenoBasketShake {0%{transform:rotate(-15deg) scale(1.2)}20%{transform:rotate(15deg) scale(1.3)}40%{transform:rotate(-12deg) scale(1.25)}60%{transform:rotate(12deg) scale(1.3)}80%{transform:rotate(-8deg) scale(1.15)}100%{transform:rotate(0deg) scale(1.1)}}
+        @keyframes kenoBallDrop {0%{transform:scale(0) translateY(-20px);opacity:0}50%{transform:scale(1.4) translateY(4px);opacity:1}75%{transform:scale(0.9) translateY(-2px)}100%{transform:scale(1) translateY(0);opacity:1}}
+        .keno-ball-anim{animation:kenoBallDrop 0.6s cubic-bezier(.34,1.56,.64,1) both;}`;
       document.head.appendChild(st);
     }
 
-    statusEl.textContent = '🎱 Tirage en cours...';
+    statusEl.textContent = '🧺 Le panier tourne...';
     const ballsContainer = document.getElementById('keno-balls-out');
     const basketEl = document.getElementById('keno-basket');
+
+    // Lancer l'animation de rotation continue du panier
+    if(basketEl) basketEl.style.animation = 'kenoBasketIdle 0.8s ease-in-out infinite';
+
+    // Délai initial — le panier tourne 2 secondes avant la première boule
+    await new Promise(res => setTimeout(res, 2000));
 
     // Boules sortent du panier une par une
     let hits = 0;
     for(let i = 0; i < winNums.length; i++){
-      await new Promise(res => setTimeout(res, 900));
+      // Délai entre chaque boule: 3 secondes
+      if(i > 0) await new Promise(res => setTimeout(res, 3000));
+
       const num = winNums[i];
       const isHit = kenoSel.includes(num);
       if(isHit) hits++;
 
-      // Animation secousse du panier
-      if(basketEl){ basketEl.style.animation='none'; void basketEl.offsetWidth; basketEl.style.animation='kenoBasketSpin 0.4s linear 3'; }
+      // Le panier secoue fort avant de lâcher la boule
+      if(basketEl){
+        basketEl.style.animation='none';
+        void basketEl.offsetWidth;
+        basketEl.style.animation='kenoBasketShake 0.5s ease-in-out 1';
+        await new Promise(res => setTimeout(res, 400));
+        basketEl.style.animation = 'kenoBasketIdle 0.8s ease-in-out infinite';
+      }
 
-      // Boule dans le tableau
+      // Boule tombe du panier
       const span = document.createElement('span');
       span.className = 'keno-ball-anim';
       span.textContent = num;
-      span.style.cssText = `display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;font-size:12px;font-weight:900;border:2px solid ${isHit?'var(--green2)':'var(--border)'};background:${isHit?'radial-gradient(circle at 35% 35%,#4cff7c,var(--green2))':'radial-gradient(circle at 35% 35%,#555,#333)'};color:${isHit?'#000':'#888'};box-shadow:${isHit?'0 0 8px rgba(40,176,78,.6)':'none'};`;
+      span.style.cssText = `display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;font-size:12px;font-weight:900;border:2px solid ${isHit?'var(--green2)':'var(--border)'};background:${isHit?'radial-gradient(circle at 35% 35%,#4cff7c,var(--green2))':'radial-gradient(circle at 35% 35%,#666,#333)'};color:${isHit?'#000':'#aaa'};box-shadow:${isHit?'0 0 12px rgba(40,176,78,.8),0 0 4px #fff':'0 2px 4px rgba(0,0,0,.5)'};`;
       ballsContainer.appendChild(span);
 
       // Allumer/assombrir le bouton dans la grille
       const btn = document.getElementById('kn'+num);
       if(btn){ if(isHit) btn.classList.add('win'); else btn.style.opacity='0.35'; }
 
-      statusEl.textContent = `🎱 Boule ${i+1}/20 — ${hits}/${kenoSel.length} trouvé${hits>1?'s':''}`;
+      statusEl.textContent = `🧺 Boule ${i+1}/20 — ${hits}/${kenoSel.length} trouvé${hits>1?'s':''}`;
     }
 
     // Arrêter l'animation du panier
@@ -3470,69 +3485,94 @@ async function jouerLucky6(){
       const st = document.createElement('style');
       st.id = 'l6-anim-style';
       st.textContent = `
-        @keyframes dragonBreath {0%{transform:scale(1) rotate(-5deg)}30%{transform:scale(1.2) rotate(5deg)}60%{transform:scale(0.95) rotate(-3deg)}100%{transform:scale(1) rotate(-5deg)}}
-        @keyframes l6BallPop {0%{transform:scale(0);opacity:0}50%{transform:scale(1.3);opacity:1}75%{transform:scale(0.95)}100%{transform:scale(1);opacity:1}}
-        @keyframes rowReveal {from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
-        .l6-ball-out{animation:l6BallPop 0.4s cubic-bezier(.34,1.56,.64,1) both;}
-        .l6-row-anim{animation:rowReveal 0.5s ease both;}`;
+        @keyframes dragonIdle {0%{transform:scale(1) rotate(-5deg)}50%{transform:scale(1.1) rotate(5deg)}100%{transform:scale(1) rotate(-5deg)}}
+        @keyframes dragonFire  {0%{transform:scale(1) rotate(-5deg)}15%{transform:scale(1.4) rotate(10deg)}35%{transform:scale(1.3) rotate(-8deg)}55%{transform:scale(1.35) rotate(8deg)}75%{transform:scale(1.2) rotate(-5deg)}100%{transform:scale(1.1) rotate(0deg)}}
+        @keyframes l6BallShoot {0%{transform:scale(0) translateX(-30px);opacity:0}40%{transform:scale(1.3) translateX(6px);opacity:1}70%{transform:scale(0.95) translateX(-2px)}100%{transform:scale(1) translateX(0);opacity:1}}
+        @keyframes rowReveal   {from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        .l6-ball-out {animation:l6BallShoot 0.55s cubic-bezier(.34,1.56,.64,1) both;}
+        .l6-row-anim {animation:rowReveal 0.4s ease both;}`;
       document.head.appendChild(st);
     }
 
-    // Construire l'affichage par rangées
+    // Construire l'affichage
     box.innerHTML = `
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <div id="l6-dragon" style="font-size:2.5em;animation:dragonBreath 1.5s ease-in-out infinite">🐉</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;background:rgba(245,200,0,.05);border:1px solid rgba(245,200,0,.15);border-radius:10px;padding:10px;">
+        <div id="l6-dragon" style="font-size:3em;animation:dragonIdle 1.5s ease-in-out infinite;filter:drop-shadow(0 0 8px rgba(255,140,0,.6))">🐉</div>
         <div>
-          <div style="font-size:12px;font-weight:700;color:var(--gold)">Tirage Lucky 6</div>
-          <div style="font-size:11px;color:var(--muted)" id="l6-anim-status">Boules en sortie...</div>
+          <div style="font-size:13px;font-weight:900;color:var(--gold)">Dragon Tirage Lucky 6</div>
+          <div style="font-size:11px;color:var(--muted)" id="l6-anim-status">Le dragon prépare les boules...</div>
         </div>
       </div>
       <div id="l6-rows-container"></div>`;
 
-    prog.textContent = 'Le dragon tire les boules...';
+    prog.textContent = 'Le dragon sort les boules une par une...';
     hitsEl.textContent = '0 / 6 trouvés';
     const rowsEl = document.getElementById('l6-rows-container');
     const dragonEl = document.getElementById('l6-dragon');
     const l6Status = document.getElementById('l6-anim-status');
     let totalFound = 0;
 
-    // Afficher les rangées une par une
+    // Délai initial — le dragon "charge" 2 secondes
+    await new Promise(res => setTimeout(res, 2000));
+
+    // Afficher les boules rangée par rangée, boule par boule
     for(let rowIdx = 0; rowIdx < rows.length; rowIdx++){
-      await new Promise(res => setTimeout(res, 1200));
       const row = rows[rowIdx];
       const rowHits = hitsParRangee[rowIdx] || 0;
-      totalFound += rowHits;
 
-      // Secouer le dragon
-      if(dragonEl){ dragonEl.style.animation='none'; void dragonEl.offsetWidth; dragonEl.style.animation='dragonBreath 0.4s ease-in-out 3'; }
-
-      // Créer la rangée
+      // Créer la rangée vide d'abord
       const rowDiv = document.createElement('div');
       rowDiv.className = 'l6-row-anim';
-      const rowLabel = rowIdx === 0 ? '1er rang 🏆' : rowIdx === 5 ? `${rowIdx+1}ème rang ❌` : `${rowIdx+1}ème rang`;
-      const rowColor = rowIdx === 0 ? 'rgba(245,200,0,.15)' : rowIdx >= 4 ? 'rgba(230,57,70,.08)' : 'rgba(26,58,143,.1)';
-      rowDiv.style.cssText = `background:${rowColor};border-radius:8px;padding:6px 8px;margin-bottom:6px;`;
-      rowDiv.innerHTML = `<div style="font-size:10px;color:var(--muted);margin-bottom:4px;font-weight:700">${rowLabel} — ${rowHits} trouvé${rowHits>1?'s':''}</div>
-        <div style="display:flex;gap:4px;flex-wrap:wrap">
-          ${row.map(n => {
-            const isHit = l6sel.includes(n);
-            const col = getL6BallColor(n);
-            const bg = isHit ? `radial-gradient(circle at 35% 35%,#fff,${col.light})` : `radial-gradient(circle at 35% 35%,${col.light},${col.css})`;
-            const border = isHit ? '#fff' : col.light;
-            const shadow = isHit ? `0 0 10px ${col.light}` : '0 2px 4px rgba(0,0,0,.3)';
-            return `<span class="l6-ball-out" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:11px;font-weight:900;background:${bg};border:2px solid ${border};color:#fff;box-shadow:${shadow};${isHit?'outline:2px solid #fff;outline-offset:1px;':''}">${n}</span>`;
-          }).join('')}
-        </div>`;
+      const rowLabel = rowIdx === 0 ? '1er rang 🏆' : `${rowIdx+1}ème rang`;
+      const rowColor = rowIdx === 0 ? 'rgba(245,200,0,.1)' : rowIdx >= 4 ? 'rgba(230,57,70,.06)' : 'rgba(26,58,143,.08)';
+      rowDiv.style.cssText = `background:${rowColor};border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:8px;margin-bottom:8px;`;
+      const ballsRow = document.createElement('div');
+      ballsRow.style.cssText = 'display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;';
+      rowDiv.innerHTML = `<div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:2px">${rowLabel}</div>`;
+      rowDiv.appendChild(ballsRow);
       rowsEl.appendChild(rowDiv);
 
-      prog.textContent = `Rang ${rowIdx+1}/6 révélé`;
-      hitsEl.textContent = `${totalFound} / 6 trouvés`;
-      if(l6Status) l6Status.textContent = `Rang ${rowIdx+1} — ${rowHits} correspondance${rowHits>1?'s':''}`;
+      // Sortir les boules de cette rangée une par une
+      for(let bi = 0; bi < row.length; bi++){
+        const n = row[bi];
+        const isHit = l6sel.includes(n);
+        if(isHit){ totalFound++; }
+
+        // Le dragon crache la boule (animation feu)
+        if(dragonEl){
+          dragonEl.style.animation='none';
+          void dragonEl.offsetWidth;
+          dragonEl.style.animation='dragonFire 0.6s ease-in-out 1';
+        }
+
+        const col = getL6BallColor(n);
+        const bg = isHit ? `radial-gradient(circle at 35% 35%,#fff,${col.light})` : `radial-gradient(circle at 35% 35%,${col.light},${col.css})`;
+        const border = isHit ? '#fff' : col.light;
+        const shadow = isHit ? `0 0 12px ${col.light},0 0 4px #fff` : '0 2px 4px rgba(0,0,0,.3)';
+        const span = document.createElement('span');
+        span.className = 'l6-ball-out';
+        span.style.cssText = `display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;font-size:11px;font-weight:900;background:${bg};border:2px solid ${border};color:#fff;box-shadow:${shadow};${isHit?'outline:2px solid #fff;outline-offset:1px;':''}`;
+        span.textContent = n;
+        ballsRow.appendChild(span);
+
+        if(l6Status) l6Status.textContent = `Rang ${rowIdx+1} — Boule ${bi+1}/${row.length}${isHit?' 🎯':''}`;
+        hitsEl.textContent = `${totalFound} / 6 trouvés`;
+
+        // Attente entre chaque boule (3.5 secondes)
+        if(!(rowIdx === rows.length-1 && bi === row.length-1)){
+          await new Promise(res => setTimeout(res, 3500));
+          // Reprendre animation idle après le feu
+          if(dragonEl) dragonEl.style.animation = 'dragonIdle 1.5s ease-in-out infinite';
+          await new Promise(res => setTimeout(res, 300));
+        }
+      }
+
+      prog.textContent = `Rang ${rowIdx+1}/6 complet — ${rowHits} trouvé${rowHits>1?'s':''}`;
       if(totalFound >= 6){ prog.textContent = '✅ Tous trouvés !'; break; }
     }
 
     // Arrêter animation dragon
-    if(dragonEl) dragonEl.style.animation = 'none';
+    if(dragonEl){ dragonEl.style.animation = 'none'; dragonEl.textContent = '🐉'; }
 
     document.getElementById('lucky6-status').textContent = r.message;
     // Sync solde vrai depuis DB
@@ -7098,7 +7138,20 @@ function jackpotCheckURLParam(){
   const token = getToken();
   if (!token) { window.location.href='index.html'; return; }
   try {
-    const me = await apiGet('/api/auth/me');
+    // Retry jusqu'à 3 fois (cold start Render peut prendre quelques secondes)
+    let me = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        me = await apiGet('/api/auth/me');
+        break; // succès
+      } catch(retryErr) {
+        // Seulement retenter sur erreur réseau, pas sur 401/403
+        if (retryErr.status === 401 || retryErr.status === 403) throw retryErr;
+        if (attempt === 3) throw retryErr;
+        console.warn(`Auth retry ${attempt}/3...`);
+        await new Promise(r => setTimeout(r, 2000 * attempt));
+      }
+    }
     if (me.role === 'joueur') {
       CJ = { name:me.name, phone:me.phone, solde:me.solde, dirCode:me.dir_code, pwd:'' };
       MODE = 'compte';
