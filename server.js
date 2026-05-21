@@ -281,11 +281,24 @@ async function executerRetraitPlopPlop(montant, methode, recipient, reference) {
   if (!authData.token) throw new Error(authData.message || 'Échec authentification PlopPlop');
   const authToken = authData.token;
 
-  // Étape 2: Générer withdrawal-token avec les paramètres EXACTS
+  // Étape 2: Générer withdrawal-token avec signature HMAC-SHA256 (obligatoire v1.3)
+  const timestamp = Math.floor(Date.now() / 1000);
+  const sigPayload = `${montant}|${methode}|${recipient}|${reference}|${timestamp}`;
+  const withdrawalSignature = crypto.createHmac('sha256', MERCHANT_SECRET_KEY)
+    .update(sigPayload)
+    .digest('hex');
+
   const wtResp = await fetch(`${BASE}/api/auth/marchand/withdrawal-token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-    body: JSON.stringify({ amount: montant, method: methode, recipient, reference })
+    body: JSON.stringify({
+      amount: montant,
+      method: methode,
+      recipient,
+      reference,
+      timestamp,
+      withdrawal_signature: withdrawalSignature
+    })
   });
   const wtData = await wtResp.json();
   if (!wtData.withdrawal_token) throw new Error(wtData.message || 'Échec génération token retrait');
