@@ -92,17 +92,46 @@ const JACKPOT_PCT       = 5; // 5%
       dir_code TEXT REFERENCES directors(code),
       caiss_code TEXT REFERENCES cashiers(code),
       type TEXT NOT NULL,
+      game_type TEXT,
       sub_type TEXT,
       selection TEXT,
+      numeros_joues TEXT,
       mise REAL,
       cote REAL,
       gain_potentiel REAL,
       draw TEXT,
       match_id TEXT,
       match_name TEXT,
+      match_info JSONB,
       statut TEXT DEFAULT 'en_attente',
       created_at TIMESTAMP DEFAULT NOW(),
       resolved_at TIMESTAMP
+    );
+    -- Ajouter colonnes manquantes si table déjà existante
+    DO $$ BEGIN
+      BEGIN ALTER TABLE bets ADD COLUMN game_type TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END;
+      BEGIN ALTER TABLE bets ADD COLUMN numeros_joues TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END;
+      BEGIN ALTER TABLE bets ADD COLUMN match_info JSONB; EXCEPTION WHEN duplicate_column THEN NULL; END;
+    END $$;
+
+    -- Tirages Keno publiés par l'admin
+    CREATE TABLE IF NOT EXISTS keno_tirages (
+      id SERIAL PRIMARY KEY,
+      dir_code TEXT,
+      numeros INT[] NOT NULL,
+      statut TEXT DEFAULT 'ouvert',   -- ouvert | ferme | publie
+      created_at TIMESTAMP DEFAULT NOW(),
+      publie_at TIMESTAMP
+    );
+
+    -- Tirages Lucky 6 publiés par l'admin
+    CREATE TABLE IF NOT EXISTS lucky6_tirages (
+      id SERIAL PRIMARY KEY,
+      dir_code TEXT,
+      numeros INT[] NOT NULL,
+      statut TEXT DEFAULT 'ouvert',
+      created_at TIMESTAMP DEFAULT NOW(),
+      publie_at TIMESTAMP
     );
     CREATE TABLE IF NOT EXISTS transactions (
       id SERIAL PRIMARY KEY,
@@ -173,10 +202,10 @@ const JACKPOT_PCT       = 5; // 5%
     );
     CREATE TABLE IF NOT EXISTS game_difficulty (
       id SERIAL PRIMARY KEY,
-      dir_code TEXT REFERENCES directors(code),
+      dir_code TEXT,
       game_name TEXT NOT NULL,
       win_probability INTEGER DEFAULT 45,
-      UNIQUE(dir_code, game_name)
+      UNIQUE NULLS NOT DISTINCT (dir_code, game_name)
     );
   `);
   console.log('✅ Tables vérifiées/créées');
@@ -222,14 +251,24 @@ async function requireDirector(req, res, next) {
 
 // Récupérer la probabilité de gain pour un jeu et un directeur
 async function getWinProbability(dirCode, gameName) {
-  const r = await pool.query(
-    "SELECT win_probability FROM game_difficulty WHERE dir_code=$1 AND game_name=$2",
-    [dirCode, gameName]
+  // 1. Chercher spécifique au directeur
+  if (dirCode) {
+    const r = await pool.query(
+      "SELECT win_probability FROM game_difficulty WHERE dir_code=$1 AND game_name=$2",
+      [dirCode, gameName]
+    );
+    if (r.rows.length) return r.rows[0].win_probability;
+  }
+  // 2. Chercher la valeur globale dans game_difficulty (dir_code IS NULL)
+  const rGlobal = await pool.query(
+    "SELECT win_probability FROM game_difficulty WHERE dir_code IS NULL AND game_name=$1",
+    [gameName]
   );
-  if (r.rows.length) return r.rows[0].win_probability;
+  if (rGlobal.rows.length) return rGlobal.rows[0].win_probability;
+  // 3. Fallback settings table
   const def = await pool.query("SELECT value FROM settings WHERE key=$1", [`${gameName}_default_diff`]);
   if (def.rows.length) return parseInt(def.rows[0].value) || 45;
-  return 45;
+  return 45; // défaut absolu
 }
 
 function isWin(probability) {
@@ -278,8 +317,9 @@ async function executerRetraitPlopPlop(montant, methode, recipient, reference) {
     body: JSON.stringify({ client_id: MERCHANT_CLIENT_ID, client_secret: MERCHANT_SECRET_KEY })
   });
   const authData = await authResp.json();
-  if (!authData.token) throw new Error(authData.message || 'Échec authentification PlopPlop');
-  const authToken = authData.token;
+  console.log('[PlopPlop] Auth response:', JSON.stringify(authData));
+  const authToken = authData.token || authData.access_token || authData.auth_token || authData.jwt;
+  if (!authToken) throw new Error(authData.message || authData.error || `Échec authentification PlopPlop (réponse: ${JSON.stringify(authData)})`);
 
   // Étape 2: Générer withdrawal-token avec signature HMAC-SHA256 (obligatoire v1.3)
   const timestamp = Math.floor(Date.now() / 1000);
@@ -301,8 +341,9 @@ async function executerRetraitPlopPlop(montant, methode, recipient, reference) {
     })
   });
   const wtData = await wtResp.json();
-  if (!wtData.withdrawal_token) throw new Error(wtData.message || 'Échec génération token retrait');
-  const withdrawalToken = wtData.withdrawal_token;
+  console.log('[PlopPlop] Withdrawal-token response:', JSON.stringify(wtData));
+  const withdrawalToken = wtData.withdrawal_token || wtData.token || wtData.access_token || wtData.jwt;
+  if (!withdrawalToken) throw new Error(wtData.message || wtData.error || `Échec token retrait (réponse: ${JSON.stringify(wtData)})`);
 
   // Étape 3: Exécuter le retrait avec les MÊMES paramètres exacts
   const wResp = await fetch(`${BASE}/api/withdraw/marchand`, {
@@ -999,15 +1040,50 @@ app.post('/api/admin/reset-password', requireAdmin, async (req, res) => {
   res.json({ success: true });
 });
 
+// GET: lire la difficulté d'un jeu (global ou par directeur)
+app.get('/api/admin/settings/game-diff', requireAdmin, async (req, res) => {
+  try {
+    const { game_name, dir_code } = req.query;
+    if (!game_name) return res.status(400).json({ error: 'game_name requis' });
+    if (dir_code) {
+      const r = await pool.query(
+        "SELECT win_probability FROM game_difficulty WHERE dir_code=$1 AND game_name=$2",
+        [dir_code, game_name]
+      );
+      return res.json({ win_probability: r.rows[0]?.win_probability ?? 45 });
+    }
+    // Global: chercher dans settings
+    const def = await pool.query("SELECT value FROM settings WHERE key=$1", [`${game_name}_default_diff`]);
+    res.json({ win_probability: def.rows.length ? parseInt(def.rows[0].value) : 45 });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST: sauvegarder la difficulté
 app.post('/api/admin/settings/game-diff', requireAdmin, async (req, res) => {
-  const { dir_code, game_name, win_probability } = req.body;
-  if (!game_name || win_probability === undefined) return res.status(400).json({ error: 'Données manquantes' });
-  if (dir_code) {
-    await pool.query(`INSERT INTO game_difficulty (dir_code, game_name, win_probability) VALUES ($1, $2, $3) ON CONFLICT (dir_code, game_name) DO UPDATE SET win_probability=$3`, [dir_code, game_name, win_probability]);
-  } else {
-    await pool.query(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value=$2`, [`${game_name}_default_diff`, win_probability.toString()]);
-  }
-  res.json({ success: true });
+  try {
+    const { dir_code, game_name, win_probability } = req.body;
+    if (!game_name || win_probability === undefined) return res.status(400).json({ error: 'Données manquantes' });
+    if (dir_code) {
+      await pool.query(
+        `INSERT INTO game_difficulty (dir_code, game_name, win_probability) VALUES ($1, $2, $3)
+         ON CONFLICT (dir_code, game_name) DO UPDATE SET win_probability=$3`,
+        [dir_code, game_name, win_probability]
+      );
+    } else {
+      // Global: sauvegarder dans settings ET dans game_difficulty (dir_code NULL)
+      await pool.query(
+        `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value=$2`,
+        [`${game_name}_default_diff`, win_probability.toString()]
+      );
+      // Aussi dans game_difficulty avec dir_code NULL pour compatibilité
+      await pool.query(
+        `INSERT INTO game_difficulty (dir_code, game_name, win_probability) VALUES (NULL, $1, $2)
+         ON CONFLICT (dir_code, game_name) DO UPDATE SET win_probability=$2`,
+        [game_name, win_probability]
+      ).catch(() => {}); // ignore si contrainte NULL
+    }
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // ── DIRECTEUR ─────────────────────────────────────────────
@@ -1063,6 +1139,58 @@ app.post('/api/cashier/players', requireAuth, async (req, res) => {
 });
 
 // ── JEUX DE CASINO ───────────────────────────────────────
+// ── ADMIN: Gestion tirages Keno & Lucky6 ────────────────
+
+// Créer un tirage Keno (admin/directeur)
+app.post('/api/admin/keno/tirage', requireAuth, async (req, res) => {
+  try {
+    if (!['admin','directeur'].includes(req.session.role)) return res.status(403).json({ error: 'Non autorisé' });
+    const { numeros, dir_code } = req.body;
+    if (!numeros || numeros.length !== 20) return res.status(400).json({ error: '20 numéros requis (1-80)' });
+    const dirCode = dir_code || req.session.user_code || null;
+    const r = await pool.query(
+      "INSERT INTO keno_tirages (dir_code, numeros, statut) VALUES ($1, $2, 'publie') RETURNING *",
+      [dirCode, numeros]
+    );
+    res.json({ success: true, tirage: r.rows[0] });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Obtenir le dernier tirage Keno actif
+app.get('/api/keno/tirage/actif', requireAuth, async (req, res) => {
+  try {
+    const r = await pool.query(
+      "SELECT * FROM keno_tirages WHERE statut='publie' ORDER BY created_at DESC LIMIT 1"
+    );
+    res.json({ tirage: r.rows[0] || null });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Créer un tirage Lucky6 (admin/directeur)
+app.post('/api/admin/lucky6/tirage', requireAuth, async (req, res) => {
+  try {
+    if (!['admin','directeur'].includes(req.session.role)) return res.status(403).json({ error: 'Non autorisé' });
+    const { numeros, dir_code } = req.body;
+    if (!numeros || numeros.length !== 36) return res.status(400).json({ error: '36 numéros requis (1-90)' });
+    const dirCode = dir_code || req.session.user_code || null;
+    const r = await pool.query(
+      "INSERT INTO lucky6_tirages (dir_code, numeros, statut) VALUES ($1, $2, 'publie') RETURNING *",
+      [dirCode, numeros]
+    );
+    res.json({ success: true, tirage: r.rows[0] });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Obtenir le dernier tirage Lucky6 actif
+app.get('/api/lucky6/tirage/actif', requireAuth, async (req, res) => {
+  try {
+    const r = await pool.query(
+      "SELECT * FROM lucky6_tirages WHERE statut='publie' ORDER BY created_at DESC LIMIT 1"
+    );
+    res.json({ tirage: r.rows[0] || null });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/games/keno/play', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
@@ -1078,30 +1206,23 @@ app.post('/api/games/keno/play', requireAuth, async (req, res) => {
     if (parseFloat(player.rows[0].solde) < mise) throw new Error('Solde insuffisant');
     const dirCode = player.rows[0].dir_code;
 
-    // Difficulté 0-100 depuis la DB
-    // Facile (>= 60): tirage favorise le joueur → 5 à nbJoues hits possibles → gagne
-    // Difficile (< 40): tirage défavorise le joueur → 1 à 4 hits → perd (seuil non atteint)
-    // Moyen (40-59): comportement standard
+    // Génération par difficulté (admin contrôle via le panneau difficulté)
     const difficulte = await getWinProbability(dirCode, 'keno'); // 0-100
 
     const pool80 = Array.from({length:80}, (_,i) => i+1);
     const joues = pool80.filter(n => playerNums.includes(n));
     const autres = pool80.filter(n => !playerNums.includes(n));
-    // Shuffle
     for (let i=joues.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[joues[i],joues[j]]=[joues[j],joues[i]];}
     for (let i=autres.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[autres[i],autres[j]]=[autres[j],autres[i]];}
 
     let nbJouesDansTirage;
     if (difficulte >= 60) {
-      // MODE FACILE: on garantit entre 5 et nbJoues hits
       const minHits = Math.min(5, nbJoues);
       nbJouesDansTirage = minHits + Math.floor(Math.random() * (nbJoues - minHits + 1));
     } else if (difficulte < 40) {
-      // MODE DIFFICILE: on garantit entre 1 et 4 hits (jamais assez pour gagner)
       const maxHits = Math.min(4, nbJoues);
       nbJouesDansTirage = 1 + Math.floor(Math.random() * maxHits);
     } else {
-      // MODE MOYEN: proportionnel à la difficulté
       nbJouesDansTirage = Math.round((difficulte / 100) * nbJoues);
     }
     nbJouesDansTirage = Math.max(0, Math.min(nbJouesDansTirage, Math.min(nbJoues, 20)));
@@ -1151,59 +1272,36 @@ app.post('/api/games/lucky6/play', requireAuth, async (req, res) => {
     if (parseFloat(player.rows[0].solde) < mise) throw new Error('Solde insuffisant');
     const dirCode = player.rows[0].dir_code;
 
-    // Difficulté 0-100 depuis la DB
+    // Génération par difficulté (admin contrôle via le panneau difficulté)
     const difficulte = await getWinProbability(dirCode, 'lucky6');
 
-    // Tirage Lucky6: 6 rangées de 6 boules (total 36 boules tirées sur 48)
-    // Rangée 1 = premier tirage (jackpot), rangée 6 = dernier (perd)
     const pool48 = Array.from({length:48},(_,i)=>i+1);
-    // Shuffle le pool
-    for (let i=pool48.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool48[i],pool48[j]]=[pool48[j],pool48[i]];}
-
-    // Construire 6 rangées de 6 boules
-    // Selon difficulté, on biaise la distribution des numéros joués dans les rangées:
-    //  - Facile (>= 60): placer les numéros joués majoritairement dans les premières rangées
-    //  - Difficile (< 40): placer les numéros joués dans les dernières rangées
-    //  - Moyen (40-59): distribution normale
     const joues = pool48.filter(n => playerNums.includes(n));
     const autres = pool48.filter(n => !playerNums.includes(n));
     for (let i=joues.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[joues[i],joues[j]]=[joues[j],joues[i]];}
     for (let i=autres.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[autres[i],autres[j]]=[autres[j],autres[i]];}
 
-    // Construire les 6 rangées de 6 boules
-    let jouesIdx = 0, autresIdx = 0;
-    const rows = []; // 6 rangées de 6 boules
-    // Selon difficulté: répartir les 6 numéros joués dans des rangées spécifiques
-    let jouesDansRangee = Array(6).fill(0); // combien de numéros joués dans chaque rangée
+    let jouesDansRangee = Array(6).fill(0);
     if (difficulte >= 60) {
-      // Facile: concentrer les joués dans les 1-2 premières rangées
       jouesDansRangee = [3, 2, 1, 0, 0, 0];
     } else if (difficulte >= 45) {
-      // Moyen-facile: distribuer dans les 3 premières rangées
       jouesDansRangee = [2, 2, 1, 1, 0, 0];
     } else if (difficulte >= 35) {
-      // Moyen: distribution équilibrée
       jouesDansRangee = [1, 1, 1, 1, 1, 1];
     } else {
-      // Difficile: concentrer dans les dernières rangées
       jouesDansRangee = [0, 0, 1, 1, 2, 2];
     }
 
+    let jouesIdx = 0, autresIdx = 0;
+    const rows = [];
     for (let r=0; r<6; r++) {
       const row = [];
       const nbJouesIci = jouesDansRangee[r];
-      for (let k=0; k<nbJouesIci && jouesIdx<joues.length; k++) {
-        row.push(joues[jouesIdx++]);
-      }
-      while (row.length < 6 && autresIdx < autres.length) {
-        row.push(autres[autresIdx++]);
-      }
-      // Mélanger la rangée
+      for (let k=0; k<nbJouesIci && jouesIdx<joues.length; k++) row.push(joues[jouesIdx++]);
+      while (row.length < 6 && autresIdx < autres.length) row.push(autres[autresIdx++]);
       for (let i=row.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[row[i],row[j]]=[row[j],row[i]];}
       rows.push(row);
     }
-
-    // Tableau de toutes les boules (pour affichage)
     const winningNumbers = rows.flat();
 
     // Calculer hits par rangée et gain
@@ -1389,12 +1487,27 @@ app.post('/api/games/helico/update', requireAuth, async (req, res) => {
 
 // ── AUTRES ROUTES API (bets, transactions, etc.) ──────────
 app.get('/api/bets', requireAuth, async (req, res) => {
-  let query = `SELECT b.*, p.name AS player_name FROM bets b LEFT JOIN players p ON b.player_phone = p.phone`;
-  let params = [];
-  if (req.session.role === 'joueur') { query += ` WHERE b.player_phone = $1`; params.push(req.session.user_phone); }
-  query += ` ORDER BY b.created_at DESC LIMIT 200`;
-  const r = await pool.query(query, params);
-  res.json({ bets: r.rows });
+  try {
+    let conditions = [];
+    let params = [];
+    if (req.session.role === 'joueur') {
+      params.push(req.session.user_phone);
+      conditions.push(`b.player_phone = $${params.length}`);
+    } else if (req.session.role === 'directeur') {
+      params.push(req.session.user_code);
+      conditions.push(`b.dir_code = $${params.length}`);
+    }
+    const gameType = req.query.game_type;
+    if (gameType) {
+      params.push(gameType);
+      conditions.push(`(b.game_type = $${params.length} OR b.type = $${params.length})`);
+    }
+    let query = `SELECT b.*, p.name AS player_name FROM bets b LEFT JOIN players p ON b.player_phone = p.phone`;
+    if (conditions.length) query += ` WHERE ` + conditions.join(' AND ');
+    query += ` ORDER BY b.created_at DESC LIMIT 200`;
+    const r = await pool.query(query, params);
+    res.json({ bets: r.rows });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get('/api/transactions', requireAuth, async (req, res) => {
@@ -1951,7 +2064,7 @@ app.post('/api/sports/bet', requireAuth, async (req, res) => {
     const { dirCode } = await deductAndRecord(client, phone, mise, 'Sport', `${homeTeam} vs ${awayTeam} → ${prediction}`);
 
     const gainPotentiel = Math.round(mise * parseFloat(cote) * 100) / 100;
-    await client.query("INSERT INTO bets (player_phone, dir_code, game_type, mise, gain_potentiel, numeros_joues, statut, match_id, match_info) VALUES ($1,$2,'sport',$3,$4,$5,'en_attente',$6,$7)",
+    await client.query("INSERT INTO bets (player_phone, dir_code, type, game_type, mise, gain_potentiel, numeros_joues, statut, match_id, match_info) VALUES ($1,$2,'sport','sport',$3,$4,$5,'en_attente',$6,$7)",
       [phone, dirCode, mise, gainPotentiel, JSON.stringify([prediction]), matchId, JSON.stringify({homeTeam, awayTeam, competition, prediction, cote})]);
 
     await client.query('COMMIT');
@@ -1969,24 +2082,7 @@ app.get('/api/jackpot', async (req, res) => {
 });
 
 // ── STATS ADMIN ───────────────────────────────────────────
-app.get('/api/admin/stats', requireAdmin, async (req, res) => {
-  try {
-    const [players, bets, gains, retraits, pending] = await Promise.all([
-      pool.query("SELECT COUNT(*) as total, COALESCE(SUM(solde),0) as solde_total FROM players WHERE role='joueur'"),
-      pool.query("SELECT COUNT(*) as total, COALESCE(SUM(mise),0) as total_mise FROM bets WHERE created_at > NOW()-INTERVAL '24 hours'"),
-      pool.query("SELECT COALESCE(SUM(gain_potentiel),0) as total_gains FROM bets WHERE statut='gagne' AND created_at > NOW()-INTERVAL '24 hours'"),
-      pool.query("SELECT COUNT(*) as total, COALESCE(SUM(montant),0) as total_montant FROM retraits WHERE statut='approved' AND created_at > NOW()-INTERVAL '24 hours'"),
-      pool.query("SELECT COUNT(*) as total FROM retraits WHERE statut='pending'"),
-    ]);
-    res.json({
-      players: { total: parseInt(players.rows[0].total), solde_total: parseFloat(players.rows[0].solde_total) },
-      bets_24h: { total: parseInt(bets.rows[0].total), total_mise: parseFloat(bets.rows[0].total_mise) },
-      gains_24h: parseFloat(gains.rows[0].total_gains),
-      retraits_24h: { total: parseInt(retraits.rows[0].total), total_montant: parseFloat(retraits.rows[0].total_montant) },
-      retraits_pending: parseInt(pending.rows[0].total),
-    });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
+// [DUPLICATE admin/stats supprimé]
 
 // ── TABLES MANQUANTES (auto-create) ───────────────────────
 (async () => {

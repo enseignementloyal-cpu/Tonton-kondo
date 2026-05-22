@@ -14,7 +14,7 @@
 
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{width:100%;overflow-x:hidden;}
-body{background:#061520;color:#fff;font-family:'Barlow',sans-serif;min-height:100vh;font-size:17px;}
+body{background:#061520;color:#fff;font-family:'Barlow',sans-serif;min-height:100vh;font-size:20px;}
 
 :root{
   --gold:#f5c800; --navy:#0d2151; --blue:#1a3a8f;
@@ -1934,6 +1934,24 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
             </table>
           </div>
         </div>
+
+        <!-- KENO TIRAGE ADMIN -->
+        <div class="card" style="border:1px solid rgba(245,200,0,.25);">
+          <h3>🧺 Publier Tirage Keno</h3>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Génère 20 numéros aléatoires (1-80) et les publie pour que les joueurs puissent parier.</p>
+          <div id="keno-publish-msg" style="display:none;padding:8px;border-radius:6px;margin-bottom:10px;font-size:13px;background:rgba(40,176,78,.1)"></div>
+          <div id="keno-tirage-display" style="margin-bottom:10px;font-size:12px;min-height:30px;"></div>
+          <button onclick="publierTirageKeno()" class="fbtn" style="background:var(--gold);color:#000;">🎯 Publier nouveau tirage Keno</button>
+        </div>
+
+        <!-- LUCKY6 TIRAGE ADMIN -->
+        <div class="card" style="border:1px solid rgba(91,142,245,.25);">
+          <h3>🐉 Publier Tirage Lucky 6</h3>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Génère 36 numéros (6 rangées × 6) et les publie pour les joueurs.</p>
+          <div id="lucky6-publish-msg" style="display:none;padding:8px;border-radius:6px;margin-bottom:10px;font-size:13px;background:rgba(40,176,78,.1)"></div>
+          <div id="lucky6-tirage-display" style="margin-bottom:10px;font-size:12px;min-height:30px;"></div>
+          <button onclick="publierTirageLucky6()" class="fbtn" style="background:var(--blue2);color:#fff;">🎯 Publier nouveau tirage Lucky 6</button>
+        </div>
       </div>
 
       <!-- TAB 2 : BLOCAGES & LIMITES -->
@@ -2087,6 +2105,24 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
           <tbody id="bor-resultats-body"><tr><td colspan="5" style="text-align:center;">Chargement...</td></tr></tbody>
         </table>
       </div>
+    </div>
+
+    <!-- KENO TIRAGE DIR -->
+    <div class="card" style="border:1px solid rgba(245,200,0,.25);">
+      <h3>🧺 Publier Tirage Keno</h3>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Génère 20 numéros aléatoires (1-80) pour que les joueurs puissent parier.</p>
+      <div id="keno-publish-msg2" style="display:none;padding:8px;border-radius:6px;margin-bottom:10px;font-size:13px;background:rgba(40,176,78,.1)"></div>
+      <div id="keno-tirage-display2" style="margin-bottom:10px;font-size:12px;min-height:30px;"></div>
+      <button onclick="publierTirageKeno2()" class="fbtn" style="background:var(--gold);color:#000;">🎯 Publier nouveau tirage Keno</button>
+    </div>
+
+    <!-- LUCKY6 TIRAGE DIR -->
+    <div class="card" style="border:1px solid rgba(91,142,245,.25);">
+      <h3>🐉 Publier Tirage Lucky 6</h3>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Génère 36 numéros (6 rangées × 6) pour les joueurs.</p>
+      <div id="lucky6-publish-msg2" style="display:none;padding:8px;border-radius:6px;margin-bottom:10px;font-size:13px;background:rgba(40,176,78,.1)"></div>
+      <div id="lucky6-tirage-display2" style="margin-bottom:10px;font-size:12px;min-height:30px;"></div>
+      <button onclick="publierTirageLucky6_2()" class="fbtn" style="background:var(--blue2);color:#fff;">🎯 Publier nouveau tirage Lucky 6</button>
     </div>
   </div>
 
@@ -3314,16 +3350,24 @@ async function jouerKeno(){
       drawBox.style.cssText = 'background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;margin:8px 0;min-height:50px;';
       statusEl.before(drawBox);
     }
-    // Boules preview dans le panier (numéros au hasard)
-    const _prev = Array.from({length:20},(_,i)=>i+1).sort(()=>Math.random()-.5).slice(0,9);
-    const _prevHtml = _prev.map(n=>`<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;font-size:8px;font-weight:900;background:radial-gradient(circle at 35% 35%,#777,#333);border:1px solid #555;color:#bbb">${n}</span>`).join('');
+    // Panier CSS avec boules DEDANS (pas emoji — vrai dessin)
+    const _prev = Array.from({length:20},(_,i)=>i+1).sort(()=>Math.random()-.5).slice(0,12);
+    const _ballsHtml = _prev.map(n=>`<span style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;font-size:7px;font-weight:900;background:radial-gradient(circle at 35% 35%,#888,#333);border:1px solid #666;color:#ddd;flex-shrink:0">${n}</span>`).join('');
     drawBox.innerHTML = `
-      <div id="keno-basket-container" style="display:flex;flex-direction:column;align-items:center;margin-bottom:8px">
-        <div style="position:relative;display:inline-block">
-          <div id="keno-basket" style="font-size:3em;display:inline-block;filter:drop-shadow(0 2px 8px rgba(0,0,0,.6))">🧺</div>
-          <div id="keno-basket-balls" style="position:absolute;top:6px;left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;gap:1px;width:52px;justify-content:center;pointer-events:none">${_prevHtml}</div>
+      <div id="keno-basket-container" style="display:flex;flex-direction:column;align-items:center;margin-bottom:10px">
+        <div id="keno-basket" style="position:relative;width:90px;display:flex;flex-direction:column;align-items:center">
+          <!-- Zone intérieure du panier (les boules sont ici) -->
+          <div style="position:relative;width:80px;height:54px;background:linear-gradient(180deg,#1a2a1a 0%,#0d1a0d 100%);border-radius:8px 8px 0 0;border:2px solid #4a7a3a;border-bottom:none;overflow:hidden;display:flex;flex-wrap:wrap;align-content:flex-end;padding:3px;gap:1px;justify-content:center" id="keno-basket-inner">
+            ${_ballsHtml}
+          </div>
+          <!-- Rebord bas du panier -->
+          <div style="width:86px;height:10px;background:linear-gradient(90deg,#3a6a2a,#5a9a3a,#3a6a2a);border-radius:0 0 12px 12px;border:2px solid #4a7a3a;border-top:3px solid #6aaa4a;"></div>
+          <!-- Anse du panier -->
+          <div style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:44px;height:16px;border:3px solid #5a8a3a;border-bottom:none;border-radius:22px 22px 0 0;"></div>
+          <!-- Stries verticales (effet tressage) -->
+          <div style="position:absolute;top:0;left:0;width:80px;height:54px;background:repeating-linear-gradient(90deg,transparent,transparent 9px,rgba(0,0,0,.25) 9px,rgba(0,0,0,.25) 10px);border-radius:8px 8px 0 0;pointer-events:none"></div>
         </div>
-        <div style="font-size:11px;color:var(--muted);margin-top:6px">🎱 Tirage en cours...</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:8px" id="keno-status-label">🎱 Tirage en cours...</div>
       </div>
       <div id="keno-balls-out" style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;"></div>`;
 
@@ -3343,10 +3387,11 @@ async function jouerKeno(){
     const ballsContainer = document.getElementById('keno-balls-out');
     const basketEl = document.getElementById('keno-basket');
 
-    // Lancer l'animation de rotation continue du panier
+    // Lancer l'animation de secousse continue du panier CSS
     if(basketEl) basketEl.style.animation = 'kenoBasketIdle 1s ease-in-out infinite';
+    const innerEl = document.getElementById('keno-basket-inner');
 
-    // Délai initial — le panier tourne 2 secondes avant la première boule
+    // Délai initial — le panier secoue 2 secondes avant la première boule
     await new Promise(res => setTimeout(res, 2000));
 
     // Boules sortent du panier une par une
@@ -3368,9 +3413,8 @@ async function jouerKeno(){
         basketEl.style.animation = 'kenoBasketIdle 0.8s ease-in-out infinite';
       }
 
-      // Retirer une boule du panier visuellement
-      const baskBalls = document.getElementById('keno-basket-balls');
-      if(baskBalls && baskBalls.lastChild) baskBalls.removeChild(baskBalls.lastChild);
+      // Retirer une boule de l'intérieur du panier
+      if(innerEl && innerEl.lastChild) innerEl.removeChild(innerEl.lastChild);
 
       // Boule tombe du panier
       const span = document.createElement('span');
@@ -3383,12 +3427,15 @@ async function jouerKeno(){
       const btn = document.getElementById('kn'+num);
       if(btn){ if(isHit) btn.classList.add('win'); else btn.style.opacity='0.35'; }
 
+      const lbl = document.getElementById('keno-status-label');
+      if(lbl) lbl.textContent = `🎱 Boule ${i+1}/20 — ${hits}/${kenoSel.length} trouvé${hits>1?'s':''}`;
       statusEl.textContent = `🧺 Boule ${i+1}/20 — ${hits}/${kenoSel.length} trouvé${hits>1?'s':''}`;
     }
 
-    // Arrêter l'animation du panier
-    const bc = document.getElementById('keno-basket-container');
-    if(bc) bc.innerHTML = '<div style="font-size:1.5em">🧺</div><div style="font-size:11px;color:var(--muted)">Tirage terminé</div>';
+    // Arrêter l'animation, panier vide
+    if(basketEl) basketEl.style.animation = 'none';
+    const lbl2 = document.getElementById('keno-status-label');
+    if(lbl2) lbl2.textContent = '✅ Tirage terminé';
 
     statusEl.textContent = r.message;
     if(r.gain>0) showNotif('🎉 '+r.message,'ok');
@@ -5011,19 +5058,38 @@ async function renderJHistCat(cat){
 async function renderJBets(){
   const el=document.getElementById('jbets');
   if(!el||!CJ) return;
-  el.innerHTML='<div style="color:var(--muted);font-size:13px;padding:8px;text-align:center">⏳ Chargement...</div>';
+  el.innerHTML='<div style="color:var(--muted);font-size:13px;padding:8px;text-align:center">⏳ Chargement paris sportifs...</div>';
   try {
-    const data = await apiGet('/api/bets');
-    const bets = (data.bets||[]).filter(b=>b.game_type==='sport');
-    if(!bets.length){ el.innerHTML='<p style="color:var(--muted);font-size:13px">Aucun pari sportif.</p>'; return; }
-    el.innerHTML=`<div style="overflow-x:auto"><table style="font-size:11px;min-width:360px;width:100%"><thead><tr><th>Date</th><th>Match</th><th>Mise</th><th>Gain pot.</th><th>Statut</th></tr></thead><tbody>
+    const data = await apiGet('/api/bets?game_type=sport');
+    const bets = (data.bets||[]).filter(b=>(b.game_type==='sport'||b.type==='sport'));
+    if(!bets.length){ el.innerHTML='<p style="color:var(--muted);font-size:13px;padding:8px">Aucun pari sportif enregistré.</p>'; return; }
+    el.innerHTML=`<div style="overflow-x:auto"><table style="font-size:12px;min-width:360px;width:100%;border-collapse:collapse">
+      <thead><tr style="border-bottom:2px solid var(--border)">
+        <th style="padding:7px 5px;text-align:left;font-size:10px;color:var(--muted)">DATE</th>
+        <th style="padding:7px 5px;text-align:left;font-size:10px;color:var(--muted)">MATCH</th>
+        <th style="padding:7px 5px;text-align:right;font-size:10px;color:var(--muted)">MISE</th>
+        <th style="padding:7px 5px;text-align:right;font-size:10px;color:var(--muted)">GAIN POT.</th>
+        <th style="padding:7px 5px;text-align:center;font-size:10px;color:var(--muted)">STATUT</th>
+      </tr></thead><tbody>
     ${bets.map(b=>{
       const info = b.match_info ? (typeof b.match_info==='string'?JSON.parse(b.match_info):b.match_info) : {};
       const date = new Date(b.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-      return `<tr><td style="font-size:10px">${date}</td><td>${info.homeTeam||'?'} vs ${info.awayTeam||'?'}<br><small style="color:var(--gold)">${info.prediction||'?'} @ ${info.cote||'?'}</small></td><td>${parseFloat(b.mise)} Gd</td><td style="color:var(--green2)">${parseFloat(b.gain_potentiel)} Gd</td><td><span class="sbadge ${b.statut==='en_attente'?'sbp':b.statut==='gagne'?'sbw':'sbl'}">${b.statut==='en_attente'?'⏳':b.statut==='gagne'?'✅':'❌'} ${b.statut}</span></td></tr>`;
+      const home = info.homeTeam||b.match_name||'?';
+      const away = info.awayTeam||'';
+      const pred = info.prediction||b.selection||'?';
+      const cote  = info.cote||b.cote||'?';
+      const statLabel = b.statut==='en_attente'?'⏳ Attente':b.statut==='gagne'?'✅ Gagné':'❌ Perdu';
+      const statCol   = b.statut==='gagne'?'var(--green2)':b.statut==='perdu'?'var(--red)':'var(--muted)';
+      return `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:8px 5px;font-size:11px;color:var(--muted);white-space:nowrap">${date}</td>
+        <td style="padding:8px 5px">${home}${away?' vs '+away:''}<br><span style="color:var(--gold);font-size:11px">${pred} @ ${cote}</span></td>
+        <td style="padding:8px 5px;text-align:right;white-space:nowrap">${parseFloat(b.mise||0).toLocaleString('fr-FR')} Gd</td>
+        <td style="padding:8px 5px;text-align:right;color:var(--green2);white-space:nowrap">${parseFloat(b.gain_potentiel||0).toLocaleString('fr-FR')} Gd</td>
+        <td style="padding:8px 5px;text-align:center;color:${statCol};white-space:nowrap">${statLabel}</td>
+      </tr>`;
     }).join('')}
     </tbody></table></div>`;
-  } catch(e){ el.innerHTML='<div style="color:var(--red);font-size:13px;padding:8px">Erreur chargement.</div>'; }
+  } catch(e){ el.innerHTML='<div style="color:var(--red);font-size:13px;padding:8px">Erreur chargement: '+e.message+'</div>'; }
 }
 
 // Patch renderJHist to use new async system
@@ -5542,34 +5608,60 @@ function resetMdpJoueur(phone){
 // ============================================================
 // FIX: Diff par directeur (0-80%)
 // ============================================================
-function getGameDiff(game){
-  // Check if current user (caissier) has a directeur with specific diff
-  const dirCode = CCaiss?.dirCode || CDir?.code || '';
-  if(dirCode){
-    const stored = localStorage.getItem('tk_diff_dir_'+dirCode+'_'+game);
-    if(stored !== null) return parseFloat(stored);
-  }
-  // Global fallback
-  const global = localStorage.getItem('tk_diff_'+game);
-  return global !== null ? parseFloat(global) : 45;
-}
-
-function saveGameDiff(game){
-  const el = document.getElementById(game+'-diff-range');
-  if(!el) return;
-  const val = parseInt(el.value);
-  localStorage.setItem('tk_diff_'+game, val);
-  showNotif('✅ Difficulté '+game+' sauvegardée: '+val+'%','ok');
-}
-
 function updateDiffLabel(game, val){
   const el = document.getElementById(game+'-pct-lbl');
   if(el) el.textContent = val+'%';
 }
 
-function saveDirGameDiff(dirCode, game, val){
-  localStorage.setItem('tk_diff_dir_'+dirCode+'_'+game, val);
-  showNotif('✅ Difficulté '+game+' sauvegardée pour '+dirCode+': '+val+'%','ok');
+// Sauvegarde difficulté GLOBALE → API → DB
+async function saveGameDiff(game){
+  const el = document.getElementById(game+'-diff-range');
+  if(!el) return;
+  const val = parseInt(el.value);
+  try {
+    await apiPost('/api/admin/settings/game-diff', { game_name: game, win_probability: val });
+    // Aussi sauvegarder en localStorage comme cache
+    localStorage.setItem('tk_diff_'+game, val);
+    showNotif('✅ Difficulté '+game+' sauvegardée en DB: '+val+'%','ok');
+  } catch(e) {
+    showNotif('❌ Erreur sauvegarde: '+e.message,'err');
+  }
+}
+
+// Sauvegarde difficulté par DIRECTEUR → API → DB
+async function saveDirGameDiff(dirCode, game, val){
+  try {
+    await apiPost('/api/admin/settings/game-diff', { dir_code: dirCode, game_name: game, win_probability: parseInt(val) });
+    localStorage.setItem('tk_diff_dir_'+dirCode+'_'+game, val);
+    showNotif('✅ Difficulté '+game+' sauvegardée pour '+dirCode+': '+val+'%','ok');
+  } catch(e) {
+    showNotif('❌ Erreur sauvegarde: '+e.message,'err');
+  }
+}
+
+// Lecture difficulté depuis DB au chargement des sliders admin
+async function loadGameDiffs(){
+  const games = ['keno','lucky6','course','helico'];
+  for(const game of games){
+    try {
+      const data = await apiGet('/api/admin/settings/game-diff?game_name='+game);
+      if(data && data.win_probability !== undefined){
+        const el = document.getElementById(game+'-diff-range');
+        if(el){ el.value = data.win_probability; updateDiffLabel(game, data.win_probability); }
+        localStorage.setItem('tk_diff_'+game, data.win_probability);
+      }
+    } catch(e){ /* fallback localStorage */ }
+  }
+}
+
+function getGameDiff(game){
+  const dirCode = CCaiss?.dirCode || CDir?.code || '';
+  if(dirCode){
+    const stored = localStorage.getItem('tk_diff_dir_'+dirCode+'_'+game);
+    if(stored !== null) return parseFloat(stored);
+  }
+  const global = localStorage.getItem('tk_diff_'+game);
+  return global !== null ? parseFloat(global) : 45;
 }
 
 function renderDirDiffList(){
@@ -5692,19 +5784,29 @@ async function refreshAdminComptes(){
    ═══════════════════════════════════════════════════ */
 
 async function refreshAdmin(){
+  // Charger les difficultés depuis la DB à chaque ouverture admin
+  loadGameDiffs().catch(()=>{});
   loadAdminDiffs && loadAdminDiffs();
   const el = n => document.getElementById(n);
 
   try {
-    // Charger toutes les données depuis la DB
+    // Charger toutes les données depuis la DB (avec logs d'erreurs détaillés)
+    const logErr = (name, e) => { console.error(`refreshAdmin [${name}]:`, e.message, e.status); return null; };
     const [playersData, betsData, transData, statsData, caissData, dirsData] = await Promise.all([
-      apiGet('/api/admin/players').catch(()=>({players:[]})),
-      apiGet('/api/admin/bets').catch(()=>({bets:[]})),
-      apiGet('/api/transactions').catch(()=>({transactions:[]})),
-      apiGet('/api/admin/stats').catch(()=>({})),
-      apiGet('/api/admin/cashiers').catch(()=>({cashiers:[]})),
-      apiGet('/api/admin/directors').catch(()=>({directors:[]})),
+      apiGet('/api/admin/players').catch(e=>{ logErr('players',e); return {players:[]}; }),
+      apiGet('/api/admin/bets').catch(e=>{ logErr('bets',e); return {bets:[]}; }),
+      apiGet('/api/transactions').catch(e=>{ logErr('transactions',e); return {transactions:[]}; }),
+      apiGet('/api/admin/stats').catch(e=>{ logErr('stats',e); return {}; }),
+      apiGet('/api/admin/cashiers').catch(e=>{ logErr('cashiers',e); return {cashiers:[]}; }),
+      apiGet('/api/admin/directors').catch(e=>{ logErr('directors',e); return {directors:[]}; }),
     ]);
+    console.log('[refreshAdmin] Loaded:', {
+      players: (playersData?.players||[]).length,
+      bets: (betsData?.bets||[]).length,
+      trans: (transData?.transactions||[]).length,
+      cashiers: (caissData?.cashiers||[]).length,
+      directors: (dirsData?.directors||[]).length
+    });
 
     const players = playersData.players || [];
     const bets    = betsData.bets || [];
@@ -6774,6 +6876,79 @@ async function borPublierResultat(){
   } catch(e) {
     msg.style.display='block';msg.style.background='rgba(230,57,70,.15)';msg.style.color='var(--red)';
     msg.textContent='❌ '+e.message;
+  }
+}
+
+// ── ADMIN: Publier tirages Keno & Lucky6 ────────────────
+async function publierTirageKeno2(){
+  // Alias pour le directeur (IDs différents)
+  const msgEl = document.getElementById('keno-publish-msg2');
+  const dispEl = document.getElementById('keno-tirage-display2');
+  try {
+    const pool = Array.from({length:80},(_,i)=>i+1);
+    for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+    const numeros = pool.slice(0,20).sort((a,b)=>a-b);
+    await apiPost('/api/admin/keno/tirage', { numeros });
+    if(msgEl){msgEl.style.display='block';msgEl.style.color='var(--green2)';msgEl.textContent='✅ Tirage Keno publié: '+numeros.join(', ');setTimeout(()=>msgEl.style.display='none',8000);}
+    if(dispEl) dispEl.innerHTML='<b style="color:var(--gold)">Dernier tirage:</b> '+numeros.map(n=>`<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--blue2);color:#fff;font-size:11px;font-weight:900;margin:1px">${n}</span>`).join('');
+  } catch(e) { if(msgEl){msgEl.style.display='block';msgEl.style.color='var(--red)';msgEl.textContent='❌ '+e.message;} }
+}
+
+async function publierTirageLucky6_2(){
+  const msgEl = document.getElementById('lucky6-publish-msg2');
+  const dispEl = document.getElementById('lucky6-tirage-display2');
+  try {
+    const pool = Array.from({length:48},(_,i)=>i+1);
+    for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+    const numeros = pool.slice(0,36);
+    await apiPost('/api/admin/lucky6/tirage', { numeros });
+    if(msgEl){msgEl.style.display='block';msgEl.style.color='var(--green2)';msgEl.textContent='✅ Tirage Lucky6 publié';setTimeout(()=>msgEl.style.display='none',5000);}
+    if(dispEl){const rows=[];for(let r=0;r<6;r++)rows.push(numeros.slice(r*6,r*6+6));dispEl.innerHTML='<b style="color:var(--gold)">Dernier tirage:</b><br>'+rows.map((row,ri)=>`<div style="margin:2px 0"><span style="font-size:10px;color:var(--muted)">Rang ${ri+1}:</span> `+row.map(n=>`<span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:hsl(${ri*40},60%,40%);color:#fff;font-size:10px;font-weight:900;margin:1px">${n}</span>`).join('')+'</div>').join('');}
+  } catch(e) { if(msgEl){msgEl.style.display='block';msgEl.style.color='var(--red)';msgEl.textContent='❌ '+e.message;} }
+}
+
+async function publierTirageKeno(){
+  const msgEl = document.getElementById('keno-publish-msg');
+  try {
+    // Générer 20 numéros uniques aléatoires entre 1-80
+    const pool = Array.from({length:80},(_,i)=>i+1);
+    for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+    const numeros = pool.slice(0,20).sort((a,b)=>a-b);
+    const r = await apiPost('/api/admin/keno/tirage', { numeros });
+    if(msgEl){
+      msgEl.style.display='block'; msgEl.style.color='var(--green2)';
+      msgEl.textContent='✅ Tirage Keno publié: '+numeros.join(', ');
+      setTimeout(()=>msgEl.style.display='none',8000);
+    }
+    // Afficher les numéros
+    const dispEl = document.getElementById('keno-tirage-display');
+    if(dispEl) dispEl.innerHTML='<b style="color:var(--gold)">Dernier tirage:</b> '+numeros.map(n=>`<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--blue2);color:#fff;font-size:11px;font-weight:900;margin:1px">${n}</span>`).join('');
+  } catch(e) {
+    if(msgEl){msgEl.style.display='block';msgEl.style.color='var(--red)';msgEl.textContent='❌ '+e.message;}
+  }
+}
+
+async function publierTirageLucky6(){
+  const msgEl = document.getElementById('lucky6-publish-msg');
+  try {
+    // Générer 36 numéros uniques aléatoires entre 1-48
+    const pool = Array.from({length:48},(_,i)=>i+1);
+    for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+    const numeros = pool.slice(0,36);
+    const r = await apiPost('/api/admin/lucky6/tirage', { numeros });
+    if(msgEl){
+      msgEl.style.display='block'; msgEl.style.color='var(--green2)';
+      msgEl.textContent='✅ Tirage Lucky6 publié — 36 numéros tirés';
+      setTimeout(()=>msgEl.style.display='none',5000);
+    }
+    const dispEl = document.getElementById('lucky6-tirage-display');
+    if(dispEl){
+      const rows = [];
+      for(let r=0;r<6;r++) rows.push(numeros.slice(r*6,r*6+6));
+      dispEl.innerHTML='<b style="color:var(--gold)">Dernier tirage:</b><br>'+rows.map((row,ri)=>`<div style="margin:2px 0"><span style="font-size:10px;color:var(--muted)">Rang ${ri+1}:</span> `+row.map(n=>`<span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:hsl(${ri*40},60%,40%);color:#fff;font-size:10px;font-weight:900;margin:1px">${n}</span>`).join('')+'</div>').join('');
+    }
+  } catch(e) {
+    if(msgEl){msgEl.style.display='block';msgEl.style.color='var(--red)';msgEl.textContent='❌ '+e.message;}
   }
 }
 
