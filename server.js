@@ -310,16 +310,25 @@ async function callPlopPlop(endpoint, body) {
 async function executerRetraitPlopPlop(montant, methode, recipient, reference) {
   const BASE = PLOPPLOP_BASE || 'https://plopplop.solutionip.app';
 
+  // ── Vérification des credentials ────────────────────────
+  if (!MERCHANT_CLIENT_ID || !MERCHANT_SECRET_KEY) {
+    throw new Error('Jeton d'authentification manquant (MERCHANT_CLIENT_ID ou MERCHANT_SECRET_KEY non configuré dans les variables d'environnement Render)');
+  }
+
+  console.log(`[PlopPlop] Retrait ${montant} ${methode} → ${recipient} | BASE=${BASE} | client_id=${MERCHANT_CLIENT_ID?.slice(0,8)}...`);
+
   // Étape 1: Authentification → AUTH_TOKEN
   const authResp = await fetch(`${BASE}/api/auth/marchand`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ client_id: MERCHANT_CLIENT_ID, client_secret: MERCHANT_SECRET_KEY })
   });
-  const authData = await authResp.json();
-  console.log('[PlopPlop] Auth response:', JSON.stringify(authData));
+  const authRaw = await authResp.text();
+  let authData;
+  try { authData = JSON.parse(authRaw); } catch(e) { throw new Error(`PlopPlop auth réponse invalide (${authResp.status}): ${authRaw.slice(0,200)}`); }
+  console.log('[PlopPlop] Étape 1 auth:', authResp.status, JSON.stringify(authData));
   const authToken = authData.token || authData.access_token || authData.auth_token || authData.jwt;
-  if (!authToken) throw new Error(authData.message || authData.error || `Échec authentification PlopPlop (réponse: ${JSON.stringify(authData)})`);
+  if (!authToken) throw new Error(`PlopPlop auth échoué (${authResp.status}): ${authData.message || authData.error || JSON.stringify(authData)}`);
 
   // Étape 2: Générer withdrawal-token avec signature HMAC-SHA256 (obligatoire v1.3)
   const timestamp = Math.floor(Date.now() / 1000);
@@ -328,30 +337,32 @@ async function executerRetraitPlopPlop(montant, methode, recipient, reference) {
     .update(sigPayload)
     .digest('hex');
 
+  const wtBody = { amount: montant, method: methode, recipient, reference, timestamp, withdrawal_signature: withdrawalSignature };
+  console.log('[PlopPlop] Étape 2 body:', JSON.stringify(wtBody));
   const wtResp = await fetch(`${BASE}/api/auth/marchand/withdrawal-token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-    body: JSON.stringify({
-      amount: montant,
-      method: methode,
-      recipient,
-      reference,
-      timestamp,
-      withdrawal_signature: withdrawalSignature
-    })
+    body: JSON.stringify(wtBody)
   });
-  const wtData = await wtResp.json();
-  console.log('[PlopPlop] Withdrawal-token response:', JSON.stringify(wtData));
+  const wtRaw = await wtResp.text();
+  let wtData;
+  try { wtData = JSON.parse(wtRaw); } catch(e) { throw new Error(`PlopPlop withdrawal-token réponse invalide (${wtResp.status}): ${wtRaw.slice(0,200)}`); }
+  console.log('[PlopPlop] Étape 2 withdrawal-token:', wtResp.status, JSON.stringify(wtData));
   const withdrawalToken = wtData.withdrawal_token || wtData.token || wtData.access_token || wtData.jwt;
-  if (!withdrawalToken) throw new Error(wtData.message || wtData.error || `Échec token retrait (réponse: ${JSON.stringify(wtData)})`);
+  if (!withdrawalToken) throw new Error(`PlopPlop withdrawal-token échoué (${wtResp.status}): ${wtData.message || wtData.error || JSON.stringify(wtData)}`);
 
   // Étape 3: Exécuter le retrait avec les MÊMES paramètres exacts
+  const wBody = { amount: montant, method: methode, recipient, reference };
+  console.log('[PlopPlop] Étape 3 body:', JSON.stringify(wBody));
   const wResp = await fetch(`${BASE}/api/withdraw/marchand`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${withdrawalToken}` },
-    body: JSON.stringify({ amount: montant, method: methode, recipient, reference })
+    body: JSON.stringify(wBody)
   });
-  const wData = await wResp.json();
+  const wRaw = await wResp.text();
+  let wData;
+  try { wData = JSON.parse(wRaw); } catch(e) { throw new Error(`PlopPlop withdraw réponse invalide (${wResp.status}): ${wRaw.slice(0,200)}`); }
+  console.log('[PlopPlop] Étape 3 résultat:', wResp.status, JSON.stringify(wData));
   if (!wResp.ok || wData.success === false) {
     const code = wData.error_code;
     if (code === 'WITHDRAWAL_COOLDOWN') throw new Error(`Cooldown: attendez ${wData.remaining_seconds||60}s avant un autre retrait`);
@@ -370,7 +381,15 @@ async function executerRetraitPlopPlop(montant, methode, recipient, reference) {
 app.get('/health', async (req, res) => {
   try {
     await pool.query('SELECT 1');
-    res.json({ status: 'ok', db: 'connected' });
+    res.json({
+      status: 'ok',
+      db: 'connected',
+      plopplop: {
+        base: PLOPPLOP_BASE || 'https://plopplop.solutionip.app (défaut)',
+        client_id: MERCHANT_CLIENT_ID ? `${MERCHANT_CLIENT_ID.slice(0,8)}... (✅ configuré)` : '❌ MANQUANT',
+        secret: MERCHANT_SECRET_KEY ? `${MERCHANT_SECRET_KEY.slice(0,4)}... (✅ configuré)` : '❌ MANQUANT',
+      }
+    });
   } catch (e) {
     res.status(500).json({ status: 'error', db: e.message });
   }
