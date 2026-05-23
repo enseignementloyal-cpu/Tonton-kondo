@@ -312,7 +312,7 @@ async function executerRetraitPlopPlop(montant, methode, recipient, reference) {
 
   // ── Vérification des credentials ────────────────────────
   if (!MERCHANT_CLIENT_ID || !MERCHANT_SECRET_KEY) {
-    throw new Error('Jeton d'authentification manquant (MERCHANT_CLIENT_ID ou MERCHANT_SECRET_KEY non configuré dans les variables d'environnement Render)');
+    throw new Error("Jeton d'authentification manquant (MERCHANT_CLIENT_ID ou MERCHANT_SECRET_KEY non configure dans les variables Render)");
   }
 
   console.log(`[PlopPlop] Retrait ${montant} ${methode} → ${recipient} | BASE=${BASE} | client_id=${MERCHANT_CLIENT_ID?.slice(0,8)}...`);
