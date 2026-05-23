@@ -2160,16 +2160,11 @@ app.get('/api/jackpot', async (req, res) => {
 // ============================================================
 // ROUTE CATCH-ALL POUR LE FRONTEND (SPA) – À PLACER À LA FIN
 // ============================================================
-// ── DIAGNOSTIC PlopPlop complet 3 étapes ──
+// ── DIAGNOSTIC PlopPlop - test séquentiel avec variations body ──
 app.get('/api/debug/plopplop-auth', async (req, res) => {
   const BASE = PLOPPLOP_BASE || 'https://plopplop.solutionip.app';
   try {
-    const credOk = { client_id: MERCHANT_CLIENT_ID || 'MANQUANT', secret_length: MERCHANT_SECRET_KEY?.length || 0, base_url: BASE };
-    if (!MERCHANT_CLIENT_ID || !MERCHANT_SECRET_KEY) {
-      return res.json({ error: 'Credentials manquants', credentials: credOk });
-    }
-    // Étape 1
-    const t1 = Date.now();
+    // Étape 1 fraîche
     const authResp = await fetch(`${BASE}/api/auth/marchand`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -2177,29 +2172,77 @@ app.get('/api/debug/plopplop-auth', async (req, res) => {
     });
     const authData = await authResp.json();
     const authToken = authData.token;
-    const t1ms = Date.now() - t1;
 
-    // Étape 2 immédiatement
-    const montant = 50; const methode = 'natcash'; const recipient = '50938047513'; const reference = 'TEST_DEBUG_001';
+    const montant = 50; const methode = 'natcash';
+    const recipient = '50938047513'; const reference = 'TEST_DEBUG_001';
     const timestamp = Math.floor(Date.now() / 1000);
     const sigPayload = `${montant}|${methode}|${recipient}|${reference}|${timestamp}`;
     const sig = crypto.createHmac('sha256', MERCHANT_SECRET_KEY).update(sigPayload).digest('hex');
-    const t2 = Date.now();
-    const wtResp = await fetch(`${BASE}/api/auth/marchand/withdrawal-token`, {
+
+    // Variations à tester — chacune avec un nouveau token frais pour éviter expiry
+    const makeToken = async () => {
+      const r = await fetch(`${BASE}/api/auth/marchand`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client_id: MERCHANT_CLIENT_ID, client_secret: MERCHANT_SECRET_KEY })
+      });
+      return (await r.json()).token;
+    };
+
+    const results = [];
+
+    // Test 1: Bearer standard + body standard
+    const tk1 = await makeToken();
+    const r1 = await fetch(`${BASE}/api/auth/marchand/withdrawal-token`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${tk1}` },
       body: JSON.stringify({ amount: montant, method: methode, recipient, reference, timestamp, withdrawal_signature: sig })
     });
-    const wtData = await wtResp.json();
-    const t2ms = Date.now() - t2;
+    results.push({ test: '1_bearer_standard', status: r1.status, response: await r1.json() });
 
-    return res.json({
-      step1: { status: authResp.status, ms: t1ms, token_kind: authData.token_kind, expires_in: authData.expires_in, token_preview: authToken?.slice(0,20)+'...' },
-      step2: { status: wtResp.status, ms: t2ms, response: wtData },
-      total_ms: Date.now() - t1,
-      credentials: credOk
+    // Test 2: Bearer + client_id dans le body aussi
+    const tk2 = await makeToken();
+    const r2 = await fetch(`${BASE}/api/auth/marchand/withdrawal-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${tk2}` },
+      body: JSON.stringify({ client_id: MERCHANT_CLIENT_ID, amount: montant, method: methode, recipient, reference, timestamp, withdrawal_signature: sig })
     });
-  } catch(e) { return res.status(500).json({ error: e.message, stack: e.stack?.slice(0,300) }); }
+    results.push({ test: '2_bearer_plus_client_id', status: r2.status, response: await r2.json() });
+
+    // Test 3: montant en string au lieu de number
+    const tk3 = await makeToken();
+    const r3 = await fetch(`${BASE}/api/auth/marchand/withdrawal-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${tk3}` },
+      body: JSON.stringify({ amount: String(montant), method: methode, recipient, reference, timestamp, withdrawal_signature: sig })
+    });
+    results.push({ test: '3_amount_string', status: r3.status, response: await r3.json() });
+
+    // Test 4: methode "NatCash" (majuscule) au lieu de "natcash"
+    const tk4 = await makeToken();
+    const ts4 = Math.floor(Date.now() / 1000);
+    const sp4 = `${montant}|NatCash|${recipient}|${reference}|${ts4}`;
+    const sg4 = crypto.createHmac('sha256', MERCHANT_SECRET_KEY).update(sp4).digest('hex');
+    const r4 = await fetch(`${BASE}/api/auth/marchand/withdrawal-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${tk4}` },
+      body: JSON.stringify({ amount: montant, method: 'NatCash', recipient, reference, timestamp: ts4, withdrawal_signature: sg4 })
+    });
+    results.push({ test: '4_method_NatCash_majuscule', status: r4.status, response: await r4.json() });
+
+    // Test 5: methode "moncash" 
+    const tk5 = await makeToken();
+    const ts5 = Math.floor(Date.now() / 1000);
+    const sp5 = `${montant}|moncash|${recipient}|${reference}|${ts5}`;
+    const sg5 = crypto.createHmac('sha256', MERCHANT_SECRET_KEY).update(sp5).digest('hex');
+    const r5 = await fetch(`${BASE}/api/auth/marchand/withdrawal-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${tk5}` },
+      body: JSON.stringify({ amount: montant, method: 'moncash', recipient, reference, timestamp: ts5, withdrawal_signature: sg5 })
+    });
+    results.push({ test: '5_method_moncash', status: r5.status, response: await r5.json() });
+
+    return res.json({ results });
+  } catch(e) { return res.status(500).json({ error: e.message }); }
 });
 
 app.get('*', (req, res) => {
