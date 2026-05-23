@@ -2160,7 +2160,7 @@ app.get('/api/jackpot', async (req, res) => {
 // ============================================================
 // ROUTE CATCH-ALL POUR LE FRONTEND (SPA) – À PLACER À LA FIN
 // ============================================================
-// ── DIAGNOSTIC PlopPlop (accessible avant le catch-all) ──
+// ── DIAGNOSTIC PlopPlop complet 3 étapes ──
 app.get('/api/debug/plopplop-auth', async (req, res) => {
   const BASE = PLOPPLOP_BASE || 'https://plopplop.solutionip.app';
   try {
@@ -2168,16 +2168,38 @@ app.get('/api/debug/plopplop-auth', async (req, res) => {
     if (!MERCHANT_CLIENT_ID || !MERCHANT_SECRET_KEY) {
       return res.json({ error: 'Credentials manquants', credentials: credOk });
     }
+    // Étape 1
+    const t1 = Date.now();
     const authResp = await fetch(`${BASE}/api/auth/marchand`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ client_id: MERCHANT_CLIENT_ID, client_secret: MERCHANT_SECRET_KEY })
     });
-    const authRaw = await authResp.text();
-    let authData;
-    try { authData = JSON.parse(authRaw); } catch(e) { authData = authRaw; }
-    return res.json({ step1_status: authResp.status, step1_response: authData, credentials: credOk });
-  } catch(e) { return res.status(500).json({ error: e.message }); }
+    const authData = await authResp.json();
+    const authToken = authData.token;
+    const t1ms = Date.now() - t1;
+
+    // Étape 2 immédiatement
+    const montant = 50; const methode = 'natcash'; const recipient = '50938047513'; const reference = 'TEST_DEBUG_001';
+    const timestamp = Math.floor(Date.now() / 1000);
+    const sigPayload = `${montant}|${methode}|${recipient}|${reference}|${timestamp}`;
+    const sig = crypto.createHmac('sha256', MERCHANT_SECRET_KEY).update(sigPayload).digest('hex');
+    const t2 = Date.now();
+    const wtResp = await fetch(`${BASE}/api/auth/marchand/withdrawal-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+      body: JSON.stringify({ amount: montant, method: methode, recipient, reference, timestamp, withdrawal_signature: sig })
+    });
+    const wtData = await wtResp.json();
+    const t2ms = Date.now() - t2;
+
+    return res.json({
+      step1: { status: authResp.status, ms: t1ms, token_kind: authData.token_kind, expires_in: authData.expires_in, token_preview: authToken?.slice(0,20)+'...' },
+      step2: { status: wtResp.status, ms: t2ms, response: wtData },
+      total_ms: Date.now() - t1,
+      credentials: credOk
+    });
+  } catch(e) { return res.status(500).json({ error: e.message, stack: e.stack?.slice(0,300) }); }
 });
 
 app.get('*', (req, res) => {
