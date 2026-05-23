@@ -2160,6 +2160,26 @@ app.get('/api/jackpot', async (req, res) => {
 // ============================================================
 // ROUTE CATCH-ALL POUR LE FRONTEND (SPA) – À PLACER À LA FIN
 // ============================================================
+// ── DIAGNOSTIC PlopPlop (accessible avant le catch-all) ──
+app.get('/api/debug/plopplop-auth', async (req, res) => {
+  const BASE = PLOPPLOP_BASE || 'https://plopplop.solutionip.app';
+  try {
+    const credOk = { client_id: MERCHANT_CLIENT_ID || 'MANQUANT', secret_length: MERCHANT_SECRET_KEY?.length || 0, base_url: BASE };
+    if (!MERCHANT_CLIENT_ID || !MERCHANT_SECRET_KEY) {
+      return res.json({ error: 'Credentials manquants', credentials: credOk });
+    }
+    const authResp = await fetch(`${BASE}/api/auth/marchand`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client_id: MERCHANT_CLIENT_ID, client_secret: MERCHANT_SECRET_KEY })
+    });
+    const authRaw = await authResp.text();
+    let authData;
+    try { authData = JSON.parse(authRaw); } catch(e) { authData = authRaw; }
+    return res.json({ step1_status: authResp.status, step1_response: authData, credentials: credOk });
+  } catch(e) { return res.status(500).json({ error: e.message }); }
+});
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
