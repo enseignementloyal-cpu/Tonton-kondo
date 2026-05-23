@@ -29,6 +29,16 @@ const PLOPPLOP_BASE = process.env.PLOPPLOP_BASE_URL || CONFIG.PLOPPLOP_BASE_URL;
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Attraper toutes les erreurs non gérées pour éviter crash silencieux
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err.message, err.stack);
+  process.exit(1);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('UNHANDLED REJECTION:', reason);
+  process.exit(1);
+});
+
 // ── CORS & MIDDLEWARES ──────────────────────────────────────
 app.use(cors({ origin: '*' }));
 app.use(express.json());
@@ -204,9 +214,11 @@ const JACKPOT_PCT       = 5; // 5%
       id SERIAL PRIMARY KEY,
       dir_code TEXT,
       game_name TEXT NOT NULL,
-      win_probability INTEGER DEFAULT 45,
-      UNIQUE NULLS NOT DISTINCT (dir_code, game_name)
+      win_probability INTEGER DEFAULT 45
     );
+    -- Index unique compatible toutes versions PostgreSQL
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_game_difficulty_unique
+      ON game_difficulty (COALESCE(dir_code, ''), game_name);
   `);
   console.log('✅ Tables vérifiées/créées');
 })();
@@ -2226,4 +2238,7 @@ app.get('/api/debug/plopplop-auth', async (req, res) => {
   } catch(e) { return res.status(500).json({ error: e.message, stack: e.stack?.slice(0,500) }); }
 });
 
-;
+// ── DÉMARRAGE SERVEUR ─────────────────────────────────────
+app.listen(PORT, () => {
+  console.log(`✅ Serveur démarré sur le port ${PORT}`);
+});
