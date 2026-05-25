@@ -2172,7 +2172,7 @@ app.get('/api/jackpot', async (req, res) => {
 // ============================================================
 // ROUTE CATCH-ALL POUR LE FRONTEND (SPA) – À PLACER À LA FIN
 // ============================================================
-// ── DIAGNOSTIC PlopPlop - test flux prefunded direct ──
+// ── DIAGNOSTIC PlopPlop - test auth étape 2 variantes ──
 app.get('/api/debug/plopplop-auth', async (req, res) => {
   const BASE = PLOPPLOP_BASE || 'https://plopplop.solutionip.app';
   const https = require('https');
@@ -2191,18 +2191,6 @@ app.get('/api/debug/plopplop-auth', async (req, res) => {
     r2.write(postBody); r2.end();
   });
 
-  const getHTTPS = (path, headers) => new Promise((resolve) => {
-    const opts = {
-      hostname: new URL(BASE).hostname, path, method: 'GET',
-      headers: { 'Accept': 'application/json', ...headers }
-    };
-    const r2 = https.request(opts, (r) => {
-      let d = ''; r.on('data', c => d += c);
-      r.on('end', () => { try { resolve({ status: r.statusCode, body: JSON.parse(d) }); } catch(e) { resolve({ status: r.statusCode, body: d.slice(0,400) }); } });
-    });
-    r2.on('error', e => resolve({ error: e.message })); r2.end();
-  });
-
   try {
     // Étape 1 : auth
     const authResp = await fetch(`${BASE}/api/auth/marchand`, {
@@ -2211,39 +2199,73 @@ app.get('/api/debug/plopplop-auth', async (req, res) => {
     });
     const authData = await authResp.json();
     const tk = authData.token;
-    const bearer = { 'Authorization': `Bearer ${tk}` };
 
+    const montant = 50; const methode = 'natcash';
+    const recipient = '50938047513'; const reference = 'TEST001';
+    const ts = Math.floor(Date.now() / 1000);
+    const sig = crypto.createHmac('sha256', MERCHANT_SECRET_KEY)
+      .update(`${montant}|${methode}|${recipient}|${reference}|${ts}`).digest('hex');
+    const body = { amount: montant, method: methode, recipient, reference, timestamp: ts, withdrawal_signature: sig };
+
+    const basicAuth = Buffer.from(`${MERCHANT_CLIENT_ID}:${MERCHANT_SECRET_KEY}`).toString('base64');
     const results = {};
 
-    // TEST A: Retrait DIRECT avec juste le token étape 1 (flux prefunded sans étape 2)
-    results.A_withdraw_direct_auth_token = await postHTTPS(
-      '/api/withdraw/marchand', bearer,
-      { amount: 50, method: 'natcash', recipient: '50938047513', reference: 'TEST_PREFUNDED_001' }
+    // Test 1: Basic Auth au lieu de Bearer
+    results.T1_basic_auth = await postHTTPS(
+      '/api/auth/marchand/withdrawal-token',
+      { 'Authorization': `Basic ${basicAuth}` }, body
     );
 
-    // TEST B: GET compte prépayé / solde
-    results.B_prefunded_balance = await getHTTPS('/api/prefunded/balance', bearer);
-    results.B2_compte_prepaye   = await getHTTPS('/api/compte-prepaye', bearer);
-    results.B3_marchand_balance = await getHTTPS('/api/marchand/balance', bearer);
-    results.B4_marchand_compte  = await getHTTPS('/api/marchand/compte', bearer);
-
-    // TEST C: GET méthodes de retrait disponibles
-    results.C_moyen_paiement    = await getHTTPS('/api/moyen-paiement', bearer);
-    results.C2_methodes_retrait = await getHTTPS('/api/marchand/methodes-retrait', bearer);
-    results.C3_withdrawal_methods = await getHTTPS('/api/withdrawal-methods', bearer);
-
-    // TEST D: POST retrait via endpoint prefunded spécifique
-    results.D_prefunded_withdraw = await postHTTPS(
-      '/api/prefunded/withdraw', bearer,
-      { amount: 50, method: 'natcash', recipient: '50938047513', reference: 'TEST_PREFUNDED_002' }
+    // Test 2: Bearer token + Basic Auth ensemble
+    results.T2_bearer_plus_basic = await postHTTPS(
+      '/api/auth/marchand/withdrawal-token',
+      { 'Authorization': `Bearer ${tk}`, 'X-Basic-Auth': `Basic ${basicAuth}` }, body
     );
-    results.D2_retrait_prepaye = await postHTTPS(
-      '/api/retrait/marchand', bearer,
-      { amount: 50, method: 'natcash', recipient: '50938047513', reference: 'TEST_PREFUNDED_003' }
+
+    // Test 3: Bearer avec le token complet en majuscule BEARER
+    results.T3_BEARER_uppercase = await postHTTPS(
+      '/api/auth/marchand/withdrawal-token',
+      { 'AUTHORIZATION': `Bearer ${tk}` }, body
     );
+
+    // Test 4: token dans X-Access-Token
+    results.T4_X_Access_Token = await postHTTPS(
+      '/api/auth/marchand/withdrawal-token',
+      { 'X-Access-Token': tk }, body
+    );
+
+    // Test 5: Bearer token nettoye (whitespace removed)
+    const cleanTk = tk.replace(/[\r\n\t ]/g, '');
+    results.T5_clean_token = await postHTTPS(
+      '/api/auth/marchand/withdrawal-token',
+      { 'Authorization': `Bearer ${cleanTk}` }, body
+    );
+
+    // Test 6: Envoyer le token dans Authorization sans "Bearer " prefix
+    results.T6_token_sans_bearer = await postHTTPS(
+      '/api/auth/marchand/withdrawal-token',
+      { 'Authorization': tk }, body
+    );
+
+    // Test 7: Basic Auth sur /api/withdraw/marchand directement
+    results.T7_withdraw_basic_auth = await postHTTPS(
+      '/api/withdraw/marchand',
+      { 'Authorization': `Basic ${basicAuth}` },
+      { amount: montant, method: methode, recipient, reference }
+    );
+
+    // Infos debug
+    results.DEBUG = {
+      token_length: tk?.length,
+      token_chars_ok: /^[A-Za-z0-9._\-]+$/.test(tk),
+      client_id: MERCHANT_CLIENT_ID,
+      secret_length: MERCHANT_SECRET_KEY?.length,
+      timestamp: ts,
+      sig_preview: sig.slice(0,20)+'...'
+    };
 
     return res.json(results);
-  } catch(e) { return res.status(500).json({ error: e.message, stack: e.stack?.slice(0,300) }); }
+  } catch(e) { return res.status(500).json({ error: e.message }); }
 });
 
 
