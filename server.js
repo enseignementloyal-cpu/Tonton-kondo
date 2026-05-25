@@ -364,24 +364,14 @@ async function executerRetraitPlopPlop(montant, methode, recipient, reference) {
   const withdrawalToken = wtData.withdrawal_token || wtData.token || wtData.access_token || wtData.jwt;
   if (!withdrawalToken) throw new Error(`PlopPlop withdrawal-token échoué (${wtResp.status}): ${wtData.message || wtData.error || JSON.stringify(wtData)}`);
 
-  // Étape 3: Exécuter le retrait
-  // Tester Bearer d'abord, puis X-Access-Token si 401
+  // Étape 3: Exécuter le retrait avec X-Access-Token (withdrawal_token)
   const wBody = { amount: montant, method: methode, recipient, reference };
   console.log('[PlopPlop] Étape 3 body:', JSON.stringify(wBody));
-  let wResp = await fetch(`${BASE}/api/withdraw/marchand`, {
+  const wResp = await fetch(`${BASE}/api/withdraw/marchand`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${withdrawalToken}` },
+    headers: { 'Content-Type': 'application/json', 'X-Access-Token': withdrawalToken },
     body: JSON.stringify(wBody)
   });
-  // Si 401, réessayer avec X-Access-Token (même pattern que étape 2)
-  if (wResp.status === 401) {
-    console.log('[PlopPlop] Étape 3 Bearer échoué, essai X-Access-Token...');
-    wResp = await fetch(`${BASE}/api/withdraw/marchand`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Access-Token': withdrawalToken },
-      body: JSON.stringify(wBody)
-    });
-  }
   const wRaw = await wResp.text();
   let wData;
   try { wData = JSON.parse(wRaw); } catch(e) { throw new Error(`PlopPlop withdraw réponse invalide (${wResp.status}): ${wRaw.slice(0,200)}`); }
@@ -2183,61 +2173,7 @@ app.get('/api/jackpot', async (req, res) => {
 // ============================================================
 // ROUTE CATCH-ALL POUR LE FRONTEND (SPA) – À PLACER À LA FIN
 // ============================================================
-// ── DIAGNOSTIC PlopPlop - flux complet 3 étapes (X-Access-Token) ──
-app.get('/api/debug/plopplop-auth', async (req, res) => {
-  const BASE = PLOPPLOP_BASE || 'https://plopplop.solutionip.app';
-  try {
-    // Étape 1
-    const authResp = await fetch(`${BASE}/api/auth/marchand`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ client_id: MERCHANT_CLIENT_ID, client_secret: MERCHANT_SECRET_KEY })
-    });
-    const authData = await authResp.json();
-    const authToken = authData.token;
-
-    // Étape 2 avec X-Access-Token
-    const ts = Math.floor(Date.now() / 1000);
-    const montant = 50; const methode = 'natcash';
-    const recipient = '50938047513'; const reference = 'DEBUG_FLOW_001';
-    const sig = crypto.createHmac('sha256', MERCHANT_SECRET_KEY)
-      .update(`${montant}|${methode}|${recipient}|${reference}|${ts}`).digest('hex');
-
-    const wtResp = await fetch(`${BASE}/api/auth/marchand/withdrawal-token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Access-Token': authToken },
-      body: JSON.stringify({ amount: montant, method: methode, recipient, reference, timestamp: ts, withdrawal_signature: sig })
-    });
-    const wtData = await wtResp.json();
-    const withdrawalToken = wtData.withdrawal_token;
-
-    let step3 = null;
-    if (withdrawalToken) {
-      // Test étape 3 avec Bearer
-      const w3BResp = await fetch(`${BASE}/api/withdraw/marchand`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${withdrawalToken}` },
-        body: JSON.stringify({ amount: montant, method: methode, recipient, reference })
-      });
-      const w3BData = await w3BResp.json();
-
-      // Test étape 3 avec X-Access-Token
-      const w3XResp = await fetch(`${BASE}/api/withdraw/marchand`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Access-Token': withdrawalToken },
-        body: JSON.stringify({ amount: montant, method: methode, recipient, reference })
-      });
-      const w3XData = await w3XResp.json();
-
-      step3 = {
-        bearer:        { status: w3BResp.status, body: w3BData },
-        x_access_token:{ status: w3XResp.status, body: w3XData },
-      };
-    }
-
-    return res.json({ step1: { status: authResp.status, ok: !!authToken }, step2: { status: wtResp.status, ok: !!withdrawalToken }, step3 });
-  } catch(e) { return res.status(500).json({ error: e.message }); }
-});
-
+// ── DIAGNOSTIC retiré (flux retrait opérationnel) ──
 
 // ── DÉMARRAGE SERVEUR ─────────────────────────────────────
 app.listen(PORT, () => {
