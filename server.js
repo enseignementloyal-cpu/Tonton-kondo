@@ -351,9 +351,10 @@ async function executerRetraitPlopPlop(montant, methode, recipient, reference) {
 
   const wtBody = { amount: montant, method: methode, recipient, reference, timestamp, withdrawal_signature: withdrawalSignature };
   console.log('[PlopPlop] Étape 2 body:', JSON.stringify(wtBody));
+  // NOTE: PlopPlop étape 2 utilise X-Access-Token (pas Authorization: Bearer)
   const wtResp = await fetch(`${BASE}/api/auth/marchand/withdrawal-token`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+    headers: { 'Content-Type': 'application/json', 'X-Access-Token': authToken },
     body: JSON.stringify(wtBody)
   });
   const wtRaw = await wtResp.text();
@@ -2172,99 +2173,40 @@ app.get('/api/jackpot', async (req, res) => {
 // ============================================================
 // ROUTE CATCH-ALL POUR LE FRONTEND (SPA) – À PLACER À LA FIN
 // ============================================================
-// ── DIAGNOSTIC PlopPlop - test auth étape 2 variantes ──
+// ── DIAGNOSTIC PlopPlop - flux complet 3 étapes (X-Access-Token) ──
 app.get('/api/debug/plopplop-auth', async (req, res) => {
   const BASE = PLOPPLOP_BASE || 'https://plopplop.solutionip.app';
-  const https = require('https');
-
-  const postHTTPS = (path, headers, bodyObj) => new Promise((resolve) => {
-    const postBody = JSON.stringify(bodyObj);
-    const opts = {
-      hostname: new URL(BASE).hostname, path, method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postBody), 'Accept': 'application/json', ...headers }
-    };
-    const r2 = https.request(opts, (r) => {
-      let d = ''; r.on('data', c => d += c);
-      r.on('end', () => { try { resolve({ status: r.statusCode, body: JSON.parse(d) }); } catch(e) { resolve({ status: r.statusCode, body: d.slice(0,400) }); } });
-    });
-    r2.on('error', e => resolve({ error: e.message }));
-    r2.write(postBody); r2.end();
-  });
-
   try {
-    // Étape 1 : auth
+    // Étape 1
     const authResp = await fetch(`${BASE}/api/auth/marchand`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ client_id: MERCHANT_CLIENT_ID, client_secret: MERCHANT_SECRET_KEY })
     });
     const authData = await authResp.json();
-    const tk = authData.token;
+    const authToken = authData.token;
 
-    const montant = 50; const methode = 'natcash';
-    const recipient = '50938047513'; const reference = 'TEST001';
+    // Étape 2 avec X-Access-Token
     const ts = Math.floor(Date.now() / 1000);
+    const montant = 50; const methode = 'natcash';
+    const recipient = '50938047513'; const reference = 'DEBUG_FLOW_001';
     const sig = crypto.createHmac('sha256', MERCHANT_SECRET_KEY)
       .update(`${montant}|${methode}|${recipient}|${reference}|${ts}`).digest('hex');
-    const body = { amount: montant, method: methode, recipient, reference, timestamp: ts, withdrawal_signature: sig };
 
-    const basicAuth = Buffer.from(`${MERCHANT_CLIENT_ID}:${MERCHANT_SECRET_KEY}`).toString('base64');
-    const results = {};
+    const wtResp = await fetch(`${BASE}/api/auth/marchand/withdrawal-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Access-Token': authToken },
+      body: JSON.stringify({ amount: montant, method: methode, recipient, reference, timestamp: ts, withdrawal_signature: sig })
+    });
+    const wtData = await wtResp.json();
+    const withdrawalToken = wtData.withdrawal_token;
 
-    // Test 1: Basic Auth au lieu de Bearer
-    results.T1_basic_auth = await postHTTPS(
-      '/api/auth/marchand/withdrawal-token',
-      { 'Authorization': `Basic ${basicAuth}` }, body
-    );
+    let step3 = null;
+    if (withdrawalToken) {
+      // Étape 3 - NE PAS exécuter réellement, juste vérifier le token
+      step3 = { note: 'withdrawal_token obtenu - étape 3 non exécutée en debug', token_preview: withdrawalToken.slice(0,30)+'...', authorized_for: wtData.authorized_for };
+    }
 
-    // Test 2: Bearer token + Basic Auth ensemble
-    results.T2_bearer_plus_basic = await postHTTPS(
-      '/api/auth/marchand/withdrawal-token',
-      { 'Authorization': `Bearer ${tk}`, 'X-Basic-Auth': `Basic ${basicAuth}` }, body
-    );
-
-    // Test 3: Bearer avec le token complet en majuscule BEARER
-    results.T3_BEARER_uppercase = await postHTTPS(
-      '/api/auth/marchand/withdrawal-token',
-      { 'AUTHORIZATION': `Bearer ${tk}` }, body
-    );
-
-    // Test 4: token dans X-Access-Token
-    results.T4_X_Access_Token = await postHTTPS(
-      '/api/auth/marchand/withdrawal-token',
-      { 'X-Access-Token': tk }, body
-    );
-
-    // Test 5: Bearer token nettoye (whitespace removed)
-    const cleanTk = tk.replace(/[\r\n\t ]/g, '');
-    results.T5_clean_token = await postHTTPS(
-      '/api/auth/marchand/withdrawal-token',
-      { 'Authorization': `Bearer ${cleanTk}` }, body
-    );
-
-    // Test 6: Envoyer le token dans Authorization sans "Bearer " prefix
-    results.T6_token_sans_bearer = await postHTTPS(
-      '/api/auth/marchand/withdrawal-token',
-      { 'Authorization': tk }, body
-    );
-
-    // Test 7: Basic Auth sur /api/withdraw/marchand directement
-    results.T7_withdraw_basic_auth = await postHTTPS(
-      '/api/withdraw/marchand',
-      { 'Authorization': `Basic ${basicAuth}` },
-      { amount: montant, method: methode, recipient, reference }
-    );
-
-    // Infos debug
-    results.DEBUG = {
-      token_length: tk?.length,
-      token_chars_ok: /^[A-Za-z0-9._\-]+$/.test(tk),
-      client_id: MERCHANT_CLIENT_ID,
-      secret_length: MERCHANT_SECRET_KEY?.length,
-      timestamp: ts,
-      sig_preview: sig.slice(0,20)+'...'
-    };
-
-    return res.json(results);
+    return res.json({ step1: { status: authResp.status, ok: !!authToken }, step2: { status: wtResp.status, ok: !!withdrawalToken, response: wtData }, step3 });
   } catch(e) { return res.status(500).json({ error: e.message }); }
 });
 
