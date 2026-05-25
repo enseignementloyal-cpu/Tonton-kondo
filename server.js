@@ -2172,71 +2172,80 @@ app.get('/api/jackpot', async (req, res) => {
 // ============================================================
 // ROUTE CATCH-ALL POUR LE FRONTEND (SPA) – À PLACER À LA FIN
 // ============================================================
-// ── DIAGNOSTIC PlopPlop - test avec httpbin pour voir les vrais headers envoyés ──
+// ── DIAGNOSTIC PlopPlop - test flux prefunded direct ──
 app.get('/api/debug/plopplop-auth', async (req, res) => {
   const BASE = PLOPPLOP_BASE || 'https://plopplop.solutionip.app';
+  const https = require('https');
+
+  const postHTTPS = (path, headers, bodyObj) => new Promise((resolve) => {
+    const postBody = JSON.stringify(bodyObj);
+    const opts = {
+      hostname: new URL(BASE).hostname, path, method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postBody), 'Accept': 'application/json', ...headers }
+    };
+    const r2 = https.request(opts, (r) => {
+      let d = ''; r.on('data', c => d += c);
+      r.on('end', () => { try { resolve({ status: r.statusCode, body: JSON.parse(d) }); } catch(e) { resolve({ status: r.statusCode, body: d.slice(0,400) }); } });
+    });
+    r2.on('error', e => resolve({ error: e.message }));
+    r2.write(postBody); r2.end();
+  });
+
+  const getHTTPS = (path, headers) => new Promise((resolve) => {
+    const opts = {
+      hostname: new URL(BASE).hostname, path, method: 'GET',
+      headers: { 'Accept': 'application/json', ...headers }
+    };
+    const r2 = https.request(opts, (r) => {
+      let d = ''; r.on('data', c => d += c);
+      r.on('end', () => { try { resolve({ status: r.statusCode, body: JSON.parse(d) }); } catch(e) { resolve({ status: r.statusCode, body: d.slice(0,400) }); } });
+    });
+    r2.on('error', e => resolve({ error: e.message })); r2.end();
+  });
+
   try {
-    // Étape 1 fraîche
+    // Étape 1 : auth
     const authResp = await fetch(`${BASE}/api/auth/marchand`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ client_id: MERCHANT_CLIENT_ID, client_secret: MERCHANT_SECRET_KEY })
     });
     const authData = await authResp.json();
-    const authToken = authData.token;
-    if (!authToken) return res.json({ error: 'Etape 1 echouee', authData });
+    const tk = authData.token;
+    const bearer = { 'Authorization': `Bearer ${tk}` };
 
-    // Test A: voir quels headers arrivent vraiment chez httpbin (miroir)
-    const mirrorResp = await fetch('https://httpbin.org/post', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken.slice(0,20)}TEST` },
-      body: JSON.stringify({ test: 1 })
-    });
-    const mirrorData = await mirrorResp.json();
+    const results = {};
 
-    // Test B: étape 2 avec node https natif (bypass fetch)
-    const https = require('https');
-    const url = new URL(`${BASE}/api/auth/marchand/withdrawal-token`);
-    const timestamp = Math.floor(Date.now() / 1000);
-    const montant = 50; const methode = 'natcash';
-    const recipient = '50938047513'; const reference = 'TEST001';
-    const sigPayload = `${montant}|${methode}|${recipient}|${reference}|${timestamp}`;
-    const sig = crypto.createHmac('sha256', MERCHANT_SECRET_KEY).update(sigPayload).digest('hex');
-    const postBody = JSON.stringify({ amount: montant, method: methode, recipient, reference, timestamp, withdrawal_signature: sig });
+    // TEST A: Retrait DIRECT avec juste le token étape 1 (flux prefunded sans étape 2)
+    results.A_withdraw_direct_auth_token = await postHTTPS(
+      '/api/withdraw/marchand', bearer,
+      { amount: 50, method: 'natcash', recipient: '50938047513', reference: 'TEST_PREFUNDED_001' }
+    );
 
-    const httpsResult = await new Promise((resolve) => {
-      const options = {
-        hostname: url.hostname,
-        path: url.pathname,
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(postBody),
-          'Authorization': `Bearer ${authToken}`,
-          'User-Agent': 'TontonKondo/1.0'
-        }
-      };
-      const req2 = https.request(options, (r) => {
-        let data = '';
-        r.on('data', chunk => data += chunk);
-        r.on('end', () => {
-          try { resolve({ status: r.statusCode, body: JSON.parse(data) }); }
-          catch(e) { resolve({ status: r.statusCode, body: data }); }
-        });
-      });
-      req2.on('error', e => resolve({ error: e.message }));
-      req2.write(postBody);
-      req2.end();
-    });
+    // TEST B: GET compte prépayé / solde
+    results.B_prefunded_balance = await getHTTPS('/api/prefunded/balance', bearer);
+    results.B2_compte_prepaye   = await getHTTPS('/api/compte-prepaye', bearer);
+    results.B3_marchand_balance = await getHTTPS('/api/marchand/balance', bearer);
+    results.B4_marchand_compte  = await getHTTPS('/api/marchand/compte', bearer);
 
-    return res.json({
-      token_length: authToken?.length,
-      token_preview: authToken?.slice(0,50),
-      mirror_headers_sent: mirrorData?.headers,
-      https_native_step2: httpsResult
-    });
-  } catch(e) { return res.status(500).json({ error: e.message, stack: e.stack?.slice(0,500) }); }
+    // TEST C: GET méthodes de retrait disponibles
+    results.C_moyen_paiement    = await getHTTPS('/api/moyen-paiement', bearer);
+    results.C2_methodes_retrait = await getHTTPS('/api/marchand/methodes-retrait', bearer);
+    results.C3_withdrawal_methods = await getHTTPS('/api/withdrawal-methods', bearer);
+
+    // TEST D: POST retrait via endpoint prefunded spécifique
+    results.D_prefunded_withdraw = await postHTTPS(
+      '/api/prefunded/withdraw', bearer,
+      { amount: 50, method: 'natcash', recipient: '50938047513', reference: 'TEST_PREFUNDED_002' }
+    );
+    results.D2_retrait_prepaye = await postHTTPS(
+      '/api/retrait/marchand', bearer,
+      { amount: 50, method: 'natcash', recipient: '50938047513', reference: 'TEST_PREFUNDED_003' }
+    );
+
+    return res.json(results);
+  } catch(e) { return res.status(500).json({ error: e.message, stack: e.stack?.slice(0,300) }); }
 });
+
 
 // ── DÉMARRAGE SERVEUR ─────────────────────────────────────
 app.listen(PORT, () => {
