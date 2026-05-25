@@ -364,14 +364,24 @@ async function executerRetraitPlopPlop(montant, methode, recipient, reference) {
   const withdrawalToken = wtData.withdrawal_token || wtData.token || wtData.access_token || wtData.jwt;
   if (!withdrawalToken) throw new Error(`PlopPlop withdrawal-token échoué (${wtResp.status}): ${wtData.message || wtData.error || JSON.stringify(wtData)}`);
 
-  // Étape 3: Exécuter le retrait avec les MÊMES paramètres exacts
+  // Étape 3: Exécuter le retrait
+  // Tester Bearer d'abord, puis X-Access-Token si 401
   const wBody = { amount: montant, method: methode, recipient, reference };
   console.log('[PlopPlop] Étape 3 body:', JSON.stringify(wBody));
-  const wResp = await fetch(`${BASE}/api/withdraw/marchand`, {
+  let wResp = await fetch(`${BASE}/api/withdraw/marchand`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${withdrawalToken}` },
     body: JSON.stringify(wBody)
   });
+  // Si 401, réessayer avec X-Access-Token (même pattern que étape 2)
+  if (wResp.status === 401) {
+    console.log('[PlopPlop] Étape 3 Bearer échoué, essai X-Access-Token...');
+    wResp = await fetch(`${BASE}/api/withdraw/marchand`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Access-Token': withdrawalToken },
+      body: JSON.stringify(wBody)
+    });
+  }
   const wRaw = await wResp.text();
   let wData;
   try { wData = JSON.parse(wRaw); } catch(e) { throw new Error(`PlopPlop withdraw réponse invalide (${wResp.status}): ${wRaw.slice(0,200)}`); }
@@ -2202,11 +2212,29 @@ app.get('/api/debug/plopplop-auth', async (req, res) => {
 
     let step3 = null;
     if (withdrawalToken) {
-      // Étape 3 - NE PAS exécuter réellement, juste vérifier le token
-      step3 = { note: 'withdrawal_token obtenu - étape 3 non exécutée en debug', token_preview: withdrawalToken.slice(0,30)+'...', authorized_for: wtData.authorized_for };
+      // Test étape 3 avec Bearer
+      const w3BResp = await fetch(`${BASE}/api/withdraw/marchand`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${withdrawalToken}` },
+        body: JSON.stringify({ amount: montant, method: methode, recipient, reference })
+      });
+      const w3BData = await w3BResp.json();
+
+      // Test étape 3 avec X-Access-Token
+      const w3XResp = await fetch(`${BASE}/api/withdraw/marchand`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Access-Token': withdrawalToken },
+        body: JSON.stringify({ amount: montant, method: methode, recipient, reference })
+      });
+      const w3XData = await w3XResp.json();
+
+      step3 = {
+        bearer:        { status: w3BResp.status, body: w3BData },
+        x_access_token:{ status: w3XResp.status, body: w3XData },
+      };
     }
 
-    return res.json({ step1: { status: authResp.status, ok: !!authToken }, step2: { status: wtResp.status, ok: !!withdrawalToken, response: wtData }, step3 });
+    return res.json({ step1: { status: authResp.status, ok: !!authToken }, step2: { status: wtResp.status, ok: !!withdrawalToken }, step3 });
   } catch(e) { return res.status(500).json({ error: e.message }); }
 });
 
