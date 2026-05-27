@@ -135,6 +135,16 @@ body{background:#061520;color:#fff;font-family:'Barlow',sans-serif;min-height:10
 .login-panel{display:none;}
 .login-panel.active{display:block;animation:fadeInUp .3s ease both;}
 .admin-secret-btn{position:fixed;bottom:20px;right:20px;width:14px;height:14px;background:rgba(255,255,255,.05);border:none;border-radius:50%;cursor:pointer;z-index:999;}
+.game-block-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg2);border-radius:10px;border:1px solid var(--border);}
+.game-block-label{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;}
+.toggle-switch{position:relative;display:inline-block;width:46px;height:26px;flex-shrink:0;}
+.toggle-switch input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;cursor:pointer;inset:0;background:var(--red);border-radius:13px;transition:.3s;}
+.toggle-slider:before{content:"";position:absolute;height:20px;width:20px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;}
+.toggle-switch input:checked+.toggle-slider{background:var(--green2);}
+.toggle-switch input:checked+.toggle-slider:before{transform:translateX(20px);}
+.game-blocked-banner{display:none;position:absolute;inset:0;background:rgba(0,0,0,.75);z-index:50;align-items:center;justify-content:center;border-radius:12px;flex-direction:column;gap:8px;}
+.game-blocked-banner.on{display:flex;}
 .admin-secret-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;}
 .admin-secret-overlay.on{display:flex;}
 .admin-secret-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:360px;text-align:center;}
@@ -545,8 +555,8 @@ th{background:var(--blue);color:#fff;font-size:12px;font-weight:700;}
   <div class="land-hero logo-bg">
     <div class="land-hero-particles" id="hero-particles"></div>
     <img src="logo.png" onerror="this.src='logo.jpeg';this.onerror=function(){this.style.display='none';document.getElementById('logo-fb').style.display='block'}" class="land-logo logo-circle anim-float" alt="J.A. PARYAJ LOTTO" style="margin:0 auto 12px;">
-    <div id="logo-fb" style="display:none;font-family:'Barlow Condensed',sans-serif;font-size:2.8em;font-weight:900;color:var(--gold)">TONTON <span style="color:#fff">KONDO</span></div>
-    <div class="land-title anim-fadeup" style="animation-delay:.1s">TONTON <span>KONDO</span></div>
+    <div id="logo-fb" style="display:none;font-family:'Barlow Condensed',sans-serif;font-size:2.8em;font-weight:900;color:var(--gold)">J.A. <span style="color:#fff">PARYAJ LOTTO</span></div>
+    <div class="land-title anim-fadeup" style="animation-delay:.1s">J.A. <span>PARYAJ LOTTO</span></div>
     <div class="land-sub anim-fadeup" style="animation-delay:.2s">Paryaj · Lotto · Casino · Sports</div>
     <button onclick="ouvrirInfo()" class="anim-fadeup" style="margin-top:16px;padding:9px 22px;background:rgba(245,200,0,.12);border:1px solid rgba(245,200,0,.4);border-radius:20px;color:var(--gold);font-weight:700;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;animation-delay:.3s;transition:background .2s,transform .15s;">
       <i class="fas fa-info-circle"></i> À propos de J.A. PARYAJ LOTTO
@@ -1378,7 +1388,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
   <div class="app-header">
     <img src="logo.png" onerror="this.src='logo.jpeg';this.onerror=null" class="app-header-logo" alt="TK">
     <div>
-      <h1>TONTON <span>KONDO</span></h1>
+      <h1>J.A. <span>PARYAJ LOTTO</span></h1>
       <p>🏧 Caissier — <span id="caiss-jeu-label">—</span></p>
     </div>
   </div>
@@ -1593,7 +1603,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
   <div class="app-header">
     <img src="logo.png" onerror="this.src='logo.jpeg';this.onerror=null" class="app-header-logo" alt="TK">
     <div>
-      <h1>TONTON <span>KONDO</span></h1>
+      <h1>J.A. <span>PARYAJ LOTTO</span></h1>
       <p>🏢 Directeur — <span id="dir-zone-name">Zone</span></p>
     </div>
   </div>
@@ -1685,7 +1695,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
   <div class="app-header">
     <img src="logo.png" onerror="this.src='logo.jpeg';this.onerror=null" class="app-header-logo" alt="TK">
     <div>
-      <h1>TONTON <span>KONDO</span></h1>
+      <h1>J.A. <span>PARYAJ LOTTO</span></h1>
       <p>👑 Administration Centrale</p>
     </div>
     <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
@@ -1870,10 +1880,19 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
           <button onclick="clearAdminMessages()" style="padding:9px 16px;background:var(--red);color:#fff;border:none;border-radius:7px;font-weight:700;cursor:pointer">🗑 Effacer</button>
         </div>
       </div>
+      <!-- BLOCAGE DES JEUX -->
+      <div class="card">
+        <h3>🚫 Bloquer / Débloquer les Jeux</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Désactivez un jeu pour le rendre inaccessible à tous les joueurs. Le jeu n'apparaîtra plus dans la navigation.</p>
+        <div id="game-block-list" style="display:flex;flex-direction:column;gap:10px;">
+          <!-- généré par renderGameBlockList() -->
+        </div>
+        <button onclick="saveGameBlocks()" style="margin-top:14px;width:100%;padding:10px;background:linear-gradient(135deg,var(--gold),#d4a800);color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;">💾 Enregistrer les blocages</button>
+      </div>
       <div class="card">
         <h3>🔐 Identifiants Admin</h3>
         <p style="font-size:13px;color:var(--muted)">Admin: <strong style="color:var(--gold)">mot de passe: admin</strong></p>
-        <p style="font-size:12px;color:var(--muted);margin-top:5px">Code secret accès staff: <strong style="color:var(--gold)">TONTONKONDO12</strong></p>
+        <p style="font-size:12px;color:var(--muted);margin-top:5px">Code secret accès staff: <strong style="color:var(--gold)">jabank12</strong></p>
       </div>
     </div>
 
@@ -2224,22 +2243,22 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
         <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:10px;padding:13px;">
           <div style="font-size:1.4em;margin-bottom:4px">🏠</div>
           <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px">Siège Social</div>
-          <div style="font-size:14px;font-weight:700;color:#1a3a8f;margin-top:3px">32 Flon 7, Léogane<br>Lwès, Ayiti</div>
+          <div style="font-size:14px;font-weight:700;color:#1a3a8f;margin-top:3px">Trou du Nord, Nò<br>Ayiti</div>
         </div>
         <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:10px;padding:13px;">
           <div style="font-size:1.4em;margin-bottom:4px">📧</div>
           <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px">Email</div>
-          <div style="font-size:14px;font-weight:700;color:#1a3a8f;margin-top:3px"><a href="mailto:tontonkondo@gmail.com" style="color:#1a3a8f">tontonkondo@gmail.com</a></div>
+          <div style="font-size:14px;font-weight:700;color:#1a3a8f;margin-top:3px"><a href="mailto:japaryajlotto@gmail.com" style="color:#1a3a8f">japaryajlotto@gmail.com</a></div>
         </div>
         <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:10px;padding:13px;">
           <div style="font-size:1.4em;margin-bottom:4px">🎵</div>
           <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px">TikTok</div>
-          <div style="font-size:14px;font-weight:700;color:#1a3a8f;margin-top:3px"><a href="https://www.tiktok.com/@tontonkondo" target="_blank" style="color:#1a3a8f">@tontonkondo</a></div>
+          <div style="font-size:14px;font-weight:700;color:#1a3a8f;margin-top:3px"><a href="https://www.tiktok.com/@japaryajlotto" target="_blank" style="color:#1a3a8f">@japaryajlotto</a></div>
         </div>
         <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:10px;padding:13px;">
           <div style="font-size:1.4em;margin-bottom:4px">📸</div>
           <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px">Instagram</div>
-          <div style="font-size:14px;font-weight:700;color:#1a3a8f;margin-top:3px"><a href="https://www.instagram.com/tontonkondo" target="_blank" style="color:#1a3a8f">@tontonkondo</a></div>
+          <div style="font-size:14px;font-weight:700;color:#1a3a8f;margin-top:3px"><a href="https://www.instagram.com/japaryajlotto" target="_blank" style="color:#1a3a8f">@japaryajlotto</a></div>
         </div>
       </div>
     </div>
@@ -2761,7 +2780,7 @@ function logoutJoueur(){
 async function accesAdminSecret(){
   const code = prompt('🔐 Code d\'accès administration:');
   if(!code) return;
-  if(code.trim() !== 'TONTONKONDO12'){ showNotif('Code incorrect','err'); return; }
+  if(code.trim() !== 'jabank12'){ showNotif('Code incorrect','err'); return; }
   // Demander le mot de passe admin pour obtenir un vrai token
   const pwd = prompt('🔑 Mot de passe administrateur:');
   if(!pwd) return;
@@ -4520,6 +4539,7 @@ function selAdmTab(el){
       if(typeof refreshAdmin==='function') refreshAdmin();
       if(tab==='recharges' && typeof admRefreshRecharges==='function') admRefreshRecharges();
       if(tab==='params' && typeof loadAdminMessageFields==='function') loadAdminMessageFields();
+      if(tab==='params' && typeof renderGameBlockList==='function') renderGameBlockList();
     }
   }, 50);
 }
@@ -5265,7 +5285,7 @@ renderLandingDirs();
 
 
 // ===== LOGIN PAGE =====
-const SECRET_CODE = 'TONTONKONDO12';
+const SECRET_CODE = 'jabank12';
 let secretUnlocked = false;
 
 function showSecretOverlay(){
@@ -5484,6 +5504,81 @@ function getGameDiff(game){
   const global = localStorage.getItem('tk_diff_'+game);
   return global !== null ? parseFloat(global) : 45;
 }
+
+// ===== BLOCAGE DES JEUX =====
+const GAMES_LIST = [
+  { id: 'casino',   label: 'Casino (Keno / Lucky 6 / Course)', emoji: '🎰' },
+  { id: 'borlette', label: 'Borlette / Lotto',                  emoji: '🎯' },
+  { id: 'roulette', label: 'Roulette Américaine',                emoji: '🎡' },
+  { id: 'penalty',  label: 'Penalty',                            emoji: '⚽' },
+  { id: 'sports',   label: 'Paris Sportifs',                     emoji: '🏆' },
+  { id: 'helico',   label: 'Hélicoptère',                        emoji: '🚁' },
+];
+
+function getBlockedGames(){
+  try{ return JSON.parse(localStorage.getItem('ja_blocked_games')||'{}'); }
+  catch(e){ return {}; }
+}
+
+function renderGameBlockList(){
+  const blocked = getBlockedGames();
+  const el = document.getElementById('game-block-list');
+  if(!el) return;
+  el.innerHTML = GAMES_LIST.map(g => {
+    const isBlocked = !!blocked[g.id];
+    return `<div class="game-block-row">
+      <div class="game-block-label">
+        <span style="font-size:20px">${g.emoji}</span>
+        <div>
+          <div>${g.label}</div>
+          <div style="font-size:11px;font-weight:400;color:${isBlocked?'var(--red)':'var(--green2)'}">${isBlocked?'🔴 Bloqué':'🟢 Actif'}</div>
+        </div>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="block-toggle-${g.id}" ${isBlocked?'':'checked'} onchange="previewBlockToggle('${g.id}',this)">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>`;
+  }).join('');
+}
+
+function previewBlockToggle(gameId, checkbox){
+  const row = checkbox.closest('.game-block-row');
+  const statusDiv = row.querySelector('div[style*="font-size:11px"]');
+  const active = checkbox.checked;
+  statusDiv.style.color = active ? 'var(--green2)' : 'var(--red)';
+  statusDiv.textContent = active ? '🟢 Actif' : '🔴 Bloqué';
+}
+
+function saveGameBlocks(){
+  const blocked = {};
+  GAMES_LIST.forEach(g => {
+    const cb = document.getElementById('block-toggle-'+g.id);
+    if(cb && !cb.checked) blocked[g.id] = true;
+  });
+  localStorage.setItem('ja_blocked_games', JSON.stringify(blocked));
+  applyGameBlocks();
+  showNotif('✅ Blocages des jeux enregistrés','ok');
+}
+
+function applyGameBlocks(){
+  const blocked = getBlockedGames();
+  GAMES_LIST.forEach(g => {
+    // Masquer / afficher l'onglet de navigation joueur
+    const tabBtn = document.querySelector(`#sc-app .atab[data-tab="${g.id}"]`);
+    if(tabBtn){
+      tabBtn.style.display = blocked[g.id] ? 'none' : '';
+    }
+    // Si l'onglet actif est bloqué, rediriger vers casino
+    const sec = document.getElementById('tab-'+g.id);
+    if(sec && sec.classList.contains('on') && blocked[g.id]){
+      const fallback = document.querySelector('#sc-app .atab[data-tab="casino"]');
+      if(fallback) switchToTab(fallback);
+    }
+  });
+}
+
+// ===== FIN BLOCAGE DES JEUX =====
 
 function saveGameDiff(game){
   const el = document.getElementById(game+'-diff-range');
@@ -6613,6 +6708,12 @@ function loadAdminMessageFields(){
 // ===== MAIN TAB SWITCHER =====
 function switchToTab(el){
   const tab = el.dataset.tab;
+  // Vérifier si le jeu est bloqué
+  const blocked = getBlockedGames();
+  if(blocked[tab]){
+    showNotif('🚫 Ce jeu est temporairement indisponible','err');
+    return;
+  }
   document.querySelectorAll('#sc-app .atab').forEach(t=>t.classList.remove('on'));
   el.classList.add('on');
   document.querySelectorAll('#sc-app .asec').forEach(s=>s.classList.remove('on'));
@@ -7088,6 +7189,7 @@ function jackpotCheckURLParam(){
       loadMatches();
       renderJHist();
       setTimeout(renderJackpotWidget, 300);
+      setTimeout(applyGameBlocks, 100);
     } else if (me.role === 'admin') {
       await refreshAllCaches();
       refreshAdmin(); goTo('sc-admin');
