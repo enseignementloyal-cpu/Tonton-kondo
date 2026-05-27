@@ -1,5 +1,5 @@
 // ============================================================
-// server.js — Tonton Kondo Paryaj Backend
+// server.js — J.A. PARYAJ LOTTO Paryaj Backend
 // Node.js + Express + PostgreSQL (Neon)
 // Version complète avec tous les endpoints pour app.html
 // ============================================================
