@@ -550,8 +550,19 @@ th{background:var(--blue);color:#fff;font-size:12px;font-weight:700;}
 </head>
 <body>
 
+<!-- ==================== SPLASH CHARGEMENT ==================== -->
+<div id="sc-splash" style="position:fixed;inset:0;background:#061520;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+  <img src="logo.png" onerror="this.src='logo.jpeg';this.onerror=null" style="width:80px;height:80px;border-radius:50%;border:3px solid #f5c800;box-shadow:0 0 0 6px rgba(245,200,0,.15);animation:glowPulse 2s ease-in-out infinite;" alt="logo">
+  <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.8em;font-weight:900;color:#f5c800;letter-spacing:2px;">J.A. <span style="color:#fff">PARYAJ LOTTO</span></div>
+  <div style="display:flex;gap:6px;margin-top:8px;">
+    <div style="width:8px;height:8px;background:#f5c800;border-radius:50%;animation:pb .9s ease-in-out infinite;animation-delay:0s"></div>
+    <div style="width:8px;height:8px;background:#f5c800;border-radius:50%;animation:pb .9s ease-in-out infinite;animation-delay:.2s"></div>
+    <div style="width:8px;height:8px;background:#f5c800;border-radius:50%;animation:pb .9s ease-in-out infinite;animation-delay:.4s"></div>
+  </div>
+</div>
+
 <!-- ==================== LANDING ==================== -->
-<div id="sc-landing" class="screen active">
+<div id="sc-landing" class="screen" style="display:none">
   <div class="land-hero logo-bg">
     <div class="land-hero-particles" id="hero-particles"></div>
     <img src="logo.png" onerror="this.src='logo.jpeg';this.onerror=function(){this.style.display='none';document.getElementById('logo-fb').style.display='block'}" class="land-logo logo-circle anim-float" alt="J.A. PARYAJ LOTTO" style="margin:0 auto 12px;">
@@ -1218,6 +1229,8 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
       <div style="margin-top:10px">
         <div class="stabs">
           <div class="stab on" onclick="filterSport(this,'all')"><span class="ti">🌍</span><span class="tn">Tous</span></div>
+          <div class="stab" onclick="filterSport(this,'basketball')"><span class="ti">🏀</span><span class="tn">Basketball</span></div>
+          <div class="stab" onclick="filterSport(this,'tennis')"><span class="ti">🎾</span><span class="tn">Tennis</span></div>
           <div class="stab" onclick="filterSport(this,'europe')"><span class="ti">🏆</span><span class="tn">Coupes EU</span></div>
           <div class="stab" onclick="filterSport(this,'fr')"><span class="ti">🇫🇷</span><span class="tn">France</span></div>
           <div class="stab" onclick="filterSport(this,'en')"><span class="ti">🏴󠁧󠁢󠁥󠁮󠁧󠁿</span><span class="tn">Angleterre</span></div>
@@ -1227,6 +1240,19 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
           <div class="stab" onclick="filterSport(this,'amsud')"><span class="ti">🌎</span><span class="tn">Am. Sud</span></div>
           <div class="stab" onclick="filterSport(this,'amnord')"><span class="ti">🇺🇸</span><span class="tn">Am. Nord</span></div>
           <div class="stab" onclick="filterSport(this,'afrique')"><span class="ti">🌍</span><span class="tn">Afrique</span></div>
+        </div>
+        <!-- Sections basketball et tennis -->
+        <div id="basketball-section" style="display:none">
+          <div class="sec-lbl">🏀 <span class="live-badge"><span class="ld"></span>LIVE</span></div>
+          <div id="bk-live-section"></div>
+          <div class="sec-lbl" style="margin-top:12px">📅 À Venir — Basketball</div>
+          <div id="bk-upcoming-section"><div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">⏳ Chargement...</div></div>
+        </div>
+        <div id="tennis-section" style="display:none">
+          <div class="sec-lbl">🎾 <span class="live-badge"><span class="ld"></span>LIVE</span></div>
+          <div id="tn-live-section"></div>
+          <div class="sec-lbl" style="margin-top:12px">📅 À Venir — Tennis</div>
+          <div id="tn-upcoming-section"><div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">⏳ Chargement...</div></div>
         </div>
         <div class="chips">
           <div class="chip on" onclick="actChip(this)">● Tous</div>
@@ -1251,17 +1277,17 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
         <div class="rm-card" onclick="initRecharge('moncash')">
           <div class="rm-ic">📱</div>
           <div class="rm-name" style="color:#ff9800">MonCash</div>
-          <div class="rm-sub">Dépôt mobile instantané</div>
+          <div class="rm-sub" id="rm-sub-moncash">Dépôt mobile instantané</div>
         </div>
         <div class="rm-card" onclick="initRecharge('natcash')">
           <div class="rm-ic">💳</div>
           <div class="rm-name" style="color:#5b8ef5">NatCash</div>
-          <div class="rm-sub">Transfert bancaire rapide</div>
+          <div class="rm-sub" id="rm-sub-natcash">Transfert bancaire rapide</div>
         </div>
         <div class="rm-card" onclick="initRecharge('kashpaw')">
           <div class="rm-ic">💜</div>
           <div class="rm-name" style="color:#a78bfa">Kashpaw</div>
-          <div class="rm-sub">Paiement mobile Kashpaw</div>
+          <div class="rm-sub" id="rm-sub-kashpaw">Paiement mobile Kashpaw</div>
         </div>
       </div>
       <div id="recharge-form" style="display:none">
@@ -1818,6 +1844,29 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
 
     <!-- PARAMÈTRES -->
     <div class="psec" id="atab-params">
+      <!-- PARAMÈTRES DE PAIEMENT -->
+      <div class="card">
+        <h3>💳 Moyens de Paiement — Numéros de Dépôt</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Modifiez ici les numéros de compte officiels affichés aux joueurs lors d'un dépôt.</p>
+        <div style="display:flex;flex-direction:column;gap:12px;" id="payment-params-list">
+          <div style="background:var(--bg2);border-radius:10px;padding:14px;border-left:4px solid #ff9800;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-weight:700;font-size:14px;">📱 <span style="color:#ff9800">MonCash</span></div>
+            <input type="tel" id="param-moncash-num" placeholder="Ex: 50912345678" style="width:100%;padding:10px;background:var(--bg3);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none;margin-bottom:6px;">
+            <input type="text" id="param-moncash-name" placeholder="Nom du compte (Ex: Jean PAUL)" style="width:100%;padding:10px;background:var(--bg3);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;">
+          </div>
+          <div style="background:var(--bg2);border-radius:10px;padding:14px;border-left:4px solid #5b8ef5;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-weight:700;font-size:14px;">💳 <span style="color:#5b8ef5">NatCash</span></div>
+            <input type="tel" id="param-natcash-num" placeholder="Ex: 50912345678" style="width:100%;padding:10px;background:var(--bg3);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none;margin-bottom:6px;">
+            <input type="text" id="param-natcash-name" placeholder="Nom du compte (Ex: Jean PAUL)" style="width:100%;padding:10px;background:var(--bg3);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;">
+          </div>
+          <div style="background:var(--bg2);border-radius:10px;padding:14px;border-left:4px solid #9b59b6;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-weight:700;font-size:14px;">💜 <span style="color:#9b59b6">Kashpaw</span></div>
+            <input type="tel" id="param-kashpaw-num" placeholder="Ex: 50912345678" style="width:100%;padding:10px;background:var(--bg3);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none;margin-bottom:6px;">
+            <input type="text" id="param-kashpaw-name" placeholder="Nom du compte (Ex: Jean PAUL)" style="width:100%;padding:10px;background:var(--bg3);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;">
+          </div>
+        </div>
+        <button onclick="savePaymentParams()" style="margin-top:14px;width:100%;padding:11px;background:linear-gradient(135deg,var(--gold),#d4a800);color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;">💾 Enregistrer les numéros</button>
+      </div>
       <!-- Difficulté par DIRECTEUR -->
       <div class="card">
         <h3>🎮 Difficulté des jeux par Directeur</h3>
@@ -1893,6 +1942,33 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
         <h3>🔐 Identifiants Admin</h3>
         <p style="font-size:13px;color:var(--muted)">Admin: <strong style="color:var(--gold)">mot de passe: admin</strong></p>
         <p style="font-size:12px;color:var(--muted);margin-top:5px">Code secret accès staff: <strong style="color:var(--gold)">jabank12</strong></p>
+      </div>
+      <!-- CONFIGURATION PASSERELLE PLOPPLOP -->
+      <div class="card">
+        <h3>⚡ Passerelle de Paiement — PlopPlop</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Ces identifiants sont utilisés pour tous les dépôts et retraits MonCash / NatCash / Kashpaw. Ils sont sauvegardés en base de données et remplacent les variables d'environnement.</p>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="fg">
+            <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">🔑 Client ID (Merchant)</label>
+            <input type="text" id="param-plop-client-id" placeholder="Votre client_id PlopPlop" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;font-family:monospace;">
+          </div>
+          <div class="fg">
+            <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">🔒 Secret Key</label>
+            <div style="display:flex;gap:6px;">
+              <input type="password" id="param-plop-secret" placeholder="Votre secret_key PlopPlop" style="flex:1;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;font-family:monospace;">
+              <button onclick="togglePlopSecret()" style="padding:8px 12px;background:var(--bg3);color:var(--muted);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;" title="Afficher/Masquer">👁</button>
+            </div>
+          </div>
+          <div class="fg">
+            <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">🌐 URL de base PlopPlop</label>
+            <input type="text" id="param-plop-base-url" placeholder="https://plopplop.solutionip.app" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;font-family:monospace;">
+          </div>
+          <div id="plop-status-badge" style="display:none;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:700;text-align:center;"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+          <button onclick="savePlopConfig()" style="flex:1;padding:11px;background:linear-gradient(135deg,var(--gold),#d4a800);color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;">💾 Enregistrer</button>
+          <button onclick="testPlopConfig()" style="padding:11px 16px;background:rgba(26,58,143,.3);border:1px solid var(--blue);color:#fff;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;">🔌 Tester</button>
+        </div>
       </div>
     </div>
 
@@ -2656,12 +2732,23 @@ const JEU_LABELS={keno:'🎯 Keno Lucky',lucky6:'🍀 Lucky 6',course:'🏎️ C
 // ===== NAVIGATION =====
 let curSc='sc-landing';
 function goTo(id){
-  const prev=document.getElementById(curSc);
-  if(prev)prev.classList.remove('active');
-  const next=document.getElementById(id);
-  if(next){next.classList.add('active');window.scrollTo(0,0);}
-  curSc=id;
-  if(id==='sc-landing')renderLandingDirs();
+  // Sécurité : sc-admin accessible uniquement si le rôle session est admin
+  if(id === 'sc-admin'){
+    const role = localStorage.getItem('tk_session_role');
+    if(role !== 'admin'){
+      showNotif('🚫 Accès réservé à l\'administration','err');
+      return;
+    }
+  }
+  // Cacher le splash de chargement
+  const splash = document.getElementById('sc-splash');
+  if(splash) splash.style.display = 'none';
+  // Cacher tous les écrans puis afficher le bon
+  document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); s.style.display = ''; });
+  const next = document.getElementById(id);
+  if(next){ next.classList.add('active'); window.scrollTo(0,0); }
+  curSc = id;
+  if(id === 'sc-landing') renderLandingDirs();
 }
 
 // ===== LANDING DIRS =====
@@ -4028,7 +4115,38 @@ function filterSport(el, region){
   document.querySelectorAll('.stab').forEach(x=>x.classList.remove('on'));
   el.classList.add('on');
   currentFilter=region;
-  renderSports();
+  // Afficher/masquer sections basket et tennis
+  const bkSec = document.getElementById('basketball-section');
+  const tnSec = document.getElementById('tennis-section');
+  const liveHd = document.getElementById('live-section-hd');
+  const liveEl = document.getElementById('liveSection');
+  const upEl   = document.getElementById('upcomingSection');
+  const chipsEl = document.querySelector('.chips');
+  if(region === 'basketball'){
+    if(bkSec) bkSec.style.display='';
+    if(tnSec) tnSec.style.display='none';
+    if(liveHd) liveHd.style.display='none';
+    if(liveEl) liveEl.style.display='none';
+    if(upEl)   upEl.style.display='none';
+    if(chipsEl) chipsEl.style.display='none';
+    loadBasketball();
+  } else if(region === 'tennis'){
+    if(bkSec) bkSec.style.display='none';
+    if(tnSec) tnSec.style.display='';
+    if(liveHd) liveHd.style.display='none';
+    if(liveEl) liveEl.style.display='none';
+    if(upEl)   upEl.style.display='none';
+    if(chipsEl) chipsEl.style.display='none';
+    loadTennis();
+  } else {
+    if(bkSec) bkSec.style.display='none';
+    if(tnSec) tnSec.style.display='none';
+    if(liveHd) liveHd.style.display='';
+    if(liveEl) liveEl.style.display='';
+    if(upEl)   upEl.style.display='';
+    if(chipsEl) chipsEl.style.display='';
+    renderSports();
+  }
 }
 
 function getFilteredMatches(){
@@ -4038,6 +4156,78 @@ function getFilteredMatches(){
     return r===currentFilter;
   });
 }
+
+// ===== BASKETBALL =====
+let BK_GAMES = [];
+async function loadBasketball(){
+  const liveEl = document.getElementById('bk-live-section');
+  const upEl   = document.getElementById('bk-upcoming-section');
+  if(upEl) upEl.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">⏳ Chargement...</div>';
+  try {
+    const data = await apiGet('/api/basketball');
+    BK_GAMES = data.games || [];
+    if(data.error && !BK_GAMES.length){
+      if(upEl) upEl.innerHTML=`<div style="text-align:center;padding:20px;color:var(--red);font-size:13px">⚠️ ${data.error}<br><span style="font-size:11px;color:var(--muted)">Ajoutez APISPORTS_KEY dans les variables d'environnement Render</span></div>`;
+      return;
+    }
+    renderBasketball();
+  } catch(e){
+    if(upEl) upEl.innerHTML='<div style="text-align:center;padding:20px;color:var(--red);font-size:13px">Erreur chargement Basketball.</div>';
+  }
+}
+
+function renderBasketball(){
+  const liveEl = document.getElementById('bk-live-section');
+  const upEl   = document.getElementById('bk-upcoming-section');
+  const live   = BK_GAMES.filter(g=>g.live);
+  const upcoming = BK_GAMES.filter(g=>!g.live);
+  if(liveEl) liveEl.innerHTML = live.length ? live.map(g=>renderSportCard(g,'🏀')).join('') : '<div style="color:var(--muted);font-size:13px;padding:8px">Aucun match live.</div>';
+  if(upEl)   upEl.innerHTML   = upcoming.length ? upcoming.map(g=>renderSportCard(g,'🏀')).join('') : '<div style="color:var(--muted);font-size:13px;padding:8px">Aucun match à venir aujourd\'hui.</div>';
+}
+
+// ===== TENNIS =====
+let TN_GAMES = [];
+async function loadTennis(){
+  const liveEl = document.getElementById('tn-live-section');
+  const upEl   = document.getElementById('tn-upcoming-section');
+  if(upEl) upEl.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">⏳ Chargement...</div>';
+  try {
+    const data = await apiGet('/api/tennis');
+    TN_GAMES = data.games || [];
+    if(data.error && !TN_GAMES.length){
+      if(upEl) upEl.innerHTML=`<div style="text-align:center;padding:20px;color:var(--red);font-size:13px">⚠️ ${data.error}<br><span style="font-size:11px;color:var(--muted)">Ajoutez APISPORTS_KEY dans les variables d'environnement Render</span></div>`;
+      return;
+    }
+    renderTennis();
+  } catch(e){
+    if(upEl) upEl.innerHTML='<div style="text-align:center;padding:20px;color:var(--red);font-size:13px">Erreur chargement Tennis.</div>';
+  }
+}
+
+function renderTennis(){
+  const liveEl = document.getElementById('tn-live-section');
+  const upEl   = document.getElementById('tn-upcoming-section');
+  const live   = TN_GAMES.filter(g=>g.live);
+  const upcoming = TN_GAMES.filter(g=>!g.live);
+  if(liveEl) liveEl.innerHTML = live.length ? live.map(g=>renderSportCard(g,'🎾')).join('') : '<div style="color:var(--muted);font-size:13px;padding:8px">Aucun match live.</div>';
+  if(upEl)   upEl.innerHTML   = upcoming.length ? upcoming.map(g=>renderSportCard(g,'🎾')).join('') : '<div style="color:var(--muted);font-size:13px;padding:8px">Aucun match à venir aujourd\'hui.</div>';
+}
+
+function renderSportCard(g, icon){
+  const dateStr = g.date ? new Date(g.date).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '';
+  const scoreLine = (g.scoreHome !== null && g.scoreAway !== null)
+    ? `<span style="font-size:16px;font-weight:900;color:var(--gold)">${g.scoreHome} — ${g.scoreAway}</span>`
+    : `<span style="font-size:12px;color:var(--muted)">${dateStr}</span>`;
+  return `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;">
+    <div style="font-size:10px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">${icon} ${g.league}${g.live?' · <span style="color:var(--red);font-weight:700">LIVE</span>':''}</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <div style="flex:1;font-size:13px;font-weight:700;text-align:right">${g.home}</div>
+      <div style="text-align:center;min-width:70px">${scoreLine}</div>
+      <div style="flex:1;font-size:13px;font-weight:700;text-align:left">${g.away}</div>
+    </div>
+  </div>`;
+}
+// ===== FIN BASKETBALL / TENNIS =====
 
 const ogSt={};
 function renderMatch(m){
@@ -4540,6 +4730,8 @@ function selAdmTab(el){
       if(tab==='recharges' && typeof admRefreshRecharges==='function') admRefreshRecharges();
       if(tab==='params' && typeof loadAdminMessageFields==='function') loadAdminMessageFields();
       if(tab==='params' && typeof renderGameBlockList==='function') renderGameBlockList();
+      if(tab==='params' && typeof loadPaymentParamsToForm==='function') loadPaymentParamsToForm();
+      if(tab==='params' && typeof loadPlopConfigToForm==='function') loadPlopConfigToForm();
     }
   }, 50);
 }
@@ -5504,6 +5696,104 @@ function getGameDiff(game){
   const global = localStorage.getItem('tk_diff_'+game);
   return global !== null ? parseFloat(global) : 45;
 }
+
+// ===== PARAMÈTRES PAIEMENT =====
+function getPaymentParams(){
+  try{ return JSON.parse(localStorage.getItem('ja_payment_params')||'{}'); }
+  catch(e){ return {}; }
+}
+function savePaymentParams(){
+  const p = {
+    moncash:{ num:document.getElementById('param-moncash-num').value.trim(), name:document.getElementById('param-moncash-name').value.trim() },
+    natcash:{ num:document.getElementById('param-natcash-num').value.trim(), name:document.getElementById('param-natcash-name').value.trim() },
+    kashpaw:{ num:document.getElementById('param-kashpaw-num').value.trim(), name:document.getElementById('param-kashpaw-name').value.trim() },
+  };
+  localStorage.setItem('ja_payment_params', JSON.stringify(p));
+  applyPaymentParamsToUI();
+  showNotif('✅ Numéros de paiement enregistrés','ok');
+}
+function loadPaymentParamsToForm(){
+  const p = getPaymentParams();
+  ['moncash','natcash','kashpaw'].forEach(m => {
+    const numEl = document.getElementById('param-'+m+'-num');
+    const nameEl = document.getElementById('param-'+m+'-name');
+    if(numEl && p[m]) numEl.value = p[m].num||'';
+    if(nameEl && p[m]) nameEl.value = p[m].name||'';
+  });
+}
+function applyPaymentParamsToUI(){
+  const p = getPaymentParams();
+  ['moncash','natcash','kashpaw'].forEach(m => {
+    const sub = document.getElementById('rm-sub-'+m);
+    if(sub && p[m] && p[m].num){
+      sub.innerHTML = `<span style="color:var(--gold);font-weight:700">${p[m].num}</span>${p[m].name?' — '+p[m].name:''}`;
+    }
+  });
+}
+// ===== FIN PARAMÈTRES PAIEMENT =====
+
+// ===== CONFIG PLOPPLOP ADMIN =====
+async function loadPlopConfigToForm(){
+  try {
+    const s = await apiGet('/api/admin/settings');
+    const clientIdEl = document.getElementById('param-plop-client-id');
+    const secretEl   = document.getElementById('param-plop-secret');
+    const baseEl     = document.getElementById('param-plop-base-url');
+    if(clientIdEl) clientIdEl.value = s['plopplop_client_id'] || '';
+    if(secretEl)   secretEl.value   = s['plopplop_secret_key'] || '';
+    if(baseEl)     baseEl.value     = s['plopplop_base_url']   || '';
+    // Afficher statut
+    const badge = document.getElementById('plop-status-badge');
+    if(badge){
+      const configured = s['plopplop_client_id'] && s['plopplop_secret_key'];
+      badge.style.display = 'block';
+      badge.style.background = configured ? 'rgba(40,176,78,.15)' : 'rgba(230,57,70,.15)';
+      badge.style.border = configured ? '1px solid var(--green2)' : '1px solid var(--red)';
+      badge.style.color  = configured ? 'var(--green2)' : 'var(--red)';
+      badge.textContent  = configured ? '✅ PlopPlop configuré' : '⚠️ Credentials manquants — paiements désactivés';
+    }
+  } catch(e){ console.warn('loadPlopConfigToForm:', e); }
+}
+
+async function savePlopConfig(){
+  const clientId = document.getElementById('param-plop-client-id')?.value.trim();
+  const secret   = document.getElementById('param-plop-secret')?.value.trim();
+  const baseUrl  = document.getElementById('param-plop-base-url')?.value.trim();
+  if(!clientId || !secret){ showNotif('⚠️ Client ID et Secret Key sont obligatoires','err'); return; }
+  try {
+    await apiPost('/api/admin/settings', {
+      plopplop_client_id:  clientId,
+      plopplop_secret_key: secret,
+      plopplop_base_url:   baseUrl || 'https://plopplop.solutionip.app',
+    });
+    showNotif('✅ Configuration PlopPlop enregistrée','ok');
+    loadPlopConfigToForm();
+  } catch(e){ showNotif('Erreur: '+e.message,'err'); }
+}
+
+async function testPlopConfig(){
+  const badge = document.getElementById('plop-status-badge');
+  if(badge){ badge.style.display='block'; badge.textContent='🔌 Test en cours...'; badge.style.background='rgba(245,200,0,.1)'; badge.style.border='1px solid var(--gold)'; badge.style.color='var(--gold)'; }
+  try {
+    const r = await fetch('/health');
+    const data = await r.json();
+    const ok = data.plopplop?.client_id?.includes('✅');
+    if(badge){
+      badge.style.background = ok ? 'rgba(40,176,78,.15)' : 'rgba(230,57,70,.15)';
+      badge.style.border = ok ? '1px solid var(--green2)' : '1px solid var(--red)';
+      badge.style.color  = ok ? 'var(--green2)' : 'var(--red)';
+      badge.textContent  = ok ? '✅ Connexion OK — '+data.plopplop.client_id : '❌ Connexion échouée — '+JSON.stringify(data.plopplop);
+    }
+  } catch(e){
+    if(badge){ badge.style.background='rgba(230,57,70,.15)'; badge.style.border='1px solid var(--red)'; badge.style.color='var(--red)'; badge.textContent='❌ Erreur: '+e.message; }
+  }
+}
+
+function togglePlopSecret(){
+  const el = document.getElementById('param-plop-secret');
+  if(el) el.type = el.type === 'password' ? 'text' : 'password';
+}
+// ===== FIN CONFIG PLOPPLOP ADMIN =====
 
 // ===== BLOCAGE DES JEUX =====
 const GAMES_LIST = [
@@ -7190,6 +7480,7 @@ function jackpotCheckURLParam(){
       renderJHist();
       setTimeout(renderJackpotWidget, 300);
       setTimeout(applyGameBlocks, 100);
+      setTimeout(applyPaymentParamsToUI, 150);
     } else if (me.role === 'admin') {
       await refreshAllCaches();
       refreshAdmin(); goTo('sc-admin');

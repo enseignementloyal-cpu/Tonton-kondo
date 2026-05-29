@@ -53,6 +53,12 @@ const pool = new Pool({
 // ── CONFIG ─────────────────────────────────────────────────
 const ADMIN_PASSWORD    = process.env.ADMIN_PASSWORD    || 'admin';
 const FOOTBALL_API_KEY  = process.env.FOOTBALL_API_KEY  || '';
+const APISPORTS_KEY     = process.env.APISPORTS_KEY     || ''; // api-sports.io (basketball + tennis)
+
+// Cache pour basketball et tennis
+let basketballCache = { data: [], updatedAt: 0 };
+let tennisCache     = { data: [], updatedAt: 0 };
+const SPORTS_CACHE_TTL = 5 * 60 * 1000; // 5 min
 const JACKPOT_PCT       = 5; // 5%
 
 // ── TABLE INIT (création automatique des tables) ───────────
@@ -305,10 +311,31 @@ function getKenoMultiplier(hits, selectedCount) {
 }
 
 // Fonction générique pour les appels PlopPlop entrants (dépôts)
+
+// Lit les credentials PlopPlop depuis la DB (settings) en priorité sur les env vars
+async function getPlopConfig() {
+  try {
+    const r = await pool.query("SELECT key, value FROM settings WHERE key IN ('plopplop_client_id','plopplop_secret_key','plopplop_base_url')");
+    const db = {};
+    r.rows.forEach(row => { db[row.key] = row.value; });
+    return {
+      clientId:  db['plopplop_client_id']  || MERCHANT_CLIENT_ID  || '',
+      secretKey: db['plopplop_secret_key'] || MERCHANT_SECRET_KEY || '',
+      baseUrl:   db['plopplop_base_url']   || PLOPPLOP_BASE       || 'https://plopplop.solutionip.app',
+    };
+  } catch(e) {
+    return {
+      clientId:  MERCHANT_CLIENT_ID  || '',
+      secretKey: MERCHANT_SECRET_KEY || '',
+      baseUrl:   PLOPPLOP_BASE       || 'https://plopplop.solutionip.app',
+    };
+  }
+}
+
 async function callPlopPlop(endpoint, body) {
-  const BASE = PLOPPLOP_BASE || 'https://plopplop.solutionip.app';
-  const auth = Buffer.from(`${MERCHANT_CLIENT_ID}:${MERCHANT_SECRET_KEY}`).toString('base64');
-  const response = await fetch(`${BASE}${endpoint}`, {
+  const cfg = await getPlopConfig();
+  const auth = Buffer.from(`${cfg.clientId}:${cfg.secretKey}`).toString('base64');
+  const response = await fetch(`${cfg.baseUrl}${endpoint}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Basic ${auth}` },
     body: JSON.stringify(body)
@@ -320,7 +347,10 @@ async function callPlopPlop(endpoint, body) {
 
 // Fonction retrait PlopPlop - flux 3 étapes obligatoires
 async function executerRetraitPlopPlop(montant, methode, recipient, reference) {
-  const BASE = PLOPPLOP_BASE || 'https://plopplop.solutionip.app';
+  const cfg = await getPlopConfig();
+  const BASE = cfg.baseUrl;
+  const MERCHANT_CLIENT_ID = cfg.clientId;
+  const MERCHANT_SECRET_KEY = cfg.secretKey;
 
   // ── Vérification des credentials ────────────────────────
   if (!MERCHANT_CLIENT_ID || !MERCHANT_SECRET_KEY) {
@@ -669,6 +699,74 @@ app.get('/api/results', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ── BASKETBALL (api-sports.io) ─────────────────────────────
+app.get('/api/basketball', async (req, res) => {
+  try {
+    const now = Date.now();
+    if (now - basketballCache.updatedAt < SPORTS_CACHE_TTL && basketballCache.data.length) {
+      return res.json({ games: basketballCache.data, cached: true });
+    }
+    if (!APISPORTS_KEY) return res.json({ games: [], error: 'Clé API-Sports non configurée' });
+
+    const today = new Date().toISOString().split('T')[0];
+    const tomorrow = new Date(Date.now()+86400000).toISOString().split('T')[0];
+    const r = await fetch(`https://v1.basketball.api-sports.io/games?date=${today}`, {
+      headers: { 'x-rapidapi-key': APISPORTS_KEY, 'x-rapidapi-host': 'v1.basketball.api-sports.io' }
+    });
+    if (!r.ok) return res.status(502).json({ games: [], error: 'API Basketball indisponible' });
+    const data = await r.json();
+    const games = (data.response || []).map(g => ({
+      id: 'bk_'+g.id,
+      sport: 'basketball',
+      league: g.league?.name || 'Basketball',
+      leagueLogo: g.league?.logo || '',
+      home: g.teams?.home?.name || '?',
+      away: g.teams?.away?.name || '?',
+      homeLogo: g.teams?.home?.logo || '',
+      awayLogo: g.teams?.away?.logo || '',
+      scoreHome: g.scores?.home?.total ?? null,
+      scoreAway: g.scores?.away?.total ?? null,
+      status: g.status?.short || 'NS',
+      date: g.date || today,
+      live: ['Q1','Q2','Q3','Q4','OT','HT'].includes(g.status?.short),
+    })).filter(g => ['NBA','EuroLeague','Euroleague','FIBA'].some(l => g.league.includes(l)) || true);
+    basketballCache = { data: games, updatedAt: now };
+    res.json({ games });
+  } catch(e) { res.status(500).json({ games: [], error: e.message }); }
+});
+
+// ── TENNIS (api-sports.io) ─────────────────────────────────
+app.get('/api/tennis', async (req, res) => {
+  try {
+    const now = Date.now();
+    if (now - tennisCache.updatedAt < SPORTS_CACHE_TTL && tennisCache.data.length) {
+      return res.json({ games: tennisCache.data, cached: true });
+    }
+    if (!APISPORTS_KEY) return res.json({ games: [], error: 'Clé API-Sports non configurée' });
+
+    const today = new Date().toISOString().split('T')[0];
+    const r = await fetch(`https://v1.tennis.api-sports.io/games?date=${today}`, {
+      headers: { 'x-rapidapi-key': APISPORTS_KEY, 'x-rapidapi-host': 'v1.tennis.api-sports.io' }
+    });
+    if (!r.ok) return res.status(502).json({ games: [], error: 'API Tennis indisponible' });
+    const data = await r.json();
+    const games = (data.response || []).map(g => ({
+      id: 'tn_'+g.id,
+      sport: 'tennis',
+      league: g.tournament?.name || 'Tennis',
+      home: g.players?.home?.name || g.teams?.home?.name || '?',
+      away: g.players?.away?.name || g.teams?.away?.name || '?',
+      scoreHome: g.scores?.home || null,
+      scoreAway: g.scores?.away || null,
+      status: g.status?.short || 'NS',
+      date: g.date || today,
+      live: g.status?.short === 'IN_PLAY',
+    }));
+    tennisCache = { data: games, updatedAt: now };
+    res.json({ games });
+  } catch(e) { res.status(500).json({ games: [], error: e.message }); }
+});
+
 // ── JOUEUR ────────────────────────────────────────────────
 app.get('/api/player/me', requireAuth, async (req, res) => {
   if (req.session.role !== 'joueur') return res.status(403).json({ error: 'Joueur seulement' });
@@ -752,13 +850,25 @@ app.post('/api/recharges/initiate', requireAuth, async (req, res) => {
     else return res.status(403).json({ error: 'Non autorisé' });
     const player = await pool.query("SELECT phone, name FROM players WHERE phone=$1", [phone]);
     if (!player.rows.length) return res.status(404).json({ error: 'Joueur introuvable' });
+    const cfg = await getPlopConfig();
     const reference_id = `TK_${phone}_${Date.now()}_${Math.random().toString(36).substr(2,6)}`;
     const plopData = await callPlopPlop('/api/paiement-marchand', {
-      client_id: MERCHANT_CLIENT_ID,
+      client_id: cfg.clientId,
       refference_id: reference_id,
       montant: montant,
       payment_method: methode
     });
+    if (!plopData.status) throw new Error(plopData.message || 'Erreur paiement');
+    await pool.query(
+      `INSERT INTO recharges (player_phone, montant, methode, reference_id, transaction_id, statut) VALUES ($1, $2, $3, $4, $5, 'pending')`,
+      [phone, montant, methode, reference_id, plopData.transaction_id]
+    );
+    res.json({ success: true, url: plopData.url, reference_id, transaction_id: plopData.transaction_id });
+  } catch(e) {
+    console.error(e);
+    res.status(502).json({ error: e.message });
+  }
+});
     if (!plopData.status) throw new Error(plopData.message || 'Erreur paiement');
     await pool.query(
       `INSERT INTO recharges (player_phone, montant, methode, reference_id, transaction_id, statut) VALUES ($1, $2, $3, $4, $5, 'pending')`,
@@ -780,7 +890,8 @@ app.get('/api/recharges/status/:referenceId', requireAuth, async (req, res) => {
     if (req.session.role === 'joueur' && r.player_phone !== req.session.user_phone) return res.status(403).json({ error: 'Non autorisé' });
     if (r.statut === 'completed') return res.json({ status: 'completed', montant: r.montant });
     if (r.statut === 'failed') return res.json({ status: 'failed' });
-    const verifyData = await callPlopPlop('/api/paiement-verify', { client_id: MERCHANT_CLIENT_ID, refference_id: referenceId });
+    const cfg = await getPlopConfig();
+    const verifyData = await callPlopPlop('/api/paiement-verify', { client_id: cfg.clientId, refference_id: referenceId });
     if (verifyData.trans_status === 'ok') {
       const client = await pool.connect();
       try {
