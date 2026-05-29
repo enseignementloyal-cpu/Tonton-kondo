@@ -869,17 +869,6 @@ app.post('/api/recharges/initiate', requireAuth, async (req, res) => {
     res.status(502).json({ error: e.message });
   }
 });
-    if (!plopData.status) throw new Error(plopData.message || 'Erreur paiement');
-    await pool.query(
-      `INSERT INTO recharges (player_phone, montant, methode, reference_id, transaction_id, statut) VALUES ($1, $2, $3, $4, $5, 'pending')`,
-      [phone, montant, methode, reference_id, plopData.transaction_id]
-    );
-    res.json({ success: true, url: plopData.url, reference_id, transaction_id: plopData.transaction_id });
-  } catch(e) {
-    console.error(e);
-    res.status(502).json({ error: e.message });
-  }
-});
 
 app.get('/api/recharges/status/:referenceId', requireAuth, async (req, res) => {
   try {
