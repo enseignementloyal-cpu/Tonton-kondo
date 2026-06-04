@@ -1568,23 +1568,21 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
 
         <!-- Boutons action -->
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
-          <button onclick="ajouterAuPanierCaisse()" style="flex:1;padding:11px 16px;background:linear-gradient(135deg,var(--blue),#0a2070);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;min-width:140px"><i class="fas fa-plus"></i> Ajouter au panier</button>
-          <button onclick="lancerJeuCaisse()" style="flex:1;padding:11px 16px;background:linear-gradient(135deg,var(--gold),#d4a800);color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;min-width:140px"><i class="fas fa-play"></i> Lancer & Imprimer</button>
+          <button onclick="ajouterAuPanierCaisse()" style="flex:1;padding:11px 16px;background:linear-gradient(135deg,var(--blue),#0a2070);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;min-width:140px"><i class="fas fa-plus"></i> Ajouter Paris</button>
+          <button onclick="imprimerTicketAvantJeu()" id="btn-imprimer-ticket" style="flex:1;padding:11px 16px;background:linear-gradient(135deg,#7c3aed,#4c1d95);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;min-width:140px;display:none"><i class="fas fa-print"></i> Imprimer Ticket</button>
         </div>
-        <button onclick="afficherTicketsGagnants()" style="width:100%;margin-top:8px;padding:10px;background:linear-gradient(135deg,var(--green2),#1a6b30);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px"><i class="fas fa-trophy"></i> Afficher Tickets Gagnants</button>
+        <button onclick="lancerJeuCaisse()" id="btn-lancer-jeu" style="width:100%;margin-top:8px;padding:11px;background:linear-gradient(135deg,var(--gold),#d4a800);color:#000;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;display:none"><i class="fas fa-play"></i> 🎮 Lancer le Jeu</button>
+        <button onclick="afficherTicketsGagnants()" style="width:100%;margin-top:8px;padding:10px;background:linear-gradient(135deg,var(--green2),#1a6b30);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px"><i class="fas fa-trophy"></i> Voir Tickets Gagnants</button>
         <div class="status-msg" id="caisse-status" style="margin-top:10px"></div>
       </div>
 
       <!-- Panier caisse (multi-joueur) -->
       <div class="card" id="caisse-panier-card" style="display:none">
-        <h3><i class="fas fa-shopping-cart"></i> Panier en cours</h3>
+        <h3><i class="fas fa-ticket-alt"></i> Tickets en attente <span id="panier-count-badge" style="background:var(--gold);color:#000;border-radius:12px;padding:2px 9px;font-size:13px;margin-left:6px">0</span></h3>
         <div id="caisse-panier-display"></div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
-          <span style="font-weight:800;font-size:14px">Total: <span style="color:var(--gold)" id="caisse-panier-total">0 Gd</span></span>
-          <div style="display:flex;gap:7px">
-            <button onclick="viderPanierCaisse()" style="padding:7px 14px;background:var(--red);color:#fff;border:none;border-radius:7px;font-weight:700;cursor:pointer;font-size:13px">🗑 Vider</button>
-            <button onclick="imprimerPanierCaisse()" style="padding:7px 14px;background:var(--blue);color:#fff;border:none;border-radius:7px;font-weight:700;cursor:pointer;font-size:13px"><i class="fas fa-print"></i> Imprimer</button>
-          </div>
+          <span style="font-weight:800;font-size:14px">Total misé: <span style="color:var(--gold)" id="caisse-panier-total">0 Gd</span></span>
+          <button onclick="viderPanierCaisse()" style="padding:7px 14px;background:var(--red);color:#fff;border:none;border-radius:7px;font-weight:700;cursor:pointer;font-size:13px">🗑 Vider</button>
         </div>
       </div>
 
@@ -4893,21 +4891,37 @@ function renderPanierCaisse(){
   if(!el)return;
   if(!caissePanier.length){
     if(card)card.style.display='none';
+    updateBoutonsCaisse();
     return;
   }
   if(card)card.style.display='';
   let total=0;
-  const abbr={borlette:'bor',lotto3:'lo3',lotto4:'lo4',lotto5:'lo5',mariage:'mar',keno:'keno',lucky6:'lucky6',course:'course'};
-  el.innerHTML=caissePanier.map(b=>{
+  const jeuIcon={borlette:'🎯',lotto3:'🎯',lotto4:'🎯',lotto5:'🎯',mariage:'💍',keno:'🎱',lucky6:'🍀',course:'🏎️'};
+  el.innerHTML=caissePanier.map((b,i)=>{
     total+=b.amount;
-    return`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border-bottom:1px solid var(--border);font-size:13px">
-      <span style="font-weight:800;color:var(--gold);min-width:50px">${abbr[b.game]||b.game}</span>
-      <span style="font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:900;flex:1;padding:0 8px">${b.number}</span>
-      <span style="font-weight:700;color:var(--green2);min-width:55px;text-align:right">${b.amount} G</span>
-      <button onclick="retirerDuPanier('${b.id}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:15px;padding:0 0 0 8px">✕</button>
+    const tid=b.ticketId||('TK-'+String(i+1).padStart(3,'0'));
+    return`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;position:relative;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+        <div style="display:flex;align-items:center;gap:7px;">
+          <span style="font-size:18px">${jeuIcon[b.game]||'🎰'}</span>
+          <div>
+            <div style="font-weight:900;font-size:14px;color:var(--gold)">${b.game.toUpperCase()}</div>
+            <div style="font-size:10px;color:var(--muted);font-family:monospace">${tid}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button onclick="imprimerUnTicket(${i})" title="Imprimer ce ticket" style="background:rgba(124,58,237,.2);border:1px solid #7c3aed;color:#a78bfa;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:11px;">🖨</button>
+          <button onclick="retirerDuPanier('${b.id}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;padding:0;">✕</button>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;letter-spacing:2px;color:#fff">${b.number}</span>
+        <span style="font-weight:800;font-size:15px;color:var(--green2)">${b.amount} Gd</span>
+      </div>
     </div>`;
   }).join('');
   if(totalEl)totalEl.textContent=total.toLocaleString('fr-FR')+' Gd';
+  updateBoutonsCaisse();
 }
 
 function retirerDuPanier(id){
@@ -4980,8 +4994,11 @@ async function lancerJeuCaisse(){
     }
   }
   let st=gSt();st.dep+=total;st.pay+=totalGain;sSt(st);
-  // Print ticket
-  imprimerResultats(resultats,total,totalGain,joueur);
+  // Print ticket résultat — UN ticket par pari
+  const joueurInfo=joueur;
+  resultats.forEach((r,i)=>{
+    setTimeout(()=>imprimerTicketIndividuel(r.bet, r, joueurInfo), i*400);
+  });
   // Update display
   const statusMsg=totalGain>0?`🏆 Total gains: +${totalGain} Gd`:`😔 Aucun gain cette fois`;
   document.getElementById('caisse-status').textContent=statusMsg;
@@ -5007,19 +5024,113 @@ async function lancerJeuCaisse(){
 function afficherResultatsCaisse(resultats,totalGain){
   const overlay=document.getElementById('tickets-win-overlay');
   document.getElementById('tw-date').textContent=new Date().toLocaleString('fr-FR');
-  document.getElementById('tw-list').innerHTML=resultats.map(r=>`
-    <div class="ticket-win-item" style="${r.gain>0?'background:rgba(40,176,78,.15);border:1px solid var(--green2)':''}">
-      <span class="name" style="font-size:12px">${r.resultMsg}</span>
-      <span class="${r.gain>0?'gain':''}" style="${r.gain>0?'color:var(--gold)':'color:var(--red)'};font-size:14px">${r.gain>0?'+'+r.gain:r.gain} Gd</span>
-    </div>`).join('');
+  document.getElementById('tw-list').innerHTML=resultats.map(r=>{
+    const tid=r.bet.ticketId||'—';
+    const jeuIcon={borlette:'🎯',lotto3:'🎯',lotto4:'🎯',lotto5:'🎯',mariage:'💍',keno:'🎱',lucky6:'🍀',course:'🏎️'}[r.bet.game]||'🎰';
+    return`<div style="background:${r.gain>0?'rgba(40,176,78,.12)':'rgba(230,57,70,.08)'};border:1px solid ${r.gain>0?'var(--green2)':'var(--border)'};border-radius:10px;padding:10px 12px;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span>${jeuIcon}</span>
+          <span style="font-weight:900;font-size:13px;color:var(--gold)">${r.bet.game.toUpperCase()}</span>
+          <span style="font-family:monospace;font-size:10px;color:var(--muted)">${tid}</span>
+        </div>
+        <span style="font-size:18px">${r.gain>0?'🏆':'❌'}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;letter-spacing:2px">${r.bet.number}</div>
+          <div style="font-size:11px;color:var(--muted)">${r.resultMsg.split('—').slice(1).join('—').trim()}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:12px;color:var(--muted)">Mise: ${r.bet.amount} Gd</div>
+          <div style="font-weight:900;font-size:16px;color:${r.gain>0?'var(--gold)':'var(--red)'}">${r.gain>0?'+'+r.gain:'−'+r.bet.amount} Gd</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
   overlay.classList.add('on');
 }
 
-function imprimerPanierCaisse(){
-  if(!caissePanier.length){showNotif('Panier vide','err');return;}
-  const total=caissePanier.reduce((s,b)=>s+b.amount,0);
+// Imprimer UN seul ticket (avant jeu)
+function imprimerUnTicket(index){
+  const bet = caissePanier[index];
+  if(!bet){ showNotif('Ticket introuvable','err'); return; }
   const joueur=joueurFileActif!==null?joueurFile[joueurFileActif]:null;
-  imprimerTicketCaisse(caissePanier,[],total,0,joueur);
+  imprimerTicketIndividuel(bet, null, joueur);
+}
+
+// Imprimer TOUS les tickets du panier (avant jeu)
+function imprimerTicketAvantJeu(){
+  if(!caissePanier.length){showNotif('Aucun ticket en attente','err');return;}
+  const joueur=joueurFileActif!==null?joueurFile[joueurFileActif]:null;
+  caissePanier.forEach(bet => {
+    setTimeout(()=>imprimerTicketIndividuel(bet, null, joueur), 300);
+  });
+  showNotif('🖨 '+caissePanier.length+' ticket(s) envoyés à l\'impression','ok');
+}
+
+// Ticket individuel — avant ou après jeu
+function imprimerTicketIndividuel(bet, resultat, joueur){
+  const pw=window.open('','_blank','width=400,height=600');
+  if(!pw){alert('Autorisez les pop-ups pour l\'impression');return;}
+  const date=new Date().toLocaleString('fr-FR',{timeZone:'America/Port-au-Prince'});
+  const tid=bet.ticketId||'TK-000000';
+  const jeuLabel={borlette:'BORLETTE',lotto3:'LOTTO 3',lotto4:'LOTTO 4',lotto5:'LOTTO 5',mariage:'MARIAGE',keno:'KENO',lucky6:'LUCKY 6',course:'COURSE AUTO'}[bet.game]||bet.game.toUpperCase();
+  const hasResult = resultat !== null;
+  const gain = hasResult ? resultat.gain : null;
+  pw.document.write(`<!DOCTYPE html><html><head><title>Ticket ${tid}</title>
+<style>
+  @page{size:80mm auto;margin:1mm;}
+  *{box-sizing:border-box;}
+  body{font-family:'Courier New',monospace;font-size:13px;width:76mm;margin:0 auto;padding:3mm 4mm;background:#fff;color:#000;}
+  .center{text-align:center;}
+  .title{font-size:22px;font-weight:900;letter-spacing:1px;}
+  .sub{font-size:10px;color:#555;}
+  .sep{border:none;border-top:2px dashed #000;margin:6px 0;}
+  .row{display:flex;justify-content:space-between;margin:3px 0;font-size:12px;}
+  .big{font-size:24px;font-weight:900;text-align:center;letter-spacing:3px;margin:8px 0;padding:6px;border:2px solid #000;border-radius:4px;}
+  .ticket-id{font-size:10px;text-align:center;color:#555;font-family:monospace;letter-spacing:1px;}
+  .result-box{text-align:center;padding:8px;border-radius:4px;margin-top:8px;font-weight:900;font-size:16px;}
+  .win{background:#e8f5e9;border:2px solid green;color:green;}
+  .lose{background:#ffeee;border:2px solid #c00;color:#c00;}
+  .footer{text-align:center;font-size:10px;margin-top:10px;padding-top:6px;border-top:1px dashed #000;color:#555;}
+  .barcode{font-family:monospace;font-size:11px;text-align:center;letter-spacing:2px;margin:4px 0;}
+</style></head><body>
+<div class="center">
+  <div class="title">J.A. PARYAJ LOTTO</div>
+  <div class="sub">Trou du Nord, Nò — Ayiti</div>
+</div>
+<hr class="sep">
+<div class="ticket-id">TIKÈ #${tid}</div>
+<div class="row"><span>Dat:</span><span>${date}</span></div>
+<div class="row"><span>Caissier:</span><span>${CCaiss?.name||'—'}</span></div>
+<div class="row"><span>Jwè:</span><span>${joueur?.name||'Anonyme'}</span></div>
+<hr class="sep">
+<div class="row"><span>Jeu:</span><span><b>${jeuLabel}</b></span></div>
+${bet.drawId?`<div class="row"><span>Tiraj:</span><span>${bet.drawId}</span></div>`:''}
+<div style="font-size:11px;color:#555;margin-top:4px;">Nimewo / Séleksyon:</div>
+<div class="big">${bet.number}</div>
+<div class="row"><span>Mise:</span><span><b>${bet.amount} Gdes</b></span></div>
+${hasResult ? `
+<hr class="sep">
+<div class="result-box ${gain>0?'win':'lose'}">
+  ${gain>0?`🏆 PAMI — GAIN: +${gain} Gdes`:`❌ Pèdi`}
+</div>` : `
+<hr class="sep">
+<div style="text-align:center;font-size:11px;color:#555;font-style:italic;">Paris anregistré — Rezilta apre tray la</div>`}
+<div class="barcode">||| ${tid} |||</div>
+<div class="footer">
+  <div>Tikè valid pou 90 jou apre tiraj</div>
+  <div>Jwe responsab · 18+ sèlman</div>
+  <div><b>J.A. PARYAJ LOTTO S.A.</b></div>
+</div>
+</body></html>`);
+  pw.document.close();
+  pw.onload=()=>{pw.focus();pw.print();};
+}
+
+function imprimerPanierCaisse(){
+  imprimerTicketAvantJeu();
 }
 
 function imprimerResultats(resultats,total,totalGain,joueur){
@@ -5350,39 +5461,50 @@ function updateCaisseForm(){
 }
 
 // ==================== PATCH: ajouterAuPanierCaisse utilise les grilles ====================
+function genTicketId(){
+  return 'TK-'+Date.now().toString(36).toUpperCase()+'-'+Math.floor(Math.random()*9000+1000);
+}
+
+function updateBoutonsCaisse(){
+  const hasBets = caissePanier.length > 0;
+  const btnImpr = document.getElementById('btn-imprimer-ticket');
+  const btnLanc = document.getElementById('btn-lancer-jeu');
+  if(btnImpr) btnImpr.style.display = hasBets ? '' : 'none';
+  if(btnLanc) btnLanc.style.display = hasBets ? '' : 'none';
+  const badge = document.getElementById('panier-count-badge');
+  if(badge) badge.textContent = caissePanier.length;
+}
+
 function ajouterAuPanierCaisse(){
   const jeu=document.getElementById('caisse-jeu-type').value;
   if(jeu==='keno'){
     if(!caisseKenoSel.length){showNotif('Sélectionnez au moins 1 numéro','err');return;}
     const mise=parseFloat(document.getElementById('caisse-keno-mise')?.value)||0;
     if(mise<=0){showNotif('Mise invalide','err');return;}
-    caissePanier.push({id:Date.now()+Math.random(),game:'keno',number:caisseKenoSel.join(','),cleanNumber:caisseKenoSel.join(','),amount:mise,nums:[...caisseKenoSel],jeuType:'keno'});
+    caissePanier.push({id:Date.now()+Math.random(),ticketId:genTicketId(),game:'keno',number:caisseKenoSel.join(','),cleanNumber:caisseKenoSel.join(','),amount:mise,nums:[...caisseKenoSel],jeuType:'keno'});
     if(joueurFileActif!==null&&joueurFile[joueurFileActif]) joueurFile[joueurFileActif].panier=caissePanier;
-    // Reset sélection keno
     caisseKenoSel=[];
     document.querySelectorAll('[id^="ck-"]').forEach(b=>{b.style.background='var(--bg2)';b.style.color='#fff';b.style.borderColor='var(--border)';});
     const cnt=document.getElementById('caisse-keno-sel-count');if(cnt)cnt.textContent='0/10';
     const nums=document.getElementById('caisse-keno-sel-nums');if(nums)nums.textContent='—';
-    renderPanierCaisse();renderJoueurFile();updateCaisseDisplay();
-    showNotif('Keno ajouté au panier','ok');
+    renderPanierCaisse();renderJoueurFile();updateCaisseDisplay();updateBoutonsCaisse();
+    showNotif('🎟 Ticket Keno ajouté','ok');
     return;
   }
   if(jeu==='lucky6'){
     if(caisseL6Sel.length!==6){showNotif('Sélectionnez exactement 6 numéros','err');return;}
     const mise=parseFloat(document.getElementById('caisse-lucky6-mise')?.value)||0;
     if(mise<=0){showNotif('Mise invalide','err');return;}
-    caissePanier.push({id:Date.now()+Math.random(),game:'lucky6',number:caisseL6Sel.join(','),cleanNumber:caisseL6Sel.join(','),amount:mise,nums:[...caisseL6Sel],jeuType:'lucky6'});
+    caissePanier.push({id:Date.now()+Math.random(),ticketId:genTicketId(),game:'lucky6',number:caisseL6Sel.join(','),cleanNumber:caisseL6Sel.join(','),amount:mise,nums:[...caisseL6Sel],jeuType:'lucky6'});
     if(joueurFileActif!==null&&joueurFile[joueurFileActif]) joueurFile[joueurFileActif].panier=caissePanier;
-    // Reset sélection lucky6
     caisseL6Sel=[];
     document.querySelectorAll('[id^="cl6-"]').forEach(b=>{b.style.background='var(--bg2)';b.style.color='#fff';b.style.borderColor='var(--border)';});
     const cnt=document.getElementById('caisse-l6-sel-count');if(cnt)cnt.textContent='0/6';
     const nums=document.getElementById('caisse-l6-sel-nums');if(nums)nums.textContent='—';
-    renderPanierCaisse();renderJoueurFile();updateCaisseDisplay();
-    showNotif('Lucky 6 ajouté au panier','ok');
+    renderPanierCaisse();renderJoueurFile();updateCaisseDisplay();updateBoutonsCaisse();
+    showNotif('🎟 Ticket Lucky 6 ajouté','ok');
     return;
   }
-  // Fallback: borlette / course
   const jeuFb=document.getElementById('caisse-jeu-type').value;
   let miseFb=0,numsFb=[];
   if(jeuFb==='borlette'){
@@ -5391,18 +5513,18 @@ function ajouterAuPanierCaisse(){
     miseFb=parseFloat(document.getElementById('caisse-bor-mise')?.value)||0;
     if(!numsFb.length||miseFb<=0){showNotif('Numéros ou mise invalides','err');return;}
     numsFb.forEach(num=>{
-      caissePanier.push({id:Date.now()+Math.random(),game:caisseBorSousJeu||'borlette',number:num,cleanNumber:num,amount:miseFb,drawId:document.getElementById('caisse-tiraj')?.value||'',jeuType:'borlette'});
+      caissePanier.push({id:Date.now()+Math.random(),ticketId:genTicketId(),game:caisseBorSousJeu||'borlette',number:num,cleanNumber:num,amount:miseFb,drawId:document.getElementById('caisse-tiraj')?.value||'',jeuType:'borlette'});
     });
     document.getElementById('caisse-bor-nums').value='';
   } else if(jeuFb==='course'){
     const car=parseInt(document.getElementById('caisse-course-car').value);
     miseFb=parseFloat(document.getElementById('caisse-course-mise').value)||0;
     if(miseFb<=0){showNotif('Mise invalide','err');return;}
-    caissePanier.push({id:Date.now()+Math.random(),game:'course',number:'Voiture #'+car,cleanNumber:String(car),amount:miseFb,car,jeuType:'course'});
+    caissePanier.push({id:Date.now()+Math.random(),ticketId:genTicketId(),game:'course',number:'Voiture #'+car,cleanNumber:String(car),amount:miseFb,car,jeuType:'course'});
   }
   if(joueurFileActif!==null&&joueurFile[joueurFileActif]) joueurFile[joueurFileActif].panier=caissePanier;
-  renderPanierCaisse();renderJoueurFile();updateCaisseDisplay();
-  showNotif('Ajouté au panier','ok');
+  renderPanierCaisse();renderJoueurFile();updateCaisseDisplay();updateBoutonsCaisse();
+  showNotif('🎟 Ticket ajouté — '+caissePanier.length+' ticket(s) en attente','ok');
 }
 
 // ==================== PATCH: updateCaisseDisplay avec grilles ====================
