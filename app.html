@@ -2282,6 +2282,42 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
 </div><!-- fin sc-admin -->
 
 <!-- OVERLAY TICKETS GAGNANTS -->
+<!-- MODALE ANIMATION CAISSIER -->
+<div id="caisse-anim-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9000;flex-direction:column;align-items:center;justify-content:center;padding:20px;">
+  <div style="width:100%;max-width:500px;background:var(--card);border-radius:16px;padding:20px;border:1px solid var(--border);">
+    <div id="canim-title" style="text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:1.8em;font-weight:900;color:var(--gold);margin-bottom:14px;">🎰 Tirage en cours...</div>
+    <!-- Boules Keno -->
+    <div id="canim-keno" style="display:none;">
+      <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:10px;">
+        <div id="canim-basket" style="font-size:3em;animation:kenoBasketSpin 0.8s linear infinite;">🧺</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px" id="canim-keno-status">Tirage en cours...</div>
+      </div>
+      <div id="canim-keno-balls" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;min-height:40px;"></div>
+    </div>
+    <!-- Boules Lucky6 -->
+    <div id="canim-lucky6" style="display:none;">
+      <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:10px;">
+        <div id="canim-l6-basket" style="font-size:3em;animation:kenoBasketSpin 0.8s linear infinite;">🎱</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px" id="canim-l6-status">Tirage Lucky 6...</div>
+      </div>
+      <div id="canim-l6-balls" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;min-height:40px;"></div>
+    </div>
+    <!-- Course -->
+    <div id="canim-course" style="display:none;">
+      <div id="canim-race-track" style="background:var(--bg2);border-radius:10px;padding:10px;"></div>
+      <div id="canim-course-status" style="text-align:center;color:var(--gold);font-weight:700;margin-top:8px;font-size:14px;"></div>
+    </div>
+    <!-- Borlette -->
+    <div id="canim-borlette" style="display:none;">
+      <div style="text-align:center;">
+        <div id="canim-bor-ball" style="font-size:4em;animation:kenoBallPop 0.5s ease infinite alternate;">🔮</div>
+        <div id="canim-bor-num" style="font-family:'Barlow Condensed',sans-serif;font-size:4em;font-weight:900;color:var(--gold);letter-spacing:4px;margin:10px 0;">—</div>
+        <div id="canim-bor-status" style="color:var(--muted);font-size:13px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="ticket-win-overlay" id="tickets-win-overlay">
   <div class="ticket-win-box">
     <div class="ticket-win-icon">🏆</div>
@@ -4941,115 +4977,280 @@ function viderPanierCaisse(){
 }
 
 async function lancerJeuCaisse(){
-  if(!caissePanier.length){showNotif('Panier vide','err');return;}
-  const total=caissePanier.reduce((s,b)=>s+b.amount,0);
-  // Déduire du joueur si en file
-  const joueur=joueurFileActif!==null?joueurFile[joueurFileActif]:null;
-  if(joueur&&joueur.phone){
-    const jData=gJ()[joueur.phone];
-    if(jData&&(jData.solde||0)<total){showNotif('Solde insuffisant pour '+joueur.name,'err');return;}
-  }
-  // Lancer chaque pari du panier
-  const resultats=[];
-  for(const bet of caissePanier){
-    let gain=0,resultMsg='';
-    const mise=bet.amount;
-    if(bet.jeuType==='borlette'){
-      const tirage=Math.floor(Math.random()*100).toString().padStart(2,'0');
-      const gagne=bet.cleanNumber===tirage;
-      gain=gagne?mise*60:0;
-      resultMsg=`${bet.game} ${bet.number} — Tirage: ${tirage} — ${gagne?'GAGNÉ +'+gain+' Gd':'Perdu'}`;
-    } else if(bet.jeuType==='keno'){
-      const tirage=[];for(let i=0;i<20;i++){let r;do{r=Math.floor(Math.random()*80)+1;}while(tirage.includes(r));tirage.push(r);}
-      const nums=bet.nums||bet.cleanNumber.split(',').map(Number);
-      const hits=nums.filter(n=>tirage.includes(n)).length;
-      gain=mise*hits*2;
-      resultMsg=`Keno ${bet.number} — ${hits} trouvés — ${gain>0?'Gain: +'+gain+' Gd':'Perdu'}`;
-    } else if(bet.jeuType==='lucky6'){
-      const nums=bet.nums||bet.cleanNumber.split(',').map(Number);
-      const pool=Array.from({length:48},(_,i)=>i+1).filter(n=>!nums.includes(n)).sort(()=>Math.random()-.5);
-      const fp=[...nums,...pool].slice(0,35);
-      const found=nums.filter(n=>fp.includes(n)).length;
-      gain=found===6?mise*30:0;
-      resultMsg=`Lucky6 ${bet.number} — ${found}/6 — ${gain>0?'GAGNÉ +'+gain+' Gd':'Perdu'}`;
-    } else if(bet.jeuType==='course'){
-      const COTES=[0,2.10,1.75,2.50,3.20,4.00,5.50];
-      const diff=getGameDiff('course');
-      const boost={easy:.5,medium:.3,hard:.2,veryhard:.1}[diff]||.3;
-      const winner=Math.random()<boost?bet.car:Math.ceil(Math.random()*6);
-      gain=winner===bet.car?parseFloat((mise*COTES[bet.car]).toFixed(2)):0;
-      resultMsg=`Course Voiture #${bet.car} — Gagnant: #${winner} — ${gain>0?'GAGNÉ +'+gain+' Gd':'Perdu'}`;
+  if(!caissePanier.length){showNotif('Aucun ticket en attente','err');return;}
+
+  const joueur = joueurFileActif!==null ? joueurFile[joueurFileActif] : null;
+  const btnLanc = document.getElementById('btn-lancer-jeu');
+  if(btnLanc) btnLanc.disabled = true;
+
+  // Déterminer le type de jeu dominant dans le panier
+  const jeuTypes = [...new Set(caissePanier.map(b=>b.jeuType))];
+  const jeuPrincipal = jeuTypes[0]; // On anime le premier type
+
+  // 1. Appel API — enregistrement en base de données
+  let resultats;
+  try {
+    const payload = {
+      paris: caissePanier,
+      player_phone: joueur?.phone || null,
+      ticket_session_id: 'CS-'+Date.now()
+    };
+    const resp = await apiPost('/api/caisse/lancer', payload);
+    resultats = resp.resultats;
+    // Mettre à jour le solde affiché si joueur connu
+    if(resp.newSolde !== null && joueur){
+      const soldeEl = document.getElementById('caisse-j-solde');
+      if(soldeEl) soldeEl.textContent = resp.newSolde.toLocaleString('fr-FR') + ' Gd';
     }
-    resultats.push({bet,gain,resultMsg});
+  } catch(e){
+    showNotif('Erreur serveur: '+e.message, 'err');
+    if(btnLanc) btnLanc.disabled = false;
+    return;
   }
-  const totalGain=resultats.reduce((s,r)=>s+r.gain,0);
-  // Appliquer transactions
-  if(joueur&&joueur.phone){
-    const j=gJ();
-    if(j[joueur.phone]){
-      j[joueur.phone].solde=(j[joueur.phone].solde||0)-total+totalGain;
-      sJ(j);
-      addTx(joueur.phone,'Jeu en Caisse',-total+totalGain,'Panier: '+caissePanier.length+' paris, gain: '+totalGain+' Gd',j[joueur.phone].solde);
-      document.getElementById('caisse-j-solde').textContent=j[joueur.phone].solde+' Gd';
-    }
-  }
-  let st=gSt();st.dep+=total;st.pay+=totalGain;sSt(st);
-  // Print ticket résultat — UN ticket par pari
-  const joueurInfo=joueur;
+
+  // 2. Jouer l'animation selon le type de jeu
+  await jouerAnimationCaisse(jeuPrincipal, resultats);
+
+  // 3. Imprimer un ticket résultat par pari
+  const joueurInfo = joueur;
   resultats.forEach((r,i)=>{
-    setTimeout(()=>imprimerTicketIndividuel(r.bet, r, joueurInfo), i*400);
+    setTimeout(()=> imprimerTicketIndividuel(r.pari, r, joueurInfo), i*500);
   });
-  // Update display
-  const statusMsg=totalGain>0?`🏆 Total gains: +${totalGain} Gd`:`😔 Aucun gain cette fois`;
-  document.getElementById('caisse-status').textContent=statusMsg;
-  document.getElementById('caisse-status').style.background=totalGain>0?'rgba(40,176,78,.15)':'rgba(230,57,70,.1)';
-  document.getElementById('caisse-status').style.color=totalGain>0?'var(--green2)':'var(--red)';
-  // Enregistrer et montrer résultats
-  const cb=gCB();
-  cb.unshift({id:Date.now(),date:new Date().toLocaleString(),jeu:'multi',resultats,total,totalGain,joueurPhone:joueur?.phone||'',joueurName:joueur?.name||'Anonyme',caissCode:CCaiss?.code||''});
-  sCB(cb);
-  refreshCaisseBets();
-  // Vider le joueur de la file
+
+  // 4. Afficher le statut total
+  const totalGain = resultats.reduce((s,r)=>s+r.gain,0);
+  const totalMise = caissePanier.reduce((s,b)=>s+b.amount,0);
+  const statusEl = document.getElementById('caisse-status');
+  if(statusEl){
+    statusEl.textContent = totalGain>0 ? `🏆 Total gains: +${totalGain} Gd` : `😔 Aucun gain — Misé: ${totalMise} Gd`;
+    statusEl.style.background = totalGain>0?'rgba(40,176,78,.15)':'rgba(230,57,70,.1)';
+    statusEl.style.color = totalGain>0?'var(--green2)':'var(--red)';
+  }
+
+  // 5. Vider le panier et réinitialiser
   if(joueurFileActif!==null){
     joueurFile.splice(joueurFileActif,1);
-    joueurFileActif=null;caissePanier=[];
-    clearJoueurCaisse();
-    renderJoueurFile();
+    joueurFileActif=null; caissePanier=[];
+    clearJoueurCaisse(); renderJoueurFile();
+  } else {
+    caissePanier=[];
   }
   renderPanierCaisse();
-  // Afficher overlay résultats
-  afficherResultatsCaisse(resultats,totalGain);
+  refreshCaisseBets();
+  if(btnLanc){ btnLanc.disabled=false; }
+
+  // 6. Afficher liste résultats
+  afficherResultatsCaisse(resultats, totalGain);
 }
 
-function afficherResultatsCaisse(resultats,totalGain){
-  const overlay=document.getElementById('tickets-win-overlay');
-  document.getElementById('tw-date').textContent=new Date().toLocaleString('fr-FR');
-  document.getElementById('tw-list').innerHTML=resultats.map(r=>{
-    const tid=r.bet.ticketId||'—';
-    const jeuIcon={borlette:'🎯',lotto3:'🎯',lotto4:'🎯',lotto5:'🎯',mariage:'💍',keno:'🎱',lucky6:'🍀',course:'🏎️'}[r.bet.game]||'🎰';
-    return`<div style="background:${r.gain>0?'rgba(40,176,78,.12)':'rgba(230,57,70,.08)'};border:1px solid ${r.gain>0?'var(--green2)':'var(--border)'};border-radius:10px;padding:10px 12px;margin-bottom:8px;">
+function afficherResultatsCaisse(resultats, totalGain){
+  const overlay = document.getElementById('tickets-win-overlay');
+  document.getElementById('tw-date').textContent = new Date().toLocaleString('fr-FR');
+  const jeuIcon = {borlette:'🎯',lotto3:'🎯',lotto4:'🎯',lotto5:'🎯',mariage:'💍',keno:'🎱',lucky6:'🍀',course:'🏎️'};
+  document.getElementById('tw-list').innerHTML = resultats.map(r=>{
+    const tid = r.ticketId || r.pari?.ticketId || '—';
+    const jeu = r.jeuType || r.pari?.game || 'jeu';
+    const numero = r.pari?.number || r.pari?.cleanNumber || '—';
+    const mise = r.pari?.amount || 0;
+    return `<div style="background:${r.gain>0?'rgba(40,176,78,.12)':'rgba(230,57,70,.08)'};border:1px solid ${r.gain>0?'var(--green2)':'var(--border)'};border-radius:10px;padding:10px 12px;margin-bottom:8px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
         <div style="display:flex;align-items:center;gap:6px;">
-          <span>${jeuIcon}</span>
-          <span style="font-weight:900;font-size:13px;color:var(--gold)">${r.bet.game.toUpperCase()}</span>
+          <span>${jeuIcon[jeu]||'🎰'}</span>
+          <span style="font-weight:900;font-size:13px;color:var(--gold)">${jeu.toUpperCase()}</span>
           <span style="font-family:monospace;font-size:10px;color:var(--muted)">${tid}</span>
         </div>
-        <span style="font-size:18px">${r.gain>0?'🏆':'❌'}</span>
+        <span style="font-size:20px">${r.gain>0?'🏆':'❌'}</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;letter-spacing:2px">${r.bet.number}</div>
-          <div style="font-size:11px;color:var(--muted)">${r.resultMsg.split('—').slice(1).join('—').trim()}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;letter-spacing:2px">${numero}</div>
+          <div style="font-size:11px;color:var(--muted)">${r.resultMsg}</div>
         </div>
         <div style="text-align:right;">
-          <div style="font-size:12px;color:var(--muted)">Mise: ${r.bet.amount} Gd</div>
-          <div style="font-weight:900;font-size:16px;color:${r.gain>0?'var(--gold)':'var(--red)'}">${r.gain>0?'+'+r.gain:'−'+r.bet.amount} Gd</div>
+          <div style="font-size:12px;color:var(--muted)">Mise: ${mise} Gd</div>
+          <div style="font-weight:900;font-size:16px;color:${r.gain>0?'var(--gold)':'var(--red)'}">${r.gain>0?'+'+r.gain:'−'+mise} Gd</div>
         </div>
       </div>
     </div>`;
   }).join('');
   overlay.classList.add('on');
 }
+
+// ===== ANIMATIONS CAISSIER =====
+async function jouerAnimationCaisse(jeuType, resultats){
+  const overlay = document.getElementById('caisse-anim-overlay');
+  overlay.style.display = 'flex';
+
+  // Masquer toutes les sections animation
+  ['canim-keno','canim-lucky6','canim-course','canim-borlette'].forEach(id=>{
+    const el = document.getElementById(id); if(el) el.style.display='none';
+  });
+
+  if(jeuType === 'keno'){
+    await animCaisseKeno(resultats.filter(r=>r.jeuType==='keno'));
+  } else if(jeuType === 'lucky6'){
+    await animCaisseLucky6(resultats.filter(r=>r.jeuType==='lucky6'));
+  } else if(jeuType === 'course'){
+    await animCaisseCourse(resultats.filter(r=>r.jeuType==='course'));
+  } else if(['borlette','lotto3','lotto4','lotto5','mariage'].includes(jeuType)){
+    await animCaisseBorlette(resultats.filter(r=>['borlette','lotto3','lotto4','lotto5','mariage'].includes(r.jeuType)));
+  }
+
+  overlay.style.display = 'none';
+}
+
+async function animCaisseKeno(resultats){
+  if(!resultats.length) return;
+  const r = resultats[0]; // Anime le premier ticket keno
+  const winNums = r.winData?.winningNumbers || [];
+  const jouedNums = (r.pari.nums || r.pari.cleanNumber.split(',').map(Number));
+
+  document.getElementById('canim-keno').style.display = '';
+  document.getElementById('canim-title').textContent = '🎱 Tirage Keno';
+  const ballsEl = document.getElementById('canim-keno-balls');
+  const statusEl = document.getElementById('canim-keno-status');
+  const basketEl = document.getElementById('canim-basket');
+  ballsEl.innerHTML = '';
+
+  let hits = 0;
+  for(let i=0; i<winNums.length; i++){
+    await new Promise(res=>setTimeout(res, 800));
+    const num = winNums[i];
+    const isHit = jouedNums.includes(num);
+    if(isHit) hits++;
+
+    if(basketEl){ basketEl.style.animation='none'; void basketEl.offsetWidth; basketEl.style.animation='kenoBasketSpin 0.4s linear 2'; }
+
+    const span = document.createElement('span');
+    span.className = 'keno-ball-anim';
+    span.textContent = num;
+    span.style.cssText = `display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;font-size:13px;font-weight:900;border:2px solid ${isHit?'var(--green2)':'var(--border)'};background:${isHit?'radial-gradient(circle at 35% 35%,#4cff7c,var(--green2))':'radial-gradient(circle at 35% 35%,#555,#333)'};color:${isHit?'#000':'#888'};box-shadow:${isHit?'0 0 8px rgba(40,176,78,.6)':'none'};`;
+    ballsEl.appendChild(span);
+    statusEl.textContent = `Boule ${i+1}/${winNums.length} — ${hits}/${jouedNums.length} trouvés`;
+  }
+  statusEl.textContent = r.resultMsg;
+  await new Promise(res=>setTimeout(res, 2000));
+}
+
+async function animCaisseLucky6(resultats){
+  if(!resultats.length) return;
+  const r = resultats[0];
+  const winNums = r.winData?.winningNumbers || [];
+  const jouedNums = (r.pari.nums || r.pari.cleanNumber.split(',').map(Number));
+
+  document.getElementById('canim-lucky6').style.display = '';
+  document.getElementById('canim-title').textContent = '🍀 Tirage Lucky 6';
+  const ballsEl = document.getElementById('canim-l6-balls');
+  const statusEl = document.getElementById('canim-l6-status');
+  ballsEl.innerHTML = '';
+
+  const L6C = [{min:1,max:12,css:'#c0152a',light:'#ff4466'},{min:13,max:24,css:'#1565c0',light:'#42a5f5'},{min:25,max:36,css:'#1b5e20',light:'#66bb6a'},{min:37,max:48,css:'#7a5800',light:'#f5c800'}];
+  const getCol = n => L6C.find(c=>n>=c.min&&n<=c.max)||L6C[0];
+
+  let hits=0;
+  // Afficher les 35 numéros
+  for(let i=0; i<winNums.length; i++){
+    await new Promise(res=>setTimeout(res, 300));
+    const num = winNums[i];
+    const isHit = jouedNums.includes(num);
+    if(isHit) hits++;
+    const col = getCol(num);
+
+    const span = document.createElement('span');
+    span.className = 'keno-ball-anim';
+    span.textContent = num;
+    span.style.cssText = `display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;font-size:12px;font-weight:900;border:2px solid ${isHit?col.light:'rgba(255,255,255,.1)'};background:${isHit?`radial-gradient(circle at 35% 35%,${col.light},${col.css})`:'var(--bg3)'};color:${isHit?'#fff':'#555'};box-shadow:${isHit?`0 0 8px ${col.light}`:'none'};`;
+    ballsEl.appendChild(span);
+    statusEl.textContent = `Boule ${i+1}/${winNums.length} — ${hits}/6 trouvés`;
+  }
+  statusEl.textContent = r.resultMsg;
+  await new Promise(res=>setTimeout(res, 2500));
+}
+
+async function animCaisseCourse(resultats){
+  if(!resultats.length) return;
+  const r = resultats[0];
+  const winner = r.winData?.winner;
+  const ranking = r.winData?.ranking || [1,2,3,4,5,6];
+
+  document.getElementById('canim-course').style.display = '';
+  document.getElementById('canim-title').textContent = '🏎️ Course en cours!';
+
+  const VCOLS = {1:'#e53935',2:'#3b82f6',3:'#374151',4:'ff6b00',5:'#16a34a',6:'#7c3aed'};
+  const VNOMS = {1:'Ferrari',2:'Red Bull',3:'Mercedes',4:'McLaren',5:'Aston M.',6:'Alpine'};
+
+  const trackEl = document.getElementById('canim-race-track');
+  const statusEl = document.getElementById('canim-course-status');
+
+  // Créer les pistes
+  trackEl.innerHTML = [1,2,3,4,5,6].map(id=>`
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+      <div style="width:24px;height:24px;border-radius:4px;background:${VCOLS[id]||'#888'};display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:900;flex-shrink:0">${id}</div>
+      <div style="flex:1;background:var(--bg3);border-radius:4px;height:18px;overflow:hidden;">
+        <div id="cbar-${id}" style="height:100%;width:0%;background:${VCOLS[id]||'#888'};border-radius:4px;transition:width 0.15s;"></div>
+      </div>
+      <span style="font-size:11px;color:var(--muted);width:55px;text-align:right" id="cstatus-${id}">🏎️</span>
+    </div>`).join('');
+
+  // Animation de la course
+  const progress = {};
+  [1,2,3,4,5,6].forEach(id=>{ progress[id]=0; });
+  const speeds = {};
+  [1,2,3,4,5,6].forEach(id=>{
+    const rank = ranking.indexOf(id);
+    speeds[id] = rank===0 ? 3.8 : Math.max(1.2, 3.5 - rank*0.4);
+  });
+
+  for(let tick=0; tick<70; tick++){
+    await new Promise(res=>setTimeout(res,100));
+    [1,2,3,4,5,6].forEach(id=>{
+      progress[id] = Math.min(100, progress[id] + speeds[id] + (Math.random()-0.4)*0.8);
+      const barEl = document.getElementById('cbar-'+id);
+      if(barEl) barEl.style.width = progress[id]+'%';
+    });
+    if(Object.values(progress).every(p=>p>=100)) break;
+  }
+  // Forcer l'arrivée dans le bon ordre
+  [1,2,3,4,5,6].forEach(id=>{
+    const barEl = document.getElementById('cbar-'+id);
+    if(barEl) barEl.style.width='100%';
+    const stEl = document.getElementById('cstatus-'+id);
+    const rank = ranking.indexOf(id)+1;
+    if(stEl) stEl.textContent = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'#'+rank;
+  });
+
+  statusEl.textContent = `🏆 #${winner} ${VNOMS[winner]||''} gagne ! — ${r.resultMsg}`;
+  await new Promise(res=>setTimeout(res,3000));
+}
+
+async function animCaisseBorlette(resultats){
+  if(!resultats.length) return;
+  // Animer pour chaque ticket borlette
+  document.getElementById('canim-borlette').style.display = '';
+  document.getElementById('canim-title').textContent = '🎯 Tirage Borlette';
+  const numEl = document.getElementById('canim-bor-num');
+  const statusEl = document.getElementById('canim-bor-status');
+
+  for(const r of resultats){
+    statusEl.textContent = `Ticket: ${r.ticketId}`;
+    // Animation rouleau de chiffres
+    for(let i=0; i<20; i++){
+      await new Promise(res=>setTimeout(res, 80));
+      if(numEl) numEl.textContent = String(Math.floor(Math.random()*100)).padStart(2,'0');
+    }
+    // Révéler le vrai numéro
+    const tirage = r.winData?.tirage || '??';
+    for(let i=0; i<5; i++){
+      await new Promise(res=>setTimeout(res,150));
+      if(numEl) numEl.textContent = i%2===0 ? '??' : tirage;
+    }
+    if(numEl){ numEl.textContent = tirage; numEl.style.color = r.gain>0?'var(--green2)':'var(--red)'; }
+    statusEl.textContent = r.resultMsg;
+    await new Promise(res=>setTimeout(res, 2500));
+    if(numEl) numEl.style.color = 'var(--gold)';
+  }
+}
+// ===== FIN ANIMATIONS CAISSIER =====
 
 // Imprimer UN seul ticket (avant jeu)
 function imprimerUnTicket(index){
