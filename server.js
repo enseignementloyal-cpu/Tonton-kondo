@@ -1105,16 +1105,75 @@ app.post('/api/cashiers', requireAuth, async (req, res) => {
     if (!['admin','directeur'].includes(req.session.role)) return res.status(403).json({ error: 'Non autorisé' });
     const { name, code, phone, pwd, jeu, dir_code } = req.body;
     if (!name||!code||!pwd) return res.status(400).json({ error: 'Nom, code et mot de passe obligatoires' });
-    // Un directeur ne peut créer que pour son propre code
     const effectiveDirCode = req.session.role === 'directeur' ? req.session.user_code : (dir_code || req.session.user_code);
     const hash = await bcrypt.hash(pwd, 10);
-    const existing = await pool.query("SELECT id FROM cashiers WHERE code=$1", [code.toUpperCase()]);
+    const existing = await pool.query("SELECT code FROM cashiers WHERE code=$1", [code.toUpperCase()]);
     if (existing.rows.length) return res.status(400).json({ error: 'Ce code caissier existe déjà' });
     const r = await pool.query(
-      "INSERT INTO cashiers (name,code,dir_code,phone,pwd_hash,jeu) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id,name,code,dir_code,phone,jeu",
+      "INSERT INTO cashiers (name,code,dir_code,phone,pwd_hash,jeu) VALUES ($1,$2,$3,$4,$5,$6) RETURNING code,name,dir_code,phone,jeu",
       [name, code.toUpperCase(), effectiveDirCode, phone||'', hash, jeu||'all']
     );
     res.json({ success: true, cashier: r.rows[0] });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── DIRECTEUR: Lister SES caissiers ──
+app.get('/api/dir/cashiers', requireDirector, async (req, res) => {
+  try {
+    const dirCode = req.session.role === 'directeur' ? req.session.user_code : req.query.dir_code;
+    const r = await pool.query(
+      "SELECT c.code, c.name, c.phone, c.jeu, c.active, c.created_at, COUNT(p.id) AS nb_joueurs FROM cashiers c LEFT JOIN players p ON p.caiss_code=c.code AND p.active=TRUE WHERE c.dir_code=$1 AND c.active=TRUE GROUP BY c.code ORDER BY c.created_at DESC",
+      [dirCode]
+    );
+    res.json({ cashiers: r.rows });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── DIRECTEUR: Lister SES joueurs ──
+app.get('/api/dir/players', requireDirector, async (req, res) => {
+  try {
+    const dirCode = req.session.role === 'directeur' ? req.session.user_code : req.query.dir_code;
+    const r = await pool.query(
+      "SELECT p.name, p.phone, p.solde, p.created_at, c.name AS caiss_name FROM players p LEFT JOIN cashiers c ON p.caiss_code=c.code WHERE p.dir_code=$1 AND p.active=TRUE ORDER BY p.created_at DESC LIMIT 200",
+      [dirCode]
+    );
+    res.json({ players: r.rows });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── DIRECTEUR: Stats (paris, transactions, soldes) ──
+app.get('/api/dir/stats', requireDirector, async (req, res) => {
+  try {
+    const dirCode = req.session.role === 'directeur' ? req.session.user_code : req.query.dir_code;
+    const [cashR, playR, betR, txR] = await Promise.all([
+      pool.query("SELECT COUNT(*) FROM cashiers WHERE dir_code=$1 AND active=TRUE", [dirCode]),
+      pool.query("SELECT COUNT(*), COALESCE(SUM(solde),0) AS total_solde FROM players WHERE dir_code=$1 AND active=TRUE", [dirCode]),
+      pool.query("SELECT COALESCE(SUM(mise),0) AS total_mise, COALESCE(SUM(gain_potentiel),0) AS total_gain FROM bets WHERE dir_code=$1", [dirCode]),
+      pool.query("SELECT t.type, t.montant, t.note, t.created_at, p.name AS player_name, c.name AS caiss_name FROM transactions t LEFT JOIN players p ON t.player_phone=p.phone LEFT JOIN cashiers c ON t.caiss_code=c.code WHERE t.dir_code=$1 ORDER BY t.created_at DESC LIMIT 100", [dirCode]),
+    ]);
+    res.json({
+      nb_caissiers: parseInt(cashR.rows[0].count),
+      nb_joueurs:   parseInt(playR.rows[0].count),
+      total_solde:  parseFloat(playR.rows[0].total_solde),
+      total_mise:   parseFloat(betR.rows[0].total_mise),
+      total_gain:   parseFloat(betR.rows[0].total_gain),
+      transactions: txR.rows,
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── DIRECTEUR: Supprimer un caissier ──
+app.post('/api/dir/cashiers/delete', requireDirector, async (req, res) => {
+  try {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: 'Code manquant' });
+    const dirCode = req.session.role === 'directeur' ? req.session.user_code : null;
+    const q = dirCode
+      ? "UPDATE cashiers SET active=FALSE WHERE code=$1 AND dir_code=$2"
+      : "UPDATE cashiers SET active=FALSE WHERE code=$1";
+    const params = dirCode ? [code.toUpperCase(), dirCode] : [code.toUpperCase()];
+    await pool.query(q, params);
+    res.json({ success: true });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -1633,6 +1692,9 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
     if (caiss_code) {
       const cr = await pool.query("SELECT dir_code FROM cashiers WHERE code=$1", [caiss_code]);
       dir_code = cr.rows[0]?.dir_code || null;
+    } else if (req.session.role === 'admin') {
+      // Admin peut lancer sans code caissier
+      caiss_code = 'ADMIN';
     }
 
     // Récupérer joueur si fourni
@@ -1726,10 +1788,11 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
         await client.query("INSERT INTO transactions (player_phone,dir_code,caiss_code,type,montant,note) VALUES ($1,$2,$3,'gain',$4,$5)", [phone, dir_code, caiss_code, gain, `Gain Caisse ${jeuType}: ${resultMsg}`]);
       }
 
-      // Enregistrer le pari en DB
+      // Enregistrer le pari en DB avec les bonnes colonnes
+      const ticketRef = pari.ticketId || ('TK-'+Date.now()+'-'+Math.random().toString(36).substr(2,4).toUpperCase());
       await client.query(
         "INSERT INTO bets (player_phone,dir_code,caiss_code,type,sub_type,selection,mise,gain_potentiel,statut,draw) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",
-        [phone||null, dir_code, caiss_code, jeuType, pari.game||jeuType, pari.number, mise, gain, gain>0?'gagne':'perdu', pari.drawId||'']
+        [phone||null, dir_code, caiss_code, jeuType, pari.game||jeuType, ticketRef+'|'+pari.number, mise, gain, gain>0?'gagne':'perdu', pari.drawId||'']
       );
 
       // Jackpot

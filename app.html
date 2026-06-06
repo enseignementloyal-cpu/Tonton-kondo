@@ -3255,59 +3255,94 @@ function selDirTab(el){
   refreshDir();
 }
 
-function refreshDir(){
-  if(!CDir)return;
-  const caiss=gCaiss(),j=gJ(),at=gAT();
-  const myCaiss=Object.values(caiss).filter(c=>c.dirCode===CDir.code);
-  const myJ=Object.values(j).filter(jj=>jj.dirCode===CDir.code);
-  const myAt=at.filter(t=>t.dirCode===CDir.code);
-  const totalDep=myAt.filter(t=>t.montant>0).reduce((a,t)=>a+t.montant,0);
-  const totalPay=myAt.filter(t=>t.montant<0).reduce((a,t)=>a+Math.abs(t.montant),0);
+async function refreshDir(){
+  if(!CDir) return;
 
+  // Charger stats, caissiers, joueurs, transactions depuis l'API
+  let stats = {}, cashiers = [], players = [], transactions = [];
+  try {
+    const [sR, cR, pR] = await Promise.all([
+      apiGet('/api/dir/stats'),
+      apiGet('/api/dir/cashiers'),
+      apiGet('/api/dir/players'),
+    ]);
+    stats = sR;
+    cashiers = cR.cashiers || [];
+    players  = pR.players  || [];
+    transactions = sR.transactions || [];
+  } catch(e) {
+    console.warn('refreshDir API error:', e.message);
+    showNotif('Erreur chargement données directeur', 'err');
+    return;
+  }
+
+  // Stats cards
+  const profit = (stats.total_mise||0) - (stats.total_gain||0);
   document.getElementById('dir-stats').innerHTML=[
-    {v:myCaiss.length,l:'Caissiers',c:'sblue'},{v:myJ.length,l:'Joueurs',c:'spurp'},
-    {v:totalDep+' Gd',l:'Total dépôts',c:'sgreen'},{v:totalPay+' Gd',l:'Total payés',c:'sred'},
-    {v:(totalDep-totalPay)+' Gd',l:'Profit',c:'sgold'},
+    {v: stats.nb_caissiers||0,  l:'Caissiers',    c:'sblue'},
+    {v: stats.nb_joueurs||0,    l:'Joueurs',       c:'spurp'},
+    {v: (stats.total_mise||0).toLocaleString('fr-FR')+' Gd', l:'Total misé',  c:'sgreen'},
+    {v: (stats.total_gain||0).toLocaleString('fr-FR')+' Gd', l:'Total payé',  c:'sred'},
+    {v: profit.toLocaleString('fr-FR')+' Gd',                l:'Profit',       c:'sgold'},
   ].map(s=>`<div class="statcard"><div class="sv ${s.c}">${s.v}</div><div class="sl">${s.l}</div></div>`).join('');
 
-  // Caissiers overview
-  const tb1=document.querySelector('#dir-caissiers-table tbody');
-  if(tb1)tb1.innerHTML=myCaiss.map(c=>{
-    const nb=Object.values(j).filter(jj=>jj.caissCode===c.code).length;
-    return`<tr><td>${c.name}</td><td>${JEU_LABELS[c.jeu]||c.jeu}</td><td><code style="color:var(--gold)">${c.code}</code></td><td>${nb}</td></tr>`;
-  }).join('')||'<tr><td colspan="4" style="color:var(--muted);text-align:center">Aucun caissier</td></tr>';
+  // Caissiers overview (tableau résumé)
+  const tb1 = document.querySelector('#dir-caissiers-table tbody');
+  if(tb1) tb1.innerHTML = cashiers.length
+    ? cashiers.map(c=>`<tr>
+        <td>${c.name}</td>
+        <td>${JEU_LABELS[c.jeu]||c.jeu}</td>
+        <td><code style="color:var(--gold)">${c.code}</code></td>
+        <td>${c.nb_joueurs||0}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="4" style="color:var(--muted);text-align:center">Aucun caissier</td></tr>';
 
-  // Caissiers list
-  const tb2=document.getElementById('dir-caiss-tbody');
-  if(tb2)tb2.innerHTML=myCaiss.map(c=>`<tr>
-    <td>${c.name}</td><td><code style="color:var(--gold)">${c.code}</code></td>
-    <td>${JEU_LABELS[c.jeu]||c.jeu}</td>
-    <td><button class="tbtn r" onclick="supprimerCaissier('${c.code}')">Supprimer</button></td>
-  </tr>`).join('')||'<tr><td colspan="4" style="color:var(--muted);text-align:center">Aucun caissier</td></tr>';
+  // Caissiers liste avec bouton supprimer
+  const tb2 = document.getElementById('dir-caiss-tbody');
+  if(tb2) tb2.innerHTML = cashiers.length
+    ? cashiers.map(c=>`<tr>
+        <td>${c.name}</td>
+        <td><code style="color:var(--gold)">${c.code}</code></td>
+        <td>${JEU_LABELS[c.jeu]||c.jeu}</td>
+        <td><button class="tbtn r" onclick="supprimerCaissier('${c.code}')">Supprimer</button></td>
+      </tr>`).join('')
+    : '<tr><td colspan="4" style="color:var(--muted);text-align:center">Aucun caissier</td></tr>';
 
   // Joueurs
-  const tb3=document.getElementById('dir-joueurs-tbody');
-  if(tb3)tb3.innerHTML=myJ.map(jj=>{
-    const c=Object.values(caiss).find(c=>c.code===jj.caissCode);
-    return`<tr><td>${jj.name}</td><td>${jj.phone}</td><td style="color:var(--gold)">${jj.solde||0} Gd</td><td>${c?c.name:'—'}</td></tr>`;
-  }).join('')||'<tr><td colspan="4" style="color:var(--muted);text-align:center">Aucun joueur</td></tr>';
+  const tb3 = document.getElementById('dir-joueurs-tbody');
+  if(tb3) tb3.innerHTML = players.length
+    ? players.map(p=>`<tr>
+        <td>${p.name}</td>
+        <td>${p.phone}</td>
+        <td style="color:var(--gold)">${parseFloat(p.solde||0).toLocaleString('fr-FR')} Gd</td>
+        <td>${p.caiss_name||'—'}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="4" style="color:var(--muted);text-align:center">Aucun joueur</td></tr>';
 
   // Transactions
-  const tb4=document.getElementById('dir-trans-tbody');
-  if(tb4)tb4.innerHTML=myAt.slice(0,50).map(t=>`<tr>
-    <td style="font-size:10px">${t.date}</td><td>${t.joueurName}</td>
-    <td><span class="sbadge ${t.montant>0?'sbd':'sbr'}">${t.type}</span></td>
-    <td style="${t.montant>0?'color:var(--green2)':'color:var(--red)'}">${t.montant>0?'+':''}${t.montant} Gd</td>
-    <td>${t.caissName||'—'}</td>
-  </tr>`).join('')||'<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:14px">Aucune transaction</td></tr>';
+  const tb4 = document.getElementById('dir-trans-tbody');
+  if(tb4) tb4.innerHTML = transactions.length
+    ? transactions.slice(0,50).map(t=>`<tr>
+        <td style="font-size:10px">${new Date(t.created_at).toLocaleString('fr-FR')}</td>
+        <td>${t.player_name||'—'}</td>
+        <td><span class="sbadge ${t.montant>0?'sbd':'sbr'}">${t.type}</span></td>
+        <td style="${t.montant>0?'color:var(--green2)':'color:var(--red)'}">${t.montant>0?'+':''}${parseFloat(t.montant||0).toLocaleString('fr-FR')} Gd</td>
+        <td>${t.caiss_name||'—'}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:14px">Aucune transaction</td></tr>';
 }
 
 
 
-function supprimerCaissier(code){
-  if(!confirm('Supprimer ce caissier ?'))return;
-  const caiss=gCaiss();delete caiss[code];sCaiss(caiss);
-  refreshDir();showNotif('Caissier supprimé','ok');
+async function supprimerCaissier(code){
+  if(!confirm('Supprimer ce caissier ?')) return;
+  try {
+    await apiPost('/api/dir/cashiers/delete', { code });
+    showNotif('Caissier supprimé','ok');
+    refreshDir();
+  } catch(e) {
+    showNotif('Erreur: '+e.message,'err');
+  }
 }
 
 // ===== ADMIN AUTH =====
