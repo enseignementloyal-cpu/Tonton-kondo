@@ -3252,7 +3252,7 @@ function selDirTab(el){
   document.querySelectorAll('#sc-dir .ptab').forEach(t=>t.classList.remove('on'));el.classList.add('on');
   document.querySelectorAll('#sc-dir .psec').forEach(s=>s.classList.remove('on'));
   document.getElementById('dtab-'+el.dataset.ptab).classList.add('on');
-  refreshDir();
+  refreshDir().catch(e=>console.warn('refreshDir:',e));
 }
 
 async function refreshDir(){
@@ -5919,27 +5919,64 @@ function loginStaff(){
   const pwd  = document.getElementById('staff-pwd').value;
   const err  = document.getElementById('staff-err');
   err.classList.remove('show');
+
   if(role==='admin'){
-    if(pwd==='admin'){ refreshAdmin(); goTo('sc-admin'); }
-    else { err.textContent='Mot de passe incorrect.'; err.classList.add('show'); }
+    loginStaffAdmin(pwd, err);
     return;
   }
   if(role==='directeur'){
-    const dirs = gDirs();
-    const found = Object.values(dirs).find(d=>d.code===code&&d.pwd===pwd);
-    if(!found){ err.textContent='Code ou mot de passe incorrect.'; err.classList.add('show'); return; }
-    CDir = found;
-    document.getElementById('dir-zone-name').textContent = found.zone;
-    refreshDir(); goTo('sc-dir'); return;
+    loginStaffDirecteur(code, pwd, err);
+    return;
   }
   if(role==='caissier'){
-    const caiss = gCaiss();
-    const found = Object.values(caiss).find(c=>c.code===code&&c.pwd===pwd);
-    if(!found){ err.textContent='Code ou mot de passe incorrect.'; err.classList.add('show'); return; }
-    CCaiss = found;
-    document.getElementById('caiss-name-display').textContent = found.name;
-    document.getElementById('caiss-jeu-label').textContent = JEU_LABELS[found.jeu]||found.jeu;
-    goTo('sc-sec'); return;
+    loginStaffCaissier(code, pwd, err);
+    return;
+  }
+}
+
+async function loginStaffAdmin(pwd, err){
+  try {
+    const data = await apiPost('/api/auth/admin', { pwd });
+    setToken(data.token);
+    localStorage.setItem('tk_session_role','admin');
+    await refreshAllCaches();
+    refreshAdmin(); goTo('sc-admin');
+  } catch(e) {
+    err.textContent = 'Mot de passe incorrect.';
+    err.classList.add('show');
+  }
+}
+
+async function loginStaffDirecteur(code, pwd, err){
+  try {
+    const data = await apiPost('/api/auth/director', { code, pwd });
+    setToken(data.token);
+    localStorage.setItem('tk_session_role','directeur');
+    CDir = { name: data.name, code: data.code, zone: data.zone||'', pct: data.pct||0 };
+    const znEl = document.getElementById('dir-zone-name');
+    if(znEl) znEl.textContent = CDir.zone;
+    await refreshDir();
+    goTo('sc-dir');
+  } catch(e) {
+    err.textContent = 'Code ou mot de passe incorrect.';
+    err.classList.add('show');
+  }
+}
+
+async function loginStaffCaissier(code, pwd, err){
+  try {
+    const data = await apiPost('/api/auth/cashier', { code, pwd });
+    setToken(data.token);
+    localStorage.setItem('tk_session_role','caissier');
+    CCaiss = { name: data.name, code: data.code, dirCode: data.dirCode, jeu: data.jeu };
+    const nameEl = document.getElementById('caiss-name-display');
+    const jeuEl  = document.getElementById('caiss-jeu-label');
+    if(nameEl) nameEl.textContent = CCaiss.name;
+    if(jeuEl)  jeuEl.textContent  = JEU_LABELS[CCaiss.jeu] || CCaiss.jeu;
+    goTo('sc-sec');
+  } catch(e) {
+    err.textContent = 'Code ou mot de passe incorrect.';
+    err.classList.add('show');
   }
 }
 
@@ -7843,11 +7880,11 @@ function jackpotCheckURLParam(){
       await refreshAllCaches();
       refreshAdmin(); goTo('sc-admin');
     } else if (me.role === 'directeur') {
-      await refreshAllCaches();
-      const dirs = gDirs();
-      CDir = dirs[me.user_code] || { name:me.name, code:me.user_code, zone:me.zone, pct:me.pct };
-      if (document.getElementById('dir-zone-name')) document.getElementById('dir-zone-name').textContent = CDir.zone || '';
-      refreshDir(); goTo('sc-dir');
+      CDir = { name: me.name, code: me.user_code, zone: me.zone||'', pct: me.pct||0 };
+      const znEl = document.getElementById('dir-zone-name');
+      if(znEl) znEl.textContent = CDir.zone;
+      await refreshDir();
+      goTo('sc-dir');
       setTimeout(async () => {
         const jk = await loadJackpotData();
         const djk = jk[me.user_code];
@@ -7856,11 +7893,11 @@ function jackpotCheckURLParam(){
         if (el && djk && djk.amount > 0) { el.style.display='block'; if(amt) amt.textContent = djk.amount.toLocaleString('fr-FR')+' Gd'; }
       }, 400);
     } else if (me.role === 'caissier') {
-      await refreshAllCaches();
-      const caiss = gCaiss();
-      CCaiss = caiss[me.user_code] || { name:me.name, code:me.user_code, dirCode:me.dir_code, jeu:me.jeu };
-      if (document.getElementById('caiss-name-display')) document.getElementById('caiss-name-display').textContent = CCaiss.name || '';
-      if (document.getElementById('caiss-jeu-label')) document.getElementById('caiss-jeu-label').textContent = JEU_LABELS[CCaiss.jeu]||CCaiss.jeu||'';
+      CCaiss = { name: me.name, code: me.user_code, dirCode: me.dir_code||me.dirCode||'', jeu: me.jeu||'all' };
+      const nameEl = document.getElementById('caiss-name-display');
+      const jeuEl  = document.getElementById('caiss-jeu-label');
+      if(nameEl) nameEl.textContent = CCaiss.name || '';
+      if(jeuEl)  jeuEl.textContent  = JEU_LABELS[CCaiss.jeu] || CCaiss.jeu || '';
       goTo('sc-sec');
     } else {
       clearToken(); window.location.href='index.html';
