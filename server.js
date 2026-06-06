@@ -69,7 +69,7 @@ const JACKPOT_PCT       = 5; // 5%
       role TEXT NOT NULL,
       user_code TEXT,
       user_phone TEXT,
-      expires_at TIMESTAMP DEFAULT NOW() + INTERVAL '7 days'
+      expires_at TIMESTAMP DEFAULT NOW() + INTERVAL '30 days'
     );
     CREATE TABLE IF NOT EXISTS directors (
       code TEXT PRIMARY KEY,
@@ -227,6 +227,12 @@ const JACKPOT_PCT       = 5; // 5%
       ON game_difficulty (COALESCE(dir_code, ''), game_name);
   `);
   console.log('✅ Tables vérifiées/créées');
+  // Nettoyage sessions expirées au démarrage
+  await pool.query("DELETE FROM sessions WHERE expires_at < NOW()").catch(()=>{});
+  // Nettoyage automatique toutes les 6 heures
+  setInterval(() => {
+    pool.query("DELETE FROM sessions WHERE expires_at < NOW()").catch(()=>{});
+  }, 6 * 60 * 60 * 1000);
 })();
 
 // ── HELPERS ────────────────────────────────────────────────
@@ -237,11 +243,11 @@ function genToken() {
 async function getSession(req) {
   const token = req.headers['x-session-token'];
   if (!token) return null;
-  const r = await pool.query(
-    "SELECT * FROM sessions WHERE id=$1 AND expires_at > NOW()",
-    [token]
-  );
-  return r.rows[0] || null;
+  const r = await pool.query("SELECT * FROM sessions WHERE id=$1 AND expires_at > NOW()", [token]);
+  if (!r.rows.length) return null;
+  // Renouveler automatiquement la session
+  pool.query("UPDATE sessions SET expires_at=NOW() + INTERVAL '30 days' WHERE id=$1", [token]).catch(()=>{});
+  return r.rows[0];
 }
 
 async function requireAuth(req, res, next) {
@@ -444,7 +450,7 @@ app.post('/api/auth/admin', async (req, res) => {
     const { pwd } = req.body;
     if (pwd !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Mot de passe incorrect' });
     const token = genToken();
-    await pool.query("INSERT INTO sessions (id, role) VALUES ($1, 'admin')", [token]);
+    await pool.query("INSERT INTO sessions (id, role, expires_at) VALUES ($1, 'admin', NOW() + INTERVAL '30 days')", [token]);
     res.json({ token, role: 'admin', name: 'Administrateur' });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -460,7 +466,7 @@ app.post('/api/auth/director', async (req, res) => {
     const ok = await bcrypt.compare(pwd, dir.pwd_hash);
     if (!ok) return res.status(401).json({ error: 'Mot de passe incorrect' });
     const token = genToken();
-    await pool.query("INSERT INTO sessions (id, role, user_code) VALUES ($1, 'directeur', $2)", [token, dir.code]);
+    await pool.query("INSERT INTO sessions (id, role, user_code, expires_at) VALUES ($1, 'directeur', $2, NOW() + INTERVAL '30 days')", [token, dir.code]);
     res.json({ token, role: 'directeur', code: dir.code, name: dir.name, zone: dir.zone, pct: dir.pct });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -479,7 +485,7 @@ app.post('/api/auth/cashier', async (req, res) => {
     const ok = await bcrypt.compare(pwd, caiss.pwd_hash);
     if (!ok) return res.status(401).json({ error: 'Mot de passe incorrect' });
     const token = genToken();
-    await pool.query("INSERT INTO sessions (id, role, user_code) VALUES ($1, 'caissier', $2)", [token, caiss.code]);
+    await pool.query("INSERT INTO sessions (id, role, user_code, expires_at) VALUES ($1, 'caissier', $2, NOW() + INTERVAL '30 days')", [token, caiss.code]);
     res.json({ token, role: 'caissier', code: caiss.code, name: caiss.name, dirCode: caiss.dir_code, jeu: caiss.jeu });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -495,7 +501,7 @@ app.post('/api/auth/player', async (req, res) => {
     const ok = await bcrypt.compare(pwd, player.pwd_hash);
     if (!ok) return res.status(401).json({ error: 'Mot de passe incorrect' });
     const token = genToken();
-    await pool.query("INSERT INTO sessions (id, role, user_phone) VALUES ($1, 'joueur', $2)", [token, player.phone]);
+    await pool.query("INSERT INTO sessions (id, role, user_phone, expires_at) VALUES ($1, 'joueur', $2, NOW() + INTERVAL '30 days')", [token, player.phone]);
     res.json({ token, role: 'joueur', phone: player.phone, name: player.name, solde: parseFloat(player.solde), dirCode: player.dir_code });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -1682,142 +1688,155 @@ app.post('/api/games/helico/update', requireAuth, async (req, res) => {
 app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
-    if (!['caissier','admin'].includes(req.session.role)) return res.status(403).json({ error: 'Caissiers seulement' });
-    const { paris, player_phone, ticket_session_id } = req.body;
+    if (!['caissier','admin','directeur'].includes(req.session.role)) {
+      return res.status(403).json({ error: 'Accès réservé au personnel' });
+    }
+    const { paris, player_phone } = req.body;
     if (!paris || !paris.length) return res.status(400).json({ error: 'Panier vide' });
 
-    // Récupérer infos caissier
-    let caiss_code = req.session.user_code || null;
-    let dir_code = null;
-    if (caiss_code) {
+    // Récupérer caiss_code et dir_code selon le rôle
+    let caiss_code = null;
+    let dir_code   = null;
+
+    if (req.session.role === 'caissier') {
+      caiss_code = req.session.user_code;
       const cr = await pool.query("SELECT dir_code FROM cashiers WHERE code=$1", [caiss_code]);
       dir_code = cr.rows[0]?.dir_code || null;
+    } else if (req.session.role === 'directeur') {
+      dir_code = req.session.user_code;
     } else if (req.session.role === 'admin') {
-      // Admin peut lancer sans code caissier
       caiss_code = 'ADMIN';
     }
 
-    // Récupérer joueur si fourni
+    // Récupérer le joueur si fourni
     let phone = player_phone || null;
-    let playerRow = null;
-    if (phone) {
-      const pr = await client.query("SELECT solde, dir_code FROM players WHERE phone=$1 FOR UPDATE", [phone]);
-      if (!pr.rows.length) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'Joueur introuvable' }); }
-      playerRow = pr.rows[0];
-      if (!dir_code) dir_code = playerRow.dir_code;
+    if (phone && !dir_code) {
+      const pr = await pool.query("SELECT dir_code FROM players WHERE phone=$1", [phone]);
+      if (pr.rows.length) dir_code = pr.rows[0].dir_code;
     }
 
     await client.query('BEGIN');
 
-    const totalMise = paris.reduce((s, p) => s + parseFloat(p.amount), 0);
-    if (phone && playerRow && parseFloat(playerRow.solde) < totalMise) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'Solde insuffisant' });
-    }
-
-    // Déduire la mise du joueur
+    // Vérifier et déduire solde si joueur connecté
+    const totalMise = paris.reduce((s, p) => s + parseFloat(p.amount || 0), 0);
     if (phone) {
+      const pr = await client.query("SELECT solde FROM players WHERE phone=$1 FOR UPDATE", [phone]);
+      if (!pr.rows.length) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'Joueur introuvable' }); }
+      if (parseFloat(pr.rows[0].solde) < totalMise) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'Solde insuffisant' }); }
       await client.query("UPDATE players SET solde=solde-$1 WHERE phone=$2", [totalMise, phone]);
-      await client.query("INSERT INTO transactions (player_phone,dir_code,caiss_code,type,montant,note) VALUES ($1,$2,$3,'mise',$4,'Jeu Caisse — '||$5||' paris')", [phone, dir_code, caiss_code, -totalMise, paris.length]);
+      await client.query(
+        "INSERT INTO transactions (player_phone,dir_code,caiss_code,type,montant,note) VALUES ($1,$2,$3,'mise',$4,$5)",
+        [phone, dir_code, caiss_code, -totalMise, `Caisse — ${paris.length} paris`]
+      );
     }
 
-    // Traiter chaque pari
     const resultats = [];
+
     for (const pari of paris) {
-      const jeuType = pari.jeuType;
-      const mise = parseFloat(pari.amount);
+      const jeuType = pari.jeuType || pari.game;
+      const mise    = parseFloat(pari.amount || 0);
       let gain = 0, winData = {}, resultMsg = '';
+
+      // Récupérer la difficulté depuis la DB
+      const difficulte = await getWinProbability(dir_code, jeuType);
 
       if (jeuType === 'keno') {
         const nums = pari.nums || pari.cleanNumber.split(',').map(Number);
         const nbJoues = nums.length;
-        const difficulte = dir_code ? await getWinProbability(dir_code, 'keno') : 50;
-        const pool80 = Array.from({length:80}, (_,i) => i+1);
-        const joues = pool80.filter(n => nums.includes(n)).sort(() => Math.random()-.5);
-        const autres = pool80.filter(n => !nums.includes(n)).sort(() => Math.random()-.5);
-        let nbHits = difficulte >= 60 ? Math.min(5,nbJoues)+Math.floor(Math.random()*(nbJoues-Math.min(5,nbJoues)+1))
-                   : difficulte < 40 ? 1+Math.floor(Math.random()*Math.min(4,nbJoues))
+        const pool80 = Array.from({length:80},(_,i)=>i+1);
+        const joues  = pool80.filter(n=>nums.includes(n)).sort(()=>Math.random()-.5);
+        const autres = pool80.filter(n=>!nums.includes(n)).sort(()=>Math.random()-.5);
+        let nbHits = difficulte>=60 ? Math.min(5,nbJoues)+Math.floor(Math.random()*(nbJoues-Math.min(5,nbJoues)+1))
+                   : difficulte<40  ? Math.floor(Math.random()*Math.min(4,nbJoues))
                    : Math.round((difficulte/100)*nbJoues);
         nbHits = Math.max(0, Math.min(nbHits, Math.min(nbJoues,20)));
         const winNums = [...joues.slice(0,nbHits), ...autres.slice(0,20-nbHits)].sort((a,b)=>a-b);
-        const hits = nums.filter(n => winNums.includes(n)).length;
-        const gainTable = {5:1,6:3,7:6,8:9,9:12,10:15};
-        const mult = hits >= 5 ? (gainTable[hits]||1) : 0;
-        gain = Math.round(mise * mult);
+        const hits = nums.filter(n=>winNums.includes(n)).length;
+        const mult = getKenoMultiplier(hits, nbJoues) || 0;
+        gain = mult > 0 ? Math.round(mise * mult) : 0;
         winData = { winningNumbers: winNums, hits, multiplier: mult };
-        resultMsg = gain > 0 ? `${hits}/${nbJoues} boules — ×${mult} — Gain: +${gain} Gd` : `${hits}/${nbJoues} boules — Perdu`;
+        resultMsg = gain>0 ? `${hits}/${nbJoues} boules ×${mult} → +${gain} Gd` : `${hits}/${nbJoues} boules → Perdu`;
 
       } else if (jeuType === 'lucky6') {
         const nums = pari.nums || pari.cleanNumber.split(',').map(Number);
-        const difficulte = dir_code ? await getWinProbability(dir_code, 'lucky6') : 50;
-        const pool48 = Array.from({length:48}, (_,i) => i+1);
-        const joues = pool48.filter(n => nums.includes(n)).sort(() => Math.random()-.5);
-        const autres = pool48.filter(n => !nums.includes(n)).sort(() => Math.random()-.5);
-        const wantHits = difficulte >= 60 ? 6 : difficulte >= 40 ? Math.floor(Math.random()*3+3) : Math.floor(Math.random()*3);
+        const pool48 = Array.from({length:48},(_,i)=>i+1);
+        const joues  = pool48.filter(n=>nums.includes(n)).sort(()=>Math.random()-.5);
+        const autres = pool48.filter(n=>!nums.includes(n)).sort(()=>Math.random()-.5);
+        const wantHits = difficulte>=60 ? 6 : difficulte>=40 ? 3+Math.floor(Math.random()*3) : Math.floor(Math.random()*3);
         const winNums = [...joues.slice(0,wantHits), ...autres.slice(0,35-wantHits)].sort((a,b)=>a-b);
-        const hits = nums.filter(n => winNums.includes(n)).length;
-        gain = hits === 6 ? Math.round(mise * 30) : hits === 5 ? Math.round(mise * 5) : 0;
+        const hits = nums.filter(n=>winNums.includes(n)).length;
+        gain = hits===6 ? Math.round(mise*30) : hits===5 ? Math.round(mise*5) : 0;
         winData = { winningNumbers: winNums, hits };
-        resultMsg = gain > 0 ? `${hits}/6 numéros — Gain: +${gain} Gd` : `${hits}/6 numéros — Perdu`;
+        resultMsg = gain>0 ? `${hits}/6 numéros → +${gain} Gd` : `${hits}/6 numéros → Perdu`;
 
       } else if (jeuType === 'course') {
         const carId = parseInt(pari.cleanNumber);
-        const COTES = [0, 2.10, 1.75, 2.50, 3.20, 4.00, 5.50];
-        const difficulte = dir_code ? await getWinProbability(dir_code, 'course') : 50;
-        const boost = difficulte >= 60 ? 0.5 : difficulte >= 40 ? 0.3 : 0.15;
-        const winner = Math.random() < boost ? carId : Math.ceil(Math.random()*6);
-        // Générer classement complet
-        const ranking = [winner];
-        for (let i=1; i<=6; i++) { if (!ranking.includes(i)) ranking.push(i); }
-        gain = winner === carId ? parseFloat((mise * COTES[carId]).toFixed(2)) : 0;
+        const COTES = [0,2.10,1.75,2.50,3.20,4.00,5.50];
+        const boost = difficulte>=60 ? 0.5 : difficulte>=40 ? 0.3 : 0.15;
+        const winner = Math.random()<boost ? carId : Math.ceil(Math.random()*6);
+        const ranking = [winner, ...[1,2,3,4,5,6].filter(i=>i!==winner)];
+        gain = winner===carId ? parseFloat((mise*(COTES[carId]||2)).toFixed(2)) : 0;
         winData = { winner, ranking };
-        resultMsg = gain > 0 ? `Voiture #${winner} gagne — +${gain} Gd` : `Voiture #${winner} gagne — Perdu`;
+        resultMsg = gain>0 ? `Voiture #${winner} gagne → +${gain} Gd` : `Voiture #${winner} gagne → Perdu`;
 
-      } else if (jeuType === 'borlette') {
-        const tirage = Math.floor(Math.random()*100).toString().padStart(2,'0');
-        const gagne = String(pari.cleanNumber).padStart(2,'0') === tirage;
-        const mult = {borlette:60,lotto3:40,lotto4:30,lotto5:20,mariage:50}[pari.game]||60;
-        gain = gagne ? Math.round(mise * mult) : 0;
+      } else {
+        // borlette / lotto3 / lotto4 / lotto5 / mariage
+        const mult = {borlette:60,lotto3:40,lotto4:30,lotto5:20,mariage:50}[pari.game||jeuType]||60;
+        const tirage = Math.floor(Math.random()*(difficulte>=60?50:100)).toString().padStart(2,'0');
+        const gagne  = String(pari.cleanNumber).padStart(2,'0') === tirage;
+        gain = gagne ? Math.round(mise*mult) : 0;
         winData = { tirage };
-        resultMsg = gain > 0 ? `Tirage: ${tirage} — GAGNÉ +${gain} Gd` : `Tirage: ${tirage} — Perdu`;
+        resultMsg = gain>0 ? `Tirage ${tirage} → GAGNÉ +${gain} Gd` : `Tirage ${tirage} → Perdu`;
       }
 
       // Créditer gain
-      if (gain > 0 && phone) {
+      if (gain>0 && phone) {
         await client.query("UPDATE players SET solde=solde+$1 WHERE phone=$2", [gain, phone]);
-        await client.query("INSERT INTO transactions (player_phone,dir_code,caiss_code,type,montant,note) VALUES ($1,$2,$3,'gain',$4,$5)", [phone, dir_code, caiss_code, gain, `Gain Caisse ${jeuType}: ${resultMsg}`]);
+        await client.query(
+          "INSERT INTO transactions (player_phone,dir_code,caiss_code,type,montant,note) VALUES ($1,$2,$3,'gain',$4,$5)",
+          [phone, dir_code, caiss_code, gain, `Gain Caisse ${jeuType}`]
+        );
       }
 
-      // Enregistrer le pari en DB avec les bonnes colonnes
-      const ticketRef = pari.ticketId || ('TK-'+Date.now()+'-'+Math.random().toString(36).substr(2,4).toUpperCase());
+      // Enregistrer pari en DB avec les bonnes colonnes
       await client.query(
-        "INSERT INTO bets (player_phone,dir_code,caiss_code,type,sub_type,selection,mise,gain_potentiel,statut,draw) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",
-        [phone||null, dir_code, caiss_code, jeuType, pari.game||jeuType, ticketRef+'|'+pari.number, mise, gain, gain>0?'gagne':'perdu', pari.drawId||'']
+        `INSERT INTO bets (player_phone,dir_code,caiss_code,type,game_type,sub_type,selection,mise,gain_potentiel,statut,draw)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+        [
+          phone||null, dir_code, caiss_code,
+          jeuType, pari.game||jeuType, pari.ticketId||null,
+          pari.number||pari.cleanNumber, mise, gain,
+          gain>0 ? 'gagne' : 'perdu',
+          pari.drawId||''
+        ]
       );
 
       // Jackpot
-      if (dir_code) await client.query("INSERT INTO jackpots (dir_code,amount,week_sales) VALUES ($1,$2,$3) ON CONFLICT (dir_code) DO UPDATE SET amount=jackpots.amount+$2,week_sales=jackpots.week_sales+$3", [dir_code, mise*JACKPOT_PCT/100, mise]);
+      if (dir_code) {
+        await pool.query(
+          "INSERT INTO jackpots (dir_code,amount,week_sales) VALUES ($1,$2,$3) ON CONFLICT (dir_code) DO UPDATE SET amount=jackpots.amount+$2,week_sales=jackpots.week_sales+$3",
+          [dir_code, mise*JACKPOT_PCT/100, mise]
+        ).catch(()=>{});
+      }
 
       resultats.push({ ticketId: pari.ticketId, jeuType, pari, gain, resultMsg, winData });
     }
 
     await client.query('COMMIT');
 
-    // Solde mis à jour
     let newSolde = null;
     if (phone) {
       const sr = await pool.query("SELECT solde FROM players WHERE phone=$1", [phone]);
-      newSolde = parseFloat(sr.rows[0].solde);
+      newSolde = parseFloat(sr.rows[0]?.solde || 0);
     }
 
     res.json({ success: true, resultats, newSolde });
   } catch(e) {
     try { await client.query('ROLLBACK'); } catch(_) {}
-    console.error('/api/caisse/lancer:', e);
+    console.error('/api/caisse/lancer:', e.message, e.stack);
     res.status(500).json({ error: e.message });
   } finally { client.release(); }
-});
-app.get('/api/bets', requireAuth, async (req, res) => {
+});app.get('/api/bets', requireAuth, async (req, res) => {
   try {
     let conditions = [];
     let params = [];

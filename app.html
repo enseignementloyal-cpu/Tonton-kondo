@@ -6265,22 +6265,25 @@ function applyGameBlocks(){
 
 // ===== FIN BLOCAGE DES JEUX =====
 
-function saveGameDiff(game){
+async function saveGameDiff(game){
   const el = document.getElementById(game+'-diff-range');
   if(!el) return;
   const val = parseInt(el.value);
-  localStorage.setItem('tk_diff_'+game, val);
-  showNotif('✅ Difficulté '+game+' sauvegardée: '+val+'%','ok');
+  try {
+    await apiPost('/api/admin/settings/game-diff', { game_name: game, win_probability: val });
+    showNotif('✅ Difficulté '+game+' sauvegardée en base: '+val+'%','ok');
+  } catch(e) {
+    showNotif('Erreur sauvegarde: '+e.message,'err');
+  }
 }
 
-function updateDiffLabel(game, val){
-  const el = document.getElementById(game+'-pct-lbl');
-  if(el) el.textContent = val+'%';
-}
-
-function saveDirGameDiff(dirCode, game, val){
-  localStorage.setItem('tk_diff_dir_'+dirCode+'_'+game, val);
-  showNotif('✅ Difficulté '+game+' sauvegardée pour '+dirCode+': '+val+'%','ok');
+async function saveDirGameDiff(dirCode, game, val){
+  try {
+    await apiPost('/api/admin/settings/game-diff', { dir_code: dirCode, game_name: game, win_probability: parseInt(val) });
+    showNotif('✅ Difficulté '+game+' sauvegardée pour '+dirCode+': '+val+'%','ok');
+  } catch(e) {
+    showNotif('Erreur sauvegarde: '+e.message,'err');
+  }
 }
 
 function renderDirDiffList(){
