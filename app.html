@@ -1513,6 +1513,8 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
             <option value="keno">🎱 Keno Lucky</option>
             <option value="lucky6">🍀 Lucky 6</option>
             <option value="course">🏎️ Course Automobile</option>
+            <option value="roulette">🎡 Roulette Américaine</option>
+            <option value="penalty">⚽ Penalty</option>
           </select>
         </div>
 
@@ -1564,6 +1566,48 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
             </select>
           </div>
           <div class="fg"><label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Mise (Gd)</label><input type="number" id="caisse-course-mise" value="50" min="1" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none"></div>
+        </div>
+
+        <!-- Formulaire Roulette -->
+        <div id="caisse-roulette-form" style="display:none">
+          <div class="fg"><label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Type de pari</label>
+            <select id="caisse-rou-type" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none">
+              <option value="rouge">🔴 Rouge (x2)</option>
+              <option value="noir">⚫ Noir (x2)</option>
+              <option value="pair">🟡 Pair (x2)</option>
+              <option value="impair">🔵 Impair (x2)</option>
+              <option value="1-18">📉 1-18 (x2)</option>
+              <option value="19-36">📈 19-36 (x2)</option>
+              <option value="1-12">1er douzaine (x3)</option>
+              <option value="13-24">2e douzaine (x3)</option>
+              <option value="25-36">3e douzaine (x3)</option>
+              <option value="numero">🎯 Numéro plein (x35)</option>
+            </select>
+          </div>
+          <div id="caisse-rou-numero-wrap" style="display:none">
+            <div class="fg"><label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Numéro (0-36)</label>
+              <input type="number" id="caisse-rou-numero" min="0" max="36" value="7" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none">
+            </div>
+          </div>
+          <div class="fg"><label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Mise (Gd)</label><input type="number" id="caisse-rou-mise" value="50" min="1" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none"></div>
+        </div>
+
+        <!-- Formulaire Penalty -->
+        <div id="caisse-penalty-form" style="display:none">
+          <div class="fg"><label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Zone visée</label>
+            <select id="caisse-pen-zone" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none">
+              <option value="hg">↖ Haut Gauche (x4)</option>
+              <option value="hc">⬆ Haut Centre (x2.5)</option>
+              <option value="hd">↗ Haut Droite (x4)</option>
+              <option value="mg">⬅ Milieu Gauche (x2)</option>
+              <option value="mc">⬅ Milieu Centre (x1.5)</option>
+              <option value="md">➡ Milieu Droite (x2)</option>
+              <option value="bg">↙ Bas Gauche (x3)</option>
+              <option value="bc">⬇ Bas Centre (x2)</option>
+              <option value="bd">↘ Bas Droite (x3)</option>
+            </select>
+          </div>
+          <div class="fg"><label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Mise (Gd)</label><input type="number" id="caisse-pen-mise" value="50" min="1" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none"></div>
         </div>
 
         <!-- Boutons action -->
@@ -2283,40 +2327,87 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
 
 <!-- OVERLAY TICKETS GAGNANTS -->
 <!-- MODALE ANIMATION CAISSIER -->
-<div id="caisse-anim-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9000;flex-direction:column;align-items:center;justify-content:center;padding:20px;">
-  <div style="width:100%;max-width:500px;background:var(--card);border-radius:16px;padding:20px;border:1px solid var(--border);">
-    <div id="canim-title" style="text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:1.8em;font-weight:900;color:var(--gold);margin-bottom:14px;">🎰 Tirage en cours...</div>
-    <!-- Boules Keno -->
-    <div id="canim-keno" style="display:none;">
-      <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:10px;">
-        <div id="canim-basket" style="font-size:3em;animation:kenoBasketSpin 0.8s linear infinite;">🧺</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:4px" id="canim-keno-status">Tirage en cours...</div>
+<div id="caisse-anim-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,8,30,.97);z-index:9000;flex-direction:column;align-items:center;justify-content:center;padding:0;overflow:hidden;">
+
+  <!-- HEADER jackpot style -->
+  <div style="width:100%;text-align:center;padding:10px 0 6px;border-bottom:1px solid rgba(255,255,255,.08);">
+    <div id="canim-title" style="font-family:'Barlow Condensed',sans-serif;font-size:1.5em;font-weight:900;color:#f5c800;letter-spacing:2px;">🎱 TIRAGE EN COURS</div>
+    <div id="canim-draw-label" style="font-size:11px;color:rgba(255,255,255,.5);letter-spacing:1px;margin-top:2px;">J.A. PARYAJ LOTTO</div>
+  </div>
+
+  <!-- KENO : grille 80 boules + tambour -->
+  <div id="canim-keno" style="display:none;width:100%;max-width:680px;padding:10px 12px;">
+    <!-- Grille 80 boules -->
+    <div id="canim-keno-grid" style="display:grid;grid-template-columns:repeat(10,1fr);gap:5px;margin-bottom:12px;"></div>
+    <!-- Tambour + boule sortante (style image 2) -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:8px;">
+      <div style="position:relative;width:110px;height:110px;">
+        <!-- Cercle externe tambour -->
+        <svg id="canim-keno-drum" viewBox="0 0 110 110" style="position:absolute;inset:0;width:100%;height:100%;animation:kenoDrumSpin 1s linear infinite;">
+          <circle cx="55" cy="55" r="50" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="8"/>
+          <circle cx="55" cy="55" r="50" fill="none" stroke="rgba(245,200,0,.6)" stroke-width="3" stroke-dasharray="30 10"/>
+        </svg>
+        <!-- Intérieur noir -->
+        <div style="position:absolute;inset:12px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#222,#000);display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,.1);">
+          <div id="canim-keno-drum-num" style="font-family:'Barlow Condensed',sans-serif;font-size:2.8em;font-weight:900;color:#fff;line-height:1;">?</div>
+        </div>
       </div>
-      <div id="canim-keno-balls" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;min-height:40px;"></div>
-    </div>
-    <!-- Boules Lucky6 -->
-    <div id="canim-lucky6" style="display:none;">
-      <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:10px;">
-        <div id="canim-l6-basket" style="font-size:3em;animation:kenoBasketSpin 0.8s linear infinite;">🎱</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:4px" id="canim-l6-status">Tirage Lucky 6...</div>
+      <div style="flex:1;max-width:200px;">
+        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:6px;" id="canim-keno-status">Tirage en cours...</div>
+        <!-- Boules tirées (grandes) -->
+        <div id="canim-keno-drawn" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
       </div>
-      <div id="canim-l6-balls" style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;min-height:40px;"></div>
     </div>
-    <!-- Course -->
-    <div id="canim-course" style="display:none;">
-      <div id="canim-race-track" style="background:var(--bg2);border-radius:10px;padding:10px;"></div>
-      <div id="canim-course-status" style="text-align:center;color:var(--gold);font-weight:700;margin-top:8px;font-size:14px;"></div>
-    </div>
-    <!-- Borlette -->
-    <div id="canim-borlette" style="display:none;">
-      <div style="text-align:center;">
-        <div id="canim-bor-ball" style="font-size:4em;animation:kenoBallPop 0.5s ease infinite alternate;">🔮</div>
-        <div id="canim-bor-num" style="font-family:'Barlow Condensed',sans-serif;font-size:4em;font-weight:900;color:var(--gold);letter-spacing:4px;margin:10px 0;">—</div>
-        <div id="canim-bor-status" style="color:var(--muted);font-size:13px;"></div>
+    <div id="canim-keno-result" style="text-align:center;font-size:13px;color:var(--gold);font-weight:700;min-height:20px;"></div>
+  </div>
+
+  <!-- LUCKY 6 : grille 48 boules colorées + tambour -->
+  <div id="canim-lucky6" style="display:none;width:100%;max-width:680px;padding:10px 12px;">
+    <!-- Titre PREBALLS -->
+    <div style="text-align:center;font-size:10px;color:rgba(255,255,255,.4);letter-spacing:2px;margin-bottom:6px;">PREBALLS (FIRST 5 BALLS)</div>
+    <!-- Grille 48 boules (6 rangées × 8) -->
+    <div id="canim-l6-grid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:5px;margin-bottom:12px;"></div>
+    <!-- Tambour + boules tirées -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:8px;">
+      <div style="position:relative;width:110px;height:110px;flex-shrink:0;">
+        <svg id="canim-l6-drum" viewBox="0 0 110 110" style="position:absolute;inset:0;width:100%;height:100%;animation:kenoDrumSpin 0.8s linear infinite;">
+          <circle cx="55" cy="55" r="50" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="10"/>
+          <circle cx="55" cy="55" r="50" fill="none" stroke="#3b82f6" stroke-width="3" stroke-dasharray="25 8"/>
+        </svg>
+        <div style="position:absolute;inset:12px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#111,#000);display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,.08);">
+          <div id="canim-l6-drum-num" style="font-family:'Barlow Condensed',sans-serif;font-size:2.8em;font-weight:900;color:#fff;line-height:1;">?</div>
+        </div>
       </div>
+      <div style="flex:1;">
+        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:6px;" id="canim-l6-status">Tirage Lucky 6...</div>
+        <!-- Boules tirées (grandes, colorées) -->
+        <div id="canim-l6-drawn" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
+      </div>
+    </div>
+    <div id="canim-l6-result" style="text-align:center;font-size:13px;color:var(--gold);font-weight:700;min-height:20px;"></div>
+  </div>
+
+  <!-- Course -->
+  <div id="canim-course" style="display:none;width:100%;max-width:500px;padding:14px;">
+    <div id="canim-race-track" style="background:var(--bg2);border-radius:10px;padding:12px;"></div>
+    <div id="canim-course-status" style="text-align:center;color:var(--gold);font-weight:700;margin-top:10px;font-size:15px;"></div>
+  </div>
+
+  <!-- Borlette -->
+  <div id="canim-borlette" style="display:none;width:100%;max-width:400px;padding:20px;">
+    <div style="text-align:center;">
+      <div id="canim-bor-num" style="font-family:'Barlow Condensed',sans-serif;font-size:6em;font-weight:900;color:var(--gold);letter-spacing:8px;line-height:1;text-shadow:0 0 30px rgba(245,200,0,.5);">—</div>
+      <div id="canim-bor-status" style="color:var(--muted);font-size:14px;margin-top:8px;"></div>
     </div>
   </div>
+
 </div>
+
+<style>
+@keyframes kenoDrumSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+@keyframes ballPop { 0%{transform:scale(0) rotate(-30deg);opacity:0} 70%{transform:scale(1.3)} 100%{transform:scale(1);opacity:1} }
+@keyframes ballGlow { 0%,100%{box-shadow:0 0 8px currentColor} 50%{box-shadow:0 0 20px currentColor,0 0 40px currentColor} }
+</style>
 
 <div class="ticket-win-overlay" id="tickets-win-overlay">
   <div class="ticket-win-box">
@@ -5136,69 +5227,191 @@ async function jouerAnimationCaisse(jeuType, resultats){
 
 async function animCaisseKeno(resultats){
   if(!resultats.length) return;
-  const r = resultats[0]; // Anime le premier ticket keno
-  const winNums = r.winData?.winningNumbers || [];
-  const jouedNums = (r.pari.nums || r.pari.cleanNumber.split(',').map(Number));
+  const r = resultats[0];
+  const winNums   = r.winData?.winningNumbers || [];
+  const jouedNums = r.pari.nums || r.pari.cleanNumber.split(',').map(Number);
 
   document.getElementById('canim-keno').style.display = '';
-  document.getElementById('canim-title').textContent = '🎱 Tirage Keno';
-  const ballsEl = document.getElementById('canim-keno-balls');
-  const statusEl = document.getElementById('canim-keno-status');
-  const basketEl = document.getElementById('canim-basket');
-  ballsEl.innerHTML = '';
+  document.getElementById('canim-title').textContent  = '🎱 KENO — TIRAGE';
 
+  const gridEl   = document.getElementById('canim-keno-grid');
+  const drawnEl  = document.getElementById('canim-keno-drawn');
+  const statusEl = document.getElementById('canim-keno-status');
+  const drumNum  = document.getElementById('canim-keno-drum-num');
+  const resultEl = document.getElementById('canim-keno-result');
+
+  // Couleurs keno par groupe de 10
+  const KCOL = ['#c0152a','#e87722','#d4a800','#1b5e20','#1565c0',
+                '#6a1b9a','#880e4f','#004d40','#1a237e','#37474f'];
+
+  // Construire grille 80 boules (toutes grises au départ)
+  gridEl.innerHTML = '';
+  drawnEl.innerHTML = '';
+  resultEl.textContent = '';
+  for(let n=1; n<=80; n++){
+    const col   = KCOL[Math.floor((n-1)/10)];
+    const isJoued = jouedNums.includes(n);
+    const div = document.createElement('div');
+    div.id = 'kball-'+n;
+    div.textContent = n;
+    div.style.cssText = `
+      display:flex;align-items:center;justify-content:center;
+      width:100%;aspect-ratio:1;border-radius:50%;
+      font-size:clamp(9px,2vw,13px);font-weight:900;
+      background:${isJoued ? `radial-gradient(circle at 35% 30%,${col}cc,${col})` : 'radial-gradient(circle at 35% 30%,#333,#1a1a1a)'};
+      color:${isJoued ? '#fff' : '#555'};
+      border:2px solid ${isJoued ? col : 'rgba(255,255,255,.08)'};
+      box-shadow:${isJoued ? `0 0 8px ${col}88` : 'none'};
+      transition:all .3s;cursor:default;`;
+    gridEl.appendChild(div);
+  }
+
+  // Animer le tirage boule par boule
   let hits = 0;
   for(let i=0; i<winNums.length; i++){
-    await new Promise(res=>setTimeout(res, 800));
-    const num = winNums[i];
-    const isHit = jouedNums.includes(num);
+    await new Promise(res=>setTimeout(res, 700));
+    const num    = winNums[i];
+    const isHit  = jouedNums.includes(num);
+    const colIdx = Math.floor((num-1)/10);
+    const col    = KCOL[colIdx];
     if(isHit) hits++;
 
-    if(basketEl){ basketEl.style.animation='none'; void basketEl.offsetWidth; basketEl.style.animation='kenoBasketSpin 0.4s linear 2'; }
+    // Tambour affiche le numéro
+    if(drumNum){
+      drumNum.style.transform = 'scale(0)';
+      drumNum.textContent = num;
+      setTimeout(()=>{ drumNum.style.transform='scale(1)'; drumNum.style.transition='transform .2s'; },50);
+    }
 
-    const span = document.createElement('span');
-    span.className = 'keno-ball-anim';
-    span.textContent = num;
-    span.style.cssText = `display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;font-size:13px;font-weight:900;border:2px solid ${isHit?'var(--green2)':'var(--border)'};background:${isHit?'radial-gradient(circle at 35% 35%,#4cff7c,var(--green2))':'radial-gradient(circle at 35% 35%,#555,#333)'};color:${isHit?'#000':'#888'};box-shadow:${isHit?'0 0 8px rgba(40,176,78,.6)':'none'};`;
-    ballsEl.appendChild(span);
+    // Allumer la boule dans la grille
+    const ballEl = document.getElementById('kball-'+num);
+    if(ballEl){
+      ballEl.style.background = `radial-gradient(circle at 35% 30%,${col}dd,${col})`;
+      ballEl.style.color      = '#fff';
+      ballEl.style.border     = `2px solid ${col}`;
+      ballEl.style.boxShadow  = `0 0 14px ${col}99,0 0 4px #fff4`;
+      ballEl.style.transform  = 'scale(1.25)';
+      setTimeout(()=>{ ballEl.style.transform='scale(1)'; },300);
+    }
+
+    // Ajouter grande boule dans la zone "tirées"
+    const big = document.createElement('div');
+    big.textContent = num;
+    big.style.cssText = `
+      display:inline-flex;align-items:center;justify-content:center;
+      width:42px;height:42px;border-radius:50%;
+      font-size:15px;font-weight:900;
+      background:radial-gradient(circle at 35% 30%,${isHit?col+'dd':col+'44'},${isHit?col:'#222'});
+      color:${isHit?'#fff':'#777'};
+      border:3px solid ${isHit?col:'rgba(255,255,255,.1)'};
+      box-shadow:${isHit?`0 0 16px ${col}88`:'none'};
+      animation:ballPop .35s cubic-bezier(.34,1.56,.64,1) both;`;
+    drawnEl.appendChild(big);
+
     statusEl.textContent = `Boule ${i+1}/${winNums.length} — ${hits}/${jouedNums.length} trouvés`;
   }
-  statusEl.textContent = r.resultMsg;
-  await new Promise(res=>setTimeout(res, 2000));
+
+  // Résultat
+  const mult = r.winData?.multiplier || 0;
+  resultEl.textContent = r.gain>0 ? `🏆 ${hits} trouvés ×${mult} → +${r.gain} Gd` : `❌ ${hits}/${jouedNums.length} trouvés — Perdu`;
+  resultEl.style.color = r.gain>0 ? 'var(--green2)' : 'var(--red)';
+  await new Promise(res=>setTimeout(res, 2500));
 }
 
 async function animCaisseLucky6(resultats){
   if(!resultats.length) return;
   const r = resultats[0];
-  const winNums = r.winData?.winningNumbers || [];
-  const jouedNums = (r.pari.nums || r.pari.cleanNumber.split(',').map(Number));
+  const winNums   = r.winData?.winningNumbers || [];
+  const jouedNums = r.pari.nums || r.pari.cleanNumber.split(',').map(Number);
 
   document.getElementById('canim-lucky6').style.display = '';
-  document.getElementById('canim-title').textContent = '🍀 Tirage Lucky 6';
-  const ballsEl = document.getElementById('canim-l6-balls');
-  const statusEl = document.getElementById('canim-l6-status');
-  ballsEl.innerHTML = '';
+  document.getElementById('canim-title').textContent    = '🍀 LUCKY 6 — TIRAGE';
 
-  const L6C = [{min:1,max:12,css:'#c0152a',light:'#ff4466'},{min:13,max:24,css:'#1565c0',light:'#42a5f5'},{min:25,max:36,css:'#1b5e20',light:'#66bb6a'},{min:37,max:48,css:'#7a5800',light:'#f5c800'}];
+  const gridEl   = document.getElementById('canim-l6-grid');
+  const drawnEl  = document.getElementById('canim-l6-drawn');
+  const statusEl = document.getElementById('canim-l6-status');
+  const drumNum  = document.getElementById('canim-l6-drum-num');
+  const resultEl = document.getElementById('canim-l6-result');
+
+  // Couleurs Lucky6 par groupe de 12 (comme l'image)
+  const L6C = [
+    {min:1, max:12, bg:'#c0152a', light:'#ff6680'},   // rouge
+    {min:13,max:24, bg:'#1565c0', light:'#60a5fa'},   // bleu
+    {min:25,max:36, bg:'#1b5e20', light:'#4ade80'},   // vert
+    {min:37,max:48, bg:'#92400e', light:'#fbbf24'},   // doré
+  ];
   const getCol = n => L6C.find(c=>n>=c.min&&n<=c.max)||L6C[0];
 
-  let hits=0;
-  // Afficher les 35 numéros
-  for(let i=0; i<winNums.length; i++){
-    await new Promise(res=>setTimeout(res, 300));
-    const num = winNums[i];
-    const isHit = jouedNums.includes(num);
-    if(isHit) hits++;
-    const col = getCol(num);
+  // Construire grille 48 boules
+  gridEl.innerHTML = '';
+  drawnEl.innerHTML = '';
+  resultEl.textContent = '';
+  for(let n=1; n<=48; n++){
+    const c = getCol(n);
+    const isJoued = jouedNums.includes(n);
+    const div = document.createElement('div');
+    div.id = 'l6ball-'+n;
+    div.textContent = n;
+    div.style.cssText = `
+      display:flex;align-items:center;justify-content:center;
+      width:100%;aspect-ratio:1;border-radius:50%;
+      font-size:clamp(10px,2.5vw,14px);font-weight:900;
+      background:${isJoued
+        ? `radial-gradient(circle at 35% 30%,${c.light},${c.bg})`
+        : 'radial-gradient(circle at 35% 30%,#2a2a2a,#141414)'};
+      color:${isJoued?'#fff':'#444'};
+      border:2px solid ${isJoued?c.light:'rgba(255,255,255,.06)'};
+      box-shadow:${isJoued?`0 0 10px ${c.light}66`:'none'};
+      transition:all .3s;`;
+    gridEl.appendChild(div);
+  }
 
-    const span = document.createElement('span');
-    span.className = 'keno-ball-anim';
-    span.textContent = num;
-    span.style.cssText = `display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;font-size:12px;font-weight:900;border:2px solid ${isHit?col.light:'rgba(255,255,255,.1)'};background:${isHit?`radial-gradient(circle at 35% 35%,${col.light},${col.css})`:'var(--bg3)'};color:${isHit?'#fff':'#555'};box-shadow:${isHit?`0 0 8px ${col.light}`:'none'};`;
-    ballsEl.appendChild(span);
+  // Animer le tirage (35 boules pour Lucky6)
+  let hits = 0;
+  for(let i=0; i<winNums.length; i++){
+    await new Promise(res=>setTimeout(res, 400));
+    const num   = winNums[i];
+    const isHit = jouedNums.includes(num);
+    const c     = getCol(num);
+    if(isHit) hits++;
+
+    // Tambour
+    if(drumNum){
+      drumNum.style.transform = 'scale(0)';
+      drumNum.textContent = num;
+      setTimeout(()=>{ drumNum.style.transform='scale(1)'; drumNum.style.transition='transform .15s'; },40);
+    }
+
+    // Allumer dans la grille
+    const ballEl = document.getElementById('l6ball-'+num);
+    if(ballEl){
+      ballEl.style.background = `radial-gradient(circle at 35% 30%,${c.light},${c.bg})`;
+      ballEl.style.color      = '#fff';
+      ballEl.style.border     = `2px solid ${c.light}`;
+      ballEl.style.boxShadow  = `0 0 16px ${c.light}88`;
+      ballEl.style.transform  = 'scale(1.3)';
+      setTimeout(()=>{ ballEl.style.transform='scale(1)'; },280);
+    }
+
+    // Grande boule colorée dans zone tirées
+    const big = document.createElement('div');
+    big.textContent = num;
+    big.style.cssText = `
+      display:inline-flex;align-items:center;justify-content:center;
+      width:44px;height:44px;border-radius:50%;
+      font-size:15px;font-weight:900;
+      background:radial-gradient(circle at 35% 30%,${isHit?c.light:c.bg+'55'},${isHit?c.bg:'#1a1a1a'});
+      color:${isHit?'#fff':'#555'};
+      border:3px solid ${isHit?c.light:'rgba(255,255,255,.08)'};
+      box-shadow:${isHit?`0 0 18px ${c.light}99`:'none'};
+      animation:ballPop .35s cubic-bezier(.34,1.56,.64,1) both;`;
+    drawnEl.appendChild(big);
+
     statusEl.textContent = `Boule ${i+1}/${winNums.length} — ${hits}/6 trouvés`;
   }
-  statusEl.textContent = r.resultMsg;
+
+  resultEl.textContent = r.gain>0 ? `🏆 ${hits}/6 trouvés → +${r.gain} Gd` : `❌ ${hits}/6 trouvés — Perdu`;
+  resultEl.style.color = r.gain>0 ? 'var(--green2)' : 'var(--red)';
   await new Promise(res=>setTimeout(res, 2500));
 }
 
@@ -5680,11 +5893,18 @@ async function renderJoueurDraws(){
 // ==================== PATCH: updateCaisseForm initialise les grilles ====================
 function updateCaisseForm(){
   const jeu=document.getElementById('caisse-jeu-type')?.value||'borlette';
-  ['borlette','keno','lucky6','course'].forEach(j=>{
+  ['borlette','keno','lucky6','course','roulette','penalty'].forEach(j=>{
     const el=document.getElementById('caisse-'+j+'-form');
     if(el) el.style.display=j===jeu?'':'none';
   });
-  // Init grilles si besoin
+  // Afficher champ numéro roulette si besoin
+  if(jeu==='roulette'){
+    const rouType = document.getElementById('caisse-rou-type');
+    if(rouType) rouType.onchange = ()=>{
+      const wrap=document.getElementById('caisse-rou-numero-wrap');
+      if(wrap) wrap.style.display = rouType.value==='numero'?'':'none';
+    };
+  }
   if(jeu==='keno'){
     const g=document.getElementById('caisse-keno-grid');
     if(g&&!g.children.length) initCaisseKeno();
@@ -5757,6 +5977,25 @@ function ajouterAuPanierCaisse(){
     miseFb=parseFloat(document.getElementById('caisse-course-mise').value)||0;
     if(miseFb<=0){showNotif('Mise invalide','err');return;}
     caissePanier.push({id:Date.now()+Math.random(),ticketId:genTicketId(),game:'course',number:'Voiture #'+car,cleanNumber:String(car),amount:miseFb,car,jeuType:'course'});
+  } else if(jeuFb==='roulette'){
+    const rouType = document.getElementById('caisse-rou-type').value;
+    miseFb=parseFloat(document.getElementById('caisse-rou-mise').value)||0;
+    if(miseFb<=0){showNotif('Mise invalide','err');return;}
+    let numLabel = rouType;
+    if(rouType==='numero'){
+      const n = parseInt(document.getElementById('caisse-rou-numero').value);
+      if(isNaN(n)||n<0||n>36){showNotif('Numéro invalide (0-36)','err');return;}
+      numLabel = 'N°'+n;
+    }
+    const COTES_ROU={rouge:2,noir:2,pair:2,impair:2,'1-18':2,'19-36':2,'1-12':3,'13-24':3,'25-36':3,numero:35};
+    caissePanier.push({id:Date.now()+Math.random(),ticketId:genTicketId(),game:'roulette',number:numLabel,cleanNumber:rouType,amount:miseFb,cote:COTES_ROU[rouType]||2,jeuType:'roulette'});
+  } else if(jeuFb==='penalty'){
+    const zone = document.getElementById('caisse-pen-zone').value;
+    miseFb=parseFloat(document.getElementById('caisse-pen-mise').value)||0;
+    if(miseFb<=0){showNotif('Mise invalide','err');return;}
+    const COTES_PEN={hg:4,hc:2.5,hd:4,mg:2,mc:1.5,md:2,bg:3,bc:2,bd:3};
+    const ZONES_LABEL={hg:'Haut Gauche',hc:'Haut Centre',hd:'Haut Droite',mg:'Milieu Gauche',mc:'Milieu Centre',md:'Milieu Droite',bg:'Bas Gauche',bc:'Bas Centre',bd:'Bas Droite'};
+    caissePanier.push({id:Date.now()+Math.random(),ticketId:genTicketId(),game:'penalty',number:ZONES_LABEL[zone]||zone,cleanNumber:zone,amount:miseFb,cote:COTES_PEN[zone]||2,jeuType:'penalty'});
   }
   if(joueurFileActif!==null&&joueurFile[joueurFileActif]) joueurFile[joueurFileActif].panier=caissePanier;
   renderPanierCaisse();renderJoueurFile();updateCaisseDisplay();updateBoutonsCaisse();

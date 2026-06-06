@@ -1779,8 +1779,42 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
         winData = { winner, ranking };
         resultMsg = gain>0 ? `Voiture #${winner} gagne → +${gain} Gd` : `Voiture #${winner} gagne → Perdu`;
 
+      } else if (jeuType === 'roulette') {
+        const ROUGE = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+        const result = Math.floor(Math.random()*37); // 0-36
+        const isRouge = ROUGE.includes(result);
+        const bet = pari.cleanNumber;
+        const COTES={rouge:2,noir:2,pair:2,impair:2,'1-18':2,'19-36':2,'1-12':3,'13-24':3,'25-36':3,numero:35};
+        let gagne = false;
+        if(bet==='rouge')     gagne = result>0 && isRouge;
+        else if(bet==='noir') gagne = result>0 && !isRouge;
+        else if(bet==='pair') gagne = result>0 && result%2===0;
+        else if(bet==='impair') gagne = result%2===1;
+        else if(bet==='1-18')  gagne = result>=1&&result<=18;
+        else if(bet==='19-36') gagne = result>=19&&result<=36;
+        else if(bet==='1-12')  gagne = result>=1&&result<=12;
+        else if(bet==='13-24') gagne = result>=13&&result<=24;
+        else if(bet==='25-36') gagne = result>=25&&result<=36;
+        else if(bet==='numero'){ const n=parseInt(pari.number.replace('N°','')); gagne = result===n; }
+        const cote = pari.cote || COTES[bet] || 2;
+        gain = gagne ? Math.round(mise * cote) : 0;
+        winData = { result, isRouge };
+        resultMsg = gagne ? `Roulette: ${result}${isRouge?' Rouge':' Noir'} → +${gain} Gd` : `Roulette: ${result}${isRouge?' Rouge':' Noir'} → Perdu`;
+
+      } else if (jeuType === 'penalty') {
+        const ZONES = ['hg','hc','hd','mg','mc','md','bg','bc','bd'];
+        const COTES_PEN = {hg:4,hc:2.5,hd:4,mg:2,mc:1.5,md:2,bg:3,bc:2,bd:3};
+        // Le gardien plonge d'un côté (chance de sauver selon difficulté)
+        const winnerZone = ZONES[Math.floor(Math.random()*ZONES.length)];
+        const saveProb = difficulte < 40 ? 0.6 : difficulte < 60 ? 0.4 : 0.25;
+        const saved = pari.cleanNumber === winnerZone && Math.random() < saveProb;
+        const scored = !saved && (pari.cleanNumber === winnerZone || Math.random() > 0.3);
+        const cote = pari.cote || COTES_PEN[pari.cleanNumber] || 2;
+        gain = scored ? Math.round(mise * cote) : 0;
+        winData = { winnerZone, scored };
+        resultMsg = scored ? `⚽ But! Zone ${pari.number} → +${gain} Gd` : `🧤 Arrêt! → Perdu`;
+
       } else {
-        // borlette / lotto3 / lotto4 / lotto5 / mariage
         const mult = {borlette:60,lotto3:40,lotto4:30,lotto5:20,mariage:50}[pari.game||jeuType]||60;
         const tirage = Math.floor(Math.random()*(difficulte>=60?50:100)).toString().padStart(2,'0');
         const gagne  = String(pari.cleanNumber).padStart(2,'0') === tirage;
