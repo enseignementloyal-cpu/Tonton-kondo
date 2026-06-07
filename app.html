@@ -5531,7 +5531,7 @@ function imprimerTicketIndividuel(bet, resultat, joueur){
   if(!pw){alert('Autorisez les pop-ups pour l\'impression');return;}
   const date=new Date().toLocaleString('fr-FR',{timeZone:'America/Port-au-Prince'});
   const tid=bet.ticketId||'TK-000000';
-  const jeuLabel={borlette:'BORLETTE',lotto3:'LOTTO 3',lotto4:'LOTTO 4',lotto5:'LOTTO 5',mariage:'MARIAGE',keno:'KENO',lucky6:'LUCKY 6',course:'COURSE AUTO'}[bet.game]||bet.game.toUpperCase();
+  const jeuLabel={borlette:'BORLETTE',lotto3:'LOTTO 3',lotto4:'LOTTO 4',lotto5:'LOTTO 5',mariage:'MARIAGE',keno:'KENO',lucky6:'LUCKY 6',course:'COURSE AUTO',roulette:'ROULETTE',penalty:'PENALTY'}[bet.game]||bet.game.toUpperCase();
   const hasResult = resultat !== null;
   const gain = hasResult ? resultat.gain : null;
   pw.document.write(`<!DOCTYPE html><html><head><title>Ticket ${tid}</title>
@@ -5540,45 +5540,48 @@ function imprimerTicketIndividuel(bet, resultat, joueur){
   *{box-sizing:border-box;}
   body{font-family:'Courier New',monospace;font-size:13px;width:76mm;margin:0 auto;padding:3mm 4mm;background:#fff;color:#000;}
   .center{text-align:center;}
-  .title{font-size:22px;font-weight:900;letter-spacing:1px;}
-  .sub{font-size:10px;color:#555;}
+  .title{font-size:22px;font-weight:900;letter-spacing:1px;color:#000;}
+  .slogan{font-size:13px;font-weight:900;color:#000;letter-spacing:1px;margin-top:2px;}
+  .sub{font-size:10px;color:#000;font-weight:700;}
   .sep{border:none;border-top:2px dashed #000;margin:6px 0;}
-  .row{display:flex;justify-content:space-between;margin:3px 0;font-size:12px;}
-  .big{font-size:24px;font-weight:900;text-align:center;letter-spacing:3px;margin:8px 0;padding:6px;border:2px solid #000;border-radius:4px;}
-  .ticket-id{font-size:10px;text-align:center;color:#555;font-family:monospace;letter-spacing:1px;}
+  .row{display:flex;justify-content:space-between;margin:3px 0;font-size:12px;color:#000;}
+  .row span{color:#000;font-weight:600;}
+  .big{font-size:26px;font-weight:900;text-align:center;letter-spacing:4px;margin:8px 0;color:#000;}
+  .ticket-id{font-size:10px;text-align:center;color:#000;font-family:monospace;letter-spacing:1px;font-weight:700;}
   .result-box{text-align:center;padding:8px;border-radius:4px;margin-top:8px;font-weight:900;font-size:16px;}
-  .win{background:#e8f5e9;border:2px solid green;color:green;}
-  .lose{background:#ffeee;border:2px solid #c00;color:#c00;}
-  .footer{text-align:center;font-size:10px;margin-top:10px;padding-top:6px;border-top:1px dashed #000;color:#555;}
-  .barcode{font-family:monospace;font-size:11px;text-align:center;letter-spacing:2px;margin:4px 0;}
+  .win{background:#d4edda;border:2px solid #000;color:#000;}
+  .lose{background:#f8d7da;border:2px solid #000;color:#000;}
+  .pending{border:2px dashed #000;color:#000;font-style:italic;font-size:11px;padding:6px;}
+  .footer{text-align:center;font-size:10px;margin-top:10px;padding-top:6px;border-top:1px dashed #000;color:#000;font-weight:700;}
+  .barcode{font-family:monospace;font-size:11px;text-align:center;letter-spacing:2px;margin:4px 0;color:#000;}
+  b,strong{color:#000;}
 </style></head><body>
 <div class="center">
   <div class="title">J.A. PARYAJ LOTTO</div>
-  <div class="sub">Trou du Nord, Nò — Ayiti</div>
+  <div class="slogan">PEYE TAW TAW</div>
+  <div class="sub">Trou du Nord, No — Ayiti</div>
 </div>
 <hr class="sep">
-<div class="ticket-id">TIKÈ #${tid}</div>
+<div class="ticket-id">TIKE #${tid}</div>
 <div class="row"><span>Dat:</span><span>${date}</span></div>
-<div class="row"><span>Caissier:</span><span>${CCaiss?.name||'—'}</span></div>
-<div class="row"><span>Jwè:</span><span>${joueur?.name||'Anonyme'}</span></div>
+<div class="row"><span>Caissier:</span><span>${CCaiss?.name||'---'}</span></div>
+<div class="row"><span>Jwe:</span><span>${joueur?.name||'Anonyme'}</span></div>
 <hr class="sep">
 <div class="row"><span>Jeu:</span><span><b>${jeuLabel}</b></span></div>
 ${bet.drawId?`<div class="row"><span>Tiraj:</span><span>${bet.drawId}</span></div>`:''}
-<div style="font-size:11px;color:#555;margin-top:4px;">Nimewo / Séleksyon:</div>
+<div style="font-size:11px;color:#000;margin-top:4px;font-weight:700;">Nimewo / Seleksyon:</div>
 <div class="big">${bet.number}</div>
 <div class="row"><span>Mise:</span><span><b>${bet.amount} Gdes</b></span></div>
-${hasResult ? `
 <hr class="sep">
-<div class="result-box ${gain>0?'win':'lose'}">
-  ${gain>0?`🏆 PAMI — GAIN: +${gain} Gdes`:`❌ Pèdi`}
-</div>` : `
-<hr class="sep">
-<div style="text-align:center;font-size:11px;color:#555;font-style:italic;">Paris anregistré — Rezilta apre tray la</div>`}
+${hasResult
+  ? `<div class="result-box ${gain>0?'win':'lose'}">${gain>0?`*** PAMI - GAIN: +${gain} Gdes ***`:`--- Pedi ---`}</div>`
+  : `<div class="result-box pending">Paris anregistre - Rezilta apre tiraj la</div>`
+}
 <div class="barcode">||| ${tid} |||</div>
 <div class="footer">
-  <div>Tikè valid pou 90 jou apre tiraj</div>
-  <div>Jwe responsab · 18+ sèlman</div>
-  <div><b>J.A. PARYAJ LOTTO S.A.</b></div>
+  <div>Tike valid pou 90 jou apre tiraj</div>
+  <div>Jwe responsab - 18+ selman</div>
+  <div>J.A. PARYAJ LOTTO — PEYE TAW TAW</div>
 </div>
 </body></html>`);
   pw.document.close();
