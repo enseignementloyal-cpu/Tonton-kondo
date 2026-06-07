@@ -476,18 +476,35 @@ app.post('/api/auth/director', async (req, res) => {
 app.post('/api/auth/cashier', async (req, res) => {
   try {
     const { code, pwd } = req.body;
+    if (!code || !pwd) return res.status(400).json({ error: 'Code et mot de passe obligatoires' });
+
     const r = await pool.query(
       "SELECT c.*, d.name AS dir_name FROM cashiers c LEFT JOIN directors d ON c.dir_code=d.code WHERE c.code=$1 AND c.active=TRUE",
       [code.toUpperCase()]
     );
     const caiss = r.rows[0];
-    if (!caiss) return res.status(401).json({ error: 'Code introuvable' });
+    if (!caiss) {
+      console.log('auth/cashier: code non trouvé:', code.toUpperCase());
+      return res.status(401).json({ error: 'Code introuvable' });
+    }
+    if (!caiss.pwd_hash) {
+      console.log('auth/cashier: pas de hash pour', code.toUpperCase());
+      return res.status(401).json({ error: 'Compte mal configuré — contactez l\'administrateur' });
+    }
     const ok = await bcrypt.compare(pwd, caiss.pwd_hash);
-    if (!ok) return res.status(401).json({ error: 'Mot de passe incorrect' });
+    if (!ok) {
+      console.log('auth/cashier: mot de passe incorrect pour', code.toUpperCase());
+      return res.status(401).json({ error: 'Mot de passe incorrect' });
+    }
     const token = genToken();
-    await pool.query("INSERT INTO sessions (id, role, user_code, expires_at) VALUES ($1, 'caissier', $2, NOW() + INTERVAL '30 days')", [token, caiss.code]);
+    await pool.query(
+      "INSERT INTO sessions (id, role, user_code, expires_at) VALUES ($1, 'caissier', $2, NOW() + INTERVAL '30 days')",
+      [token, caiss.code]
+    );
+    console.log('auth/cashier: connexion réussie pour', caiss.code);
     res.json({ token, role: 'caissier', code: caiss.code, name: caiss.name, dirCode: caiss.dir_code, jeu: caiss.jeu });
   } catch (e) {
+    console.error('auth/cashier error:', e.message);
     res.status(500).json({ error: e.message });
   }
 });
@@ -1123,6 +1140,18 @@ app.post('/api/cashiers', requireAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ── DIAGNOSTIC: Vérifier un caissier (admin seulement) ──
+app.get('/api/admin/cashier-check/:code', requireAdmin, async (req, res) => {
+  try {
+    const r = await pool.query(
+      "SELECT code, name, dir_code, jeu, active, created_at, (pwd_hash IS NOT NULL) AS has_hash, LENGTH(pwd_hash) AS hash_len FROM cashiers WHERE code=$1",
+      [req.params.code.toUpperCase()]
+    );
+    if (!r.rows.length) return res.status(404).json({ error: 'Caissier non trouvé' });
+    res.json(r.rows[0]);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ── DIRECTEUR: Lister SES caissiers ──
 app.get('/api/dir/cashiers', requireDirector, async (req, res) => {
   try {
@@ -1151,21 +1180,21 @@ app.get('/api/dir/players', requireDirector, async (req, res) => {
 app.get('/api/dir/stats', requireDirector, async (req, res) => {
   try {
     const dirCode = req.session.role === 'directeur' ? req.session.user_code : req.query.dir_code;
-    const [cashR, playR, betR, txR] = await Promise.all([
-      pool.query("SELECT COUNT(*) FROM cashiers WHERE dir_code=$1 AND active=TRUE", [dirCode]),
-      pool.query("SELECT COUNT(*), COALESCE(SUM(solde),0) AS total_solde FROM players WHERE dir_code=$1 AND active=TRUE", [dirCode]),
-      pool.query("SELECT COALESCE(SUM(mise),0) AS total_mise, COALESCE(SUM(gain_potentiel),0) AS total_gain FROM bets WHERE dir_code=$1", [dirCode]),
-      pool.query("SELECT t.type, t.montant, t.note, t.created_at, p.name AS player_name, c.name AS caiss_name FROM transactions t LEFT JOIN players p ON t.player_phone=p.phone LEFT JOIN cashiers c ON t.caiss_code=c.code WHERE t.dir_code=$1 ORDER BY t.created_at DESC LIMIT 100", [dirCode]),
-    ]);
-    res.json({
-      nb_caissiers: parseInt(cashR.rows[0].count),
-      nb_joueurs:   parseInt(playR.rows[0].count),
-      total_solde:  parseFloat(playR.rows[0].total_solde),
-      total_mise:   parseFloat(betR.rows[0].total_mise),
-      total_gain:   parseFloat(betR.rows[0].total_gain),
-      transactions: txR.rows,
-    });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+    let nb_caissiers=0, nb_joueurs=0, total_solde=0, total_mise=0, total_gain=0, transactions=[];
+    try { const r=await pool.query("SELECT COUNT(*) FROM cashiers WHERE dir_code=$1 AND active=TRUE",[dirCode]); nb_caissiers=parseInt(r.rows[0].count)||0; } catch(e){console.warn('stats.cashiers:',e.message);}
+    try { const r=await pool.query("SELECT COUNT(*),COALESCE(SUM(solde),0) AS ts FROM players WHERE dir_code=$1 AND active=TRUE",[dirCode]); nb_joueurs=parseInt(r.rows[0].count)||0; total_solde=parseFloat(r.rows[0].ts)||0; } catch(e){console.warn('stats.players:',e.message);}
+    try { const r=await pool.query("SELECT COALESCE(SUM(mise),0) AS tm,COALESCE(SUM(gain_potentiel),0) AS tg FROM bets WHERE dir_code=$1",[dirCode]); total_mise=parseFloat(r.rows[0].tm)||0; total_gain=parseFloat(r.rows[0].tg)||0; } catch(e){console.warn('stats.bets:',e.message);}
+    try {
+      const r=await pool.query(
+        `SELECT t.type,t.montant,t.note,t.created_at,p.name AS player_name,c.name AS caiss_name
+         FROM transactions t
+         LEFT JOIN players p ON t.player_phone=p.phone
+         LEFT JOIN cashiers c ON t.caiss_code=c.code
+         WHERE t.dir_code=$1 ORDER BY t.created_at DESC LIMIT 100`,[dirCode]);
+      transactions=r.rows;
+    } catch(e){console.warn('stats.transactions:',e.message);}
+    res.json({nb_caissiers,nb_joueurs,total_solde,total_mise,total_gain,transactions});
+  } catch(e) { console.error('/api/dir/stats:',e.message); res.status(500).json({ error: e.message }); }
 });
 
 // ── DIRECTEUR: Supprimer un caissier ──
@@ -1705,7 +1734,7 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
     } else if (req.session.role === 'directeur') {
       dir_code = req.session.user_code;
     } else if (req.session.role === 'admin') {
-      caiss_code = 'ADMIN';
+      caiss_code = null; // Admin n'a pas de code caissier
     }
 
     // Récupérer le joueur si fourni

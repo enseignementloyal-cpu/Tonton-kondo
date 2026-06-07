@@ -3349,23 +3349,14 @@ function selDirTab(el){
 async function refreshDir(){
   if(!CDir) return;
 
-  // Charger stats, caissiers, joueurs, transactions depuis l'API
-  let stats = {}, cashiers = [], players = [], transactions = [];
-  try {
-    const [sR, cR, pR] = await Promise.all([
-      apiGet('/api/dir/stats'),
-      apiGet('/api/dir/cashiers'),
-      apiGet('/api/dir/players'),
-    ]);
-    stats = sR;
-    cashiers = cR.cashiers || [];
-    players  = pR.players  || [];
-    transactions = sR.transactions || [];
-  } catch(e) {
-    console.warn('refreshDir API error:', e.message);
-    showNotif('Erreur chargement données directeur', 'err');
-    return;
-  }
+  let stats = {nb_caissiers:0, nb_joueurs:0, total_solde:0, total_mise:0, total_gain:0, transactions:[]};
+  let cashiers = [];
+  let players  = [];
+
+  // Chaque appel indépendant — un échec ne bloque pas les autres
+  try { stats    = await apiGet('/api/dir/stats');    } catch(e){ console.warn('dir/stats:',e.message); }
+  try { const r  = await apiGet('/api/dir/cashiers'); cashiers = r.cashiers||[]; } catch(e){ console.warn('dir/cashiers:',e.message); }
+  try { const r  = await apiGet('/api/dir/players');  players  = r.players||[];  } catch(e){ console.warn('dir/players:',e.message); }
 
   // Stats cards
   const profit = (stats.total_mise||0) - (stats.total_gain||0);
@@ -3411,6 +3402,7 @@ async function refreshDir(){
     : '<tr><td colspan="4" style="color:var(--muted);text-align:center">Aucun joueur</td></tr>';
 
   // Transactions
+  const transactions = stats.transactions || [];
   const tb4 = document.getElementById('dir-trans-tbody');
   if(tb4) tb4.innerHTML = transactions.length
     ? transactions.slice(0,50).map(t=>`<tr>
