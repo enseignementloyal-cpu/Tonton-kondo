@@ -3331,11 +3331,11 @@ async function authDir(){
     const data = await apiPost('/api/auth/director', { code, pwd });
     setToken(data.token);
     localStorage.setItem('tk_session_role','directeur');
-    localStorage.setItem('tk_session_code',data.code);
-    await refreshAllCaches();
-    CDir = { name:data.name, code:data.code, zone:data.zone, pct:data.pct };
-    if(document.getElementById('dir-zone-name')) document.getElementById('dir-zone-name').textContent=data.zone||'';
-    refreshDir(); goTo('sc-dir');
+    CDir = { name:data.name, code:data.code, zone:data.zone||'', pct:data.pct||0 };
+    const znEl=document.getElementById('dir-zone-name');
+    if(znEl) znEl.textContent=CDir.zone;
+    await refreshDir();
+    goTo('sc-dir');
   } catch(e) { if(err){err.textContent=e.message;err.classList.add('show');} }
 }
 
@@ -5266,10 +5266,12 @@ async function animCaisseKeno(resultats){
     gridEl.appendChild(div);
   }
 
-  // Animer le tirage boule par boule
+  // Animer le tirage boule par boule — durée totale 90 secondes
+  const KENO_TOTAL_MS = 90000;
+  const kenoDelay = Math.floor(KENO_TOTAL_MS / winNums.length);
   let hits = 0;
   for(let i=0; i<winNums.length; i++){
-    await new Promise(res=>setTimeout(res, 700));
+    await new Promise(res=>setTimeout(res, kenoDelay));
     const num    = winNums[i];
     const isHit  = jouedNums.includes(num);
     const colIdx = Math.floor((num-1)/10);
@@ -5308,7 +5310,8 @@ async function animCaisseKeno(resultats){
       animation:ballPop .35s cubic-bezier(.34,1.56,.64,1) both;`;
     drawnEl.appendChild(big);
 
-    statusEl.textContent = `Boule ${i+1}/${winNums.length} — ${hits}/${jouedNums.length} trouvés`;
+    const remaining = Math.round((winNums.length - i - 1) * kenoDelay / 1000);
+    statusEl.textContent = `Boule ${i+1}/${winNums.length} — ${hits}/${jouedNums.length} trouvés — ${remaining}s restantes`;
   }
 
   // Résultat
@@ -5333,19 +5336,20 @@ async function animCaisseLucky6(resultats){
   const drumNum  = document.getElementById('canim-l6-drum-num');
   const resultEl = document.getElementById('canim-l6-result');
 
-  // Couleurs Lucky6 par groupe de 12 (comme l'image)
+  // 4 couleurs par groupe de 12 (style image Keno)
   const L6C = [
-    {min:1, max:12, bg:'#c0152a', light:'#ff6680'},   // rouge
-    {min:13,max:24, bg:'#1565c0', light:'#60a5fa'},   // bleu
-    {min:25,max:36, bg:'#1b5e20', light:'#4ade80'},   // vert
-    {min:37,max:48, bg:'#92400e', light:'#fbbf24'},   // doré
+    {min:1,  max:12, bg:'#7c3aed', light:'#a78bfa'}, // violet
+    {min:13, max:24, bg:'#1565c0', light:'#60a5fa'}, // bleu
+    {min:25, max:36, bg:'#c0152a', light:'#ff6680'}, // rouge
+    {min:37, max:48, bg:'#d97706', light:'#fbbf24'}, // orange/doré
   ];
   const getCol = n => L6C.find(c=>n>=c.min&&n<=c.max)||L6C[0];
 
-  // Construire grille 48 boules
+  // Construire grille 48 boules (6 rangées × 8)
   gridEl.innerHTML = '';
   drawnEl.innerHTML = '';
   resultEl.textContent = '';
+
   for(let n=1; n<=48; n++){
     const c = getCol(n);
     const isJoued = jouedNums.includes(n);
@@ -5354,22 +5358,26 @@ async function animCaisseLucky6(resultats){
     div.textContent = n;
     div.style.cssText = `
       display:flex;align-items:center;justify-content:center;
-      width:100%;aspect-ratio:1;border-radius:50%;
+      width:100%;aspect-ratio:1;border-radius:6px;
       font-size:clamp(10px,2.5vw,14px);font-weight:900;
       background:${isJoued
         ? `radial-gradient(circle at 35% 30%,${c.light},${c.bg})`
-        : 'radial-gradient(circle at 35% 30%,#2a2a2a,#141414)'};
-      color:${isJoued?'#fff':'#444'};
-      border:2px solid ${isJoued?c.light:'rgba(255,255,255,.06)'};
-      box-shadow:${isJoued?`0 0 10px ${c.light}66`:'none'};
-      transition:all .3s;`;
+        : `${c.bg}55`};
+      color:${isJoued ? '#fff' : c.light+'99'};
+      border:2px solid ${isJoued ? c.light : c.bg+'88'};
+      box-shadow:${isJoued ? `0 0 10px ${c.light}66` : 'none'};
+      transition:all .25s;`;
     gridEl.appendChild(div);
   }
 
-  // Animer le tirage (35 boules pour Lucky6)
+  // Durée totale : 90 secondes — 35 boules tirées
+  // Délai entre boules = 90000ms / 35 ≈ 2571ms
+  const TOTAL_MS = 90000;
+  const delayBetween = Math.floor(TOTAL_MS / winNums.length);
+
   let hits = 0;
   for(let i=0; i<winNums.length; i++){
-    await new Promise(res=>setTimeout(res, 400));
+    await new Promise(res=>setTimeout(res, delayBetween));
     const num   = winNums[i];
     const isHit = jouedNums.includes(num);
     const c     = getCol(num);
@@ -5377,9 +5385,12 @@ async function animCaisseLucky6(resultats){
 
     // Tambour
     if(drumNum){
-      drumNum.style.transform = 'scale(0)';
+      drumNum.style.transition = 'none';
+      drumNum.style.transform  = 'scale(0)';
       drumNum.textContent = num;
-      setTimeout(()=>{ drumNum.style.transform='scale(1)'; drumNum.style.transition='transform .15s'; },40);
+      await new Promise(res=>setTimeout(res, 50));
+      drumNum.style.transition = 'transform .2s cubic-bezier(.34,1.56,.64,1)';
+      drumNum.style.transform  = 'scale(1)';
     }
 
     // Allumer dans la grille
@@ -5388,31 +5399,35 @@ async function animCaisseLucky6(resultats){
       ballEl.style.background = `radial-gradient(circle at 35% 30%,${c.light},${c.bg})`;
       ballEl.style.color      = '#fff';
       ballEl.style.border     = `2px solid ${c.light}`;
-      ballEl.style.boxShadow  = `0 0 16px ${c.light}88`;
-      ballEl.style.transform  = 'scale(1.3)';
-      setTimeout(()=>{ ballEl.style.transform='scale(1)'; },280);
+      ballEl.style.boxShadow  = `0 0 18px ${c.light}99`;
+      ballEl.style.transform  = 'scale(1.25)';
+      setTimeout(()=>{ ballEl.style.transform='scale(1)'; }, 300);
     }
 
-    // Grande boule colorée dans zone tirées
+    // Grande boule dans zone tirées
     const big = document.createElement('div');
     big.textContent = num;
     big.style.cssText = `
       display:inline-flex;align-items:center;justify-content:center;
-      width:44px;height:44px;border-radius:50%;
+      width:44px;height:44px;border-radius:8px;
       font-size:15px;font-weight:900;
-      background:radial-gradient(circle at 35% 30%,${isHit?c.light:c.bg+'55'},${isHit?c.bg:'#1a1a1a'});
-      color:${isHit?'#fff':'#555'};
-      border:3px solid ${isHit?c.light:'rgba(255,255,255,.08)'};
+      background:radial-gradient(circle at 35% 30%,${isHit?c.light:c.bg+'66'},${isHit?c.bg:'#1a1a1a'});
+      color:${isHit?'#fff':'#666'};
+      border:3px solid ${isHit?c.light:'rgba(255,255,255,.1)'};
       box-shadow:${isHit?`0 0 18px ${c.light}99`:'none'};
       animation:ballPop .35s cubic-bezier(.34,1.56,.64,1) both;`;
     drawnEl.appendChild(big);
 
-    statusEl.textContent = `Boule ${i+1}/${winNums.length} — ${hits}/6 trouvés`;
+    // Décompte temps restant
+    const remaining = Math.round((winNums.length - i - 1) * delayBetween / 1000);
+    statusEl.textContent = `Boule ${i+1}/${winNums.length} — ${hits}/6 trouvés — ${remaining}s restantes`;
   }
 
-  resultEl.textContent = r.gain>0 ? `🏆 ${hits}/6 trouvés → +${r.gain} Gd` : `❌ ${hits}/6 trouvés — Perdu`;
+  resultEl.textContent = r.gain>0
+    ? `🏆 ${hits}/6 → +${r.gain} Gd`
+    : `❌ ${hits}/6 trouvés — Perdu`;
   resultEl.style.color = r.gain>0 ? 'var(--green2)' : 'var(--red)';
-  await new Promise(res=>setTimeout(res, 2500));
+  await new Promise(res=>setTimeout(res, 3000));
 }
 
 async function animCaisseCourse(resultats){
@@ -6264,17 +6279,12 @@ async function creerCaissier(){
   const jeu  = document.getElementById('new-caiss-jeu')?.value || 'all';
   if(!name||!code||!pwd){ showNotif('Tous les champs obligatoires','err'); return; }
   try {
-    // Enregistrer en DB via l'API
     await apiPost('/api/cashiers', { name, code, phone:phone||'', pwd, jeu, dir_code: CDir.code });
-    // Aussi en cache local pour la session caissier
-    const caiss = gCaiss();
-    caiss[code] = {name, code, phone:phone||'', pwd, jeu, dirCode:CDir.code, zone:CDir.zone, createdAt:new Date().toLocaleString()};
-    localStorage.setItem('tk_caiss_cache', JSON.stringify(caiss));
-    showNotif('✅ Caissier créé en base: '+name+' ('+code+')','ok');
+    showNotif('✅ Caissier créé: '+name+' ('+code+')','ok');
     ['new-caiss-name','new-caiss-code','new-caiss-phone','new-caiss-pwd'].forEach(id=>{
       const el=document.getElementById(id); if(el) el.value='';
     });
-    refreshDir();
+    await refreshDir();
   } catch(e){
     showNotif('Erreur: '+(e.message||'impossible de créer le caissier'),'err');
   }
