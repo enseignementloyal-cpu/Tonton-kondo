@@ -1,171 +1,862 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LOTATO PRO - Accès</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * { margin:0; padding:0; box-sizing:border-box; font-family:'Plus Jakarta Sans',sans-serif; }
-        body { background:linear-gradient(135deg,#0a0b1e 0%,#1a1c3a 100%); min-height:100vh; display:flex; justify-content:center; align-items:center; padding:20px; }
-        .card { background:rgba(255,255,255,0.05); backdrop-filter:blur(10px); border-radius:32px; padding:30px; width:100%; max-width:450px; border:1px solid rgba(255,255,255,0.1); }
-        .logo { text-align:center; margin-bottom:20px; }
-        .logo h1 { font-size:2rem; background:linear-gradient(135deg,#ad00f1,#00d4ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-        .tabs { display:flex; gap:10px; margin-bottom:25px; }
-        .tab-btn { flex:1; background:rgba(255,255,255,0.08); border:none; padding:12px; border-radius:30px; color:#fff; font-weight:600; cursor:pointer; transition:0.3s; }
-        .tab-btn.active { background:linear-gradient(135deg,#ad00f1,#00d4ff); }
-        .form-container { display:none; }
-        .form-container.active { display:block; }
-        .input-group { margin-bottom:15px; }
-        .input-group label { display:block; color:#a0a0b8; margin-bottom:6px; font-size:0.85rem; }
-        .input-group input { width:100%; padding:12px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.15); border-radius:16px; color:#fff; font-size:1rem; }
-        .btn { width:100%; padding:12px; background:linear-gradient(135deg,#ad00f1,#00d4ff); border:none; border-radius:30px; color:#fff; font-weight:bold; font-size:1rem; cursor:pointer; transition:0.2s; }
-        .btn:hover { transform:translateY(-2px); }
-        .error-msg { color:#ff6b6b; font-size:0.85rem; margin-top:10px; text-align:center; }
-        .info-text { text-align:center; margin-top:20px; font-size:0.7rem; color:#7a7a9a; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>J.A. PARYAJ LOTTO — Paryaj</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;overflow-x:hidden;}
+body{background:#061a2e;color:#fff;font-family:'Barlow',sans-serif;min-height:100vh;}
+
+/* ANIMATIONS */
+@keyframes glowPulse{0%,100%{box-shadow:0 0 10px rgba(245,200,0,.3)}50%{box-shadow:0 0 22px rgba(245,200,0,.7)}}
+@keyframes floatUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes ssAnim{from{opacity:0}to{opacity:1}}
+
+/* ====== TOP BAR ====== */
+/* Using table layout so it NEVER breaks regardless of screen size */
+.top-bar{
+  width:100%;
+  background:linear-gradient(135deg,#0d2151,#061a2e);
+  border-bottom:2px solid rgba(245,200,0,.4);
+  position:sticky;top:0;z-index:200;
+  display:table;
+  table-layout:fixed;
+  height:56px;
+  padding:0 10px;
+}
+.tb-left{
+  display:table-cell;
+  width:46px;
+  vertical-align:middle;
+  padding-right:8px;
+}
+.tb-logo{
+  width:40px;height:40px;border-radius:50%;
+  object-fit:cover;border:2px solid #f5c800;
+  display:block;
+  box-shadow:0 0 12px rgba(245,200,0,.5);
+  animation:glowPulse 2.5s ease-in-out infinite;
+}
+.tb-mid{
+  display:table-cell;
+  vertical-align:middle;
+  overflow:hidden;
+}
+.tb-name{
+  font-family:"Barlow Condensed",sans-serif;
+  font-size:clamp(22px,6.5vw,30px);
+  font-weight:900;
+  color:#f5c800;
+  letter-spacing:3px;
+  line-height:1;
+  white-space:nowrap;
+  background:linear-gradient(135deg,#f5c800 0%,#fff8dc 40%,#f5c800 60%,#d4a800 100%);
+  background-size:200% auto;
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  animation:shimmerName 3s linear infinite;
+}
+@keyframes shimmerName{0%{background-position:0% center}100%{background-position:200% center}}
+.tb-slogan{
+  font-size:9px;
+  color:rgba(255,255,255,.4);
+  white-space:nowrap;
+  letter-spacing:1.5px;
+  margin-top:2px;
+}
+.tb-right{
+  display:table-cell;
+  width:40px;
+  vertical-align:middle;
+  text-align:right;
+  white-space:nowrap;
+}
+.btn-konekte{
+  display:inline-flex;align-items:center;gap:4px;
+  background:#22c55e;color:#fff;
+  border:none;padding:0 12px;
+  border-radius:18px;font-weight:800;font-size:12px;
+  cursor:pointer;height:32px;
+  box-shadow:0 2px 8px rgba(34,197,94,.3);
+}
+.btn-enskri{
+  display:inline-flex;align-items:center;
+  background:transparent;color:#f5c800;
+  border:1.5px solid #f5c800;
+  padding:0 10px;border-radius:18px;
+  font-weight:800;font-size:12px;cursor:pointer;
+  height:32px;margin:0 4px;
+}
+.btn-info-ico{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.08);border:none;
+  color:rgba(255,255,255,.55);font-size:16px;
+  cursor:pointer;width:30px;height:30px;
+  border-radius:50%;vertical-align:middle;
+}
+
+/* cat-tabs css removed */
+
+/* ====== TICKER ====== */
+.ticker-wrap{
+  background:rgba(245,200,0,.08);
+  border-bottom:1px solid rgba(245,200,0,.2);
+  height:30px;display:flex;align-items:center;overflow:hidden;
+}
+.ticker-label{
+  background:#f5c800;color:#000;
+  padding:0 10px;height:100%;
+  display:flex;align-items:center;
+  font-weight:900;font-size:11px;white-space:nowrap;flex-shrink:0;gap:4px;
+}
+.ticker-track{overflow:hidden;flex:1;height:100%;display:flex;align-items:center;}
+.ticker-text{
+  display:inline-block;white-space:nowrap;
+  font-size:11px;font-weight:600;color:#f5c800;
+  animation:ticker 26s linear infinite;padding-left:14px;
+}
+
+/* ====== ADMIN NOTIF ====== */
+.admin-notif{
+  display:none;padding:8px 12px;align-items:center;gap:8px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.admin-notif.show{display:flex;}
+
+/* ====== SLIDESHOW ====== */
+.ss-wrap{position:relative;overflow:hidden;background:#050e1a;width:100%;}
+.ss-track{display:flex;transition:transform .5s cubic-bezier(.4,0,.2,1);will-change:transform;}
+.ss-slide{flex:0 0 100vw;width:100vw;height:320px;position:relative;overflow:hidden;}
+.ss-slide img.ss-img{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;object-position:center;display:none;
+}
+.ss-slide img.ss-img.loaded{display:block;}
+.ss-fallback{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px;
+}
+.ss-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(6,26,46,.1) 0%,rgba(6,26,46,.8) 100%);
+  pointer-events:none;z-index:1;
+}
+.ss-caption{position:absolute;bottom:0;left:0;right:0;padding:12px 14px;z-index:2;}
+.ss-tag{
+  display:inline-block;background:#f5c800;color:#000;
+  font-size:10px;font-weight:900;padding:2px 7px;border-radius:3px;
+  margin-bottom:4px;text-transform:uppercase;letter-spacing:1px;
+}
+.ss-title{font-family:"Barlow Condensed",sans-serif;font-size:1.5em;font-weight:900;color:#fff;line-height:1.1;}
+.ss-sub{font-size:11px;color:rgba(255,255,255,.7);margin-top:2px;}
+.ss-dots{position:absolute;bottom:9px;right:10px;display:flex;gap:4px;z-index:5;}
+.ss-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.35);cursor:pointer;transition:.25s;}
+.ss-dot.on{background:#f5c800;width:16px;border-radius:3px;}
+.ss-arrow{
+  position:absolute;top:50%;transform:translateY(-50%);
+  background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.15);
+  color:#fff;width:32px;height:32px;border-radius:50%;
+  cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;z-index:5;
+}
+.ss-arrow.left{left:7px;}
+.ss-arrow.right{right:7px;}
+
+/* ====== GAMES SECTION ====== */
+.games-section{padding:12px 12px 0;}
+.sec-title{
+  font-family:"Barlow Condensed",sans-serif;font-size:1.15em;font-weight:900;
+  color:#fff;margin-bottom:11px;display:flex;align-items:center;gap:7px;
+}
+.sec-title::before{content:"";width:3px;height:16px;background:#f5c800;border-radius:2px;flex-shrink:0;}
+.games-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;}
+@media(min-width:480px){.games-grid{grid-template-columns:repeat(4,1fr);}}
+@media(min-width:700px){.games-grid{grid-template-columns:repeat(5,1fr);}}
+.gcard{
+  background:linear-gradient(135deg,#0f2040,#091525);
+  border:1px solid rgba(255,255,255,.08);border-radius:12px;
+  padding:13px 7px;text-align:center;cursor:pointer;
+  transition:transform .2s,border-color .2s;position:relative;overflow:hidden;
+  animation:fadeInUp .4s ease both;
+}
+.gcard:nth-child(1){animation-delay:.05s}.gcard:nth-child(2){animation-delay:.1s}
+.gcard:nth-child(3){animation-delay:.15s}.gcard:nth-child(4){animation-delay:.2s}
+.gcard:nth-child(5){animation-delay:.25s}.gcard:nth-child(6){animation-delay:.3s}
+.gcard:nth-child(7){animation-delay:.35s}.gcard:nth-child(8){animation-delay:.4s}
+.gcard:hover,.gcard:active{transform:translateY(-3px);border-color:rgba(245,200,0,.35);}
+.gcard-icon{font-size:1.9em;margin-bottom:6px;display:block;animation:floatUp 3s ease-in-out infinite;}
+.gcard:nth-child(2) .gcard-icon{animation-delay:.2s}
+.gcard:nth-child(3) .gcard-icon{animation-delay:.4s}
+.gcard:nth-child(4) .gcard-icon{animation-delay:.6s}
+.gcard-name{font-size:11px;font-weight:800;color:#fff;margin-bottom:2px;}
+.gcard-desc{font-size:9px;color:rgba(255,255,255,.45);}
+.gcard-badge{position:absolute;top:6px;right:6px;font-size:9px;font-weight:900;padding:1px 5px;border-radius:7px;}
+.badge-hot{background:#e63946;color:#fff;}
+.badge-new{background:#22c55e;color:#fff;}
+.badge-pop{background:#f5c800;color:#000;}
+.live-dot{display:inline-block;width:5px;height:5px;background:#22c55e;border-radius:50%;animation:blink 1.5s infinite;}
+
+/* ====== MATCHES ====== */
+.matches-section{padding:12px;}
+.match-row{display:flex;gap:9px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;}
+.match-row::-webkit-scrollbar{display:none;}
+.mcard{
+  background:#0f2040;border:1px solid rgba(255,255,255,.08);border-radius:11px;
+  min-width:165px;padding:10px;flex-shrink:0;cursor:pointer;transition:.2s;
+}
+.mcard:hover{border-color:rgba(245,200,0,.3);}
+.mc-league{font-size:10px;color:rgba(255,255,255,.4);margin-bottom:4px;}
+.mc-teams{font-size:13px;font-weight:800;margin-bottom:3px;}
+.mc-vs{color:rgba(255,255,255,.3);font-weight:400;margin:0 3px;}
+.mc-time{font-size:10px;color:#f5c800;margin-bottom:6px;}
+.mc-odds{display:flex;gap:3px;}
+.mc-odd{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:5px;padding:4px 2px;text-align:center;cursor:pointer;transition:.15s;}
+.mc-odd:hover{background:rgba(245,200,0,.1);border-color:#f5c800;}
+.mc-odd-l{font-size:9px;color:rgba(255,255,255,.4);}
+.mc-odd-v{font-size:12px;font-weight:900;color:#f5c800;}
+
+/* ====== BOTTOM NAV ====== */
+.bot-nav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:#0d1b35;border-top:1px solid rgba(255,255,255,.1);
+  display:flex;z-index:150;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.bn{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  padding:7px 4px 5px;cursor:pointer;
+  color:rgba(255,255,255,.4);font-size:10px;font-weight:600;gap:3px;transition:.2s;
+}
+.bn i{font-size:19px;}
+.bn.on{color:#f5c800;}
+.bn.on i{filter:drop-shadow(0 0 5px rgba(245,200,0,.5));}
+.spacer-bot{height:68px;}
+
+/* ====== MODALS ====== */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:500;display:none;align-items:flex-end;justify-content:center;}
+.modal-overlay.on{display:flex;}
+.modal-sheet{background:#0d1b35;border:1px solid rgba(255,255,255,.1);border-radius:20px 20px 0 0;padding:22px 18px 38px;width:100%;max-width:500px;animation:slideUp .3s ease both;}
+.modal-handle{width:34px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 18px;}
+.modal-title{font-family:"Barlow Condensed",sans-serif;font-size:1.5em;font-weight:900;color:#f5c800;margin-bottom:16px;text-align:center;letter-spacing:2px;}
+.m-inp{width:100%;padding:12px 13px;background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.15);border-radius:10px;font-size:15px;outline:none;margin-bottom:11px;font-family:inherit;}
+.m-inp:focus{border-color:#f5c800;}
+.m-inp-wrap{position:relative;margin-bottom:11px;}
+.m-inp-wrap .m-inp{margin-bottom:0;padding-right:42px;}
+.m-eye{position:absolute;right:11px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:15px;}
+.m-btn{width:100%;padding:13px;background:#22c55e;color:#fff;border:none;border-radius:10px;font-weight:900;font-size:15px;cursor:pointer;font-family:"Barlow Condensed",sans-serif;letter-spacing:2px;transition:.15s;}
+.m-btn.gold{background:linear-gradient(135deg,#f5c800,#d4a800);color:#000;}
+.m-link{text-align:center;margin-top:11px;font-size:13px;color:rgba(255,255,255,.5);}
+.m-link a{color:#f5c800;cursor:pointer;font-weight:700;}
+.m-err{background:rgba(230,57,70,.15);border:1px solid rgba(230,57,70,.4);color:#ff6b7a;padding:8px 11px;border-radius:8px;font-size:13px;margin-bottom:10px;display:none;}
+.m-err.show{display:block;}
+.m-select{width:100%;padding:12px 13px;background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.15);border-radius:10px;font-size:15px;outline:none;margin-bottom:11px;cursor:pointer;font-family:inherit;}
+.m-select option{background:#0d1b35;}
+.auth-gate{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:600;display:none;align-items:center;justify-content:center;padding:18px;}
+.auth-gate.on{display:flex;}
+.auth-gate-box{background:#0d1b35;border:1px solid rgba(245,200,0,.3);border-radius:18px;padding:26px 22px;width:100%;max-width:360px;text-align:center;}
+.secret-ov{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:700;display:none;align-items:center;justify-content:center;padding:18px;}
+.secret-ov.on{display:flex;}
+.secret-box{background:#0f2040;border:1px solid rgba(245,200,0,.3);border-radius:14px;padding:26px;width:100%;max-width:320px;text-align:center;}
+.secret-inp{width:100%;padding:13px;background:rgba(255,255,255,.06);color:#fff;border:2px solid rgba(255,255,255,.15);border-radius:10px;font-size:20px;font-weight:900;text-align:center;letter-spacing:8px;outline:none;margin:12px 0;font-family:"Barlow Condensed",sans-serif;}
+.secret-inp:focus{border-color:#f5c800;}
+.info-modal{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:18px;}
+.info-modal.on{display:flex;}
+.notif{position:fixed;top:14px;right:14px;padding:10px 14px;border-radius:8px;font-weight:700;font-size:13px;transform:translateY(-60px);opacity:0;transition:.3s;z-index:999;max-width:270px;box-shadow:0 4px 14px rgba(0,0,0,.4);}
+.notif.on{transform:translateY(0);opacity:1;}
+.notif.ok{background:#22c55e;color:#fff;}.notif.err{background:#e63946;color:#fff;}.notif.info{background:#f5c800;color:#000;}
+.secret-btn{position:fixed;bottom:66px;right:5px;width:12px;height:12px;background:transparent;border:none;cursor:pointer;opacity:.01;z-index:99;}
+</style>
 </head>
 <body>
-<div class="card">
-    <div class="logo"><h1>LOTATO PRO</h1></div>
-    <div class="tabs">
-        <button class="tab-btn active" data-tab="login">Connexion</button>
-        <button class="tab-btn" data-tab="register">Inscription joueur</button>
-    </div>
 
-    <!-- Formulaire de connexion (propriétaire ou joueur) -->
-    <div id="login-form-container" class="form-container active">
-        <div class="input-group">
-            <label><i class="fas fa-user"></i> Identifiant</label>
-            <input type="text" id="login-identifier" placeholder="Téléphone ou nom d'utilisateur" autocomplete="off">
-        </div>
-        <div class="input-group">
-            <label><i class="fas fa-lock"></i> Mot de passe</label>
-            <input type="password" id="login-password" placeholder="Mot de passe">
-        </div>
-        <button class="btn" id="login-btn">Se connecter</button>
-        <div id="login-error" class="error-msg"></div>
-        <div class="info-text"><i class="fas fa-shield-alt"></i> Propriétaire : admin / admin123</div>
-    </div>
-
-    <!-- Formulaire d'inscription joueur -->
-    <div id="register-form-container" class="form-container">
-        <div class="input-group">
-            <label><i class="fas fa-user"></i> Nom complet</label>
-            <input type="text" id="reg-name" placeholder="Ex: Jean Dupont">
-        </div>
-        <div class="input-group">
-            <label><i class="fas fa-phone"></i> Téléphone (identifiant unique)</label>
-            <input type="tel" id="reg-phone" placeholder="509XXXXXXXX">
-        </div>
-        <div class="input-group">
-            <label><i class="fas fa-lock"></i> Mot de passe</label>
-            <input type="password" id="reg-password" placeholder="Au moins 4 caractères">
-        </div>
-        <div class="input-group">
-            <label><i class="fas fa-map-marker-alt"></i> Zone (optionnel)</label>
-            <input type="text" id="reg-zone" placeholder="Ex: Port-au-Prince">
-        </div>
-        <button class="btn" id="register-btn">Créer mon compte</button>
-        <div id="register-error" class="error-msg"></div>
-    </div>
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="tb-left">
+    <img src="logo.png" onerror="this.src='logo.jpeg';this.onerror=null" class="tb-logo" alt="TK">
+  </div>
+  <div class="tb-mid">
+    <div class="tb-name">J.A. PARYAJ LOTTO</div>
+    <div class="tb-slogan">Lotto &middot; Paryaj &middot; Casino &middot; Sports</div>
+  </div>
+  <div class="tb-right">
+    <button class="btn-info-ico" onclick="ouvrirInfo()"><i class="fas fa-info-circle"></i></button>
+  </div>
 </div>
 
+<!-- category tabs removed -->
+
+<!-- TICKER -->
+<div class="ticker-wrap" id="ticker-wrap">
+  <div class="ticker-label"><span>📢</span> INFO</div>
+  <div class="ticker-track">
+    <div class="ticker-text" id="ticker-text">Byenveni sou J.A. PARYAJ LOTTO Paryaj !&nbsp;&nbsp;•&nbsp;&nbsp;Jwe responsab — 18 an ak plis sèlman&nbsp;&nbsp;•&nbsp;&nbsp;Email: tontonkondo@gmail.com&nbsp;&nbsp;•&nbsp;&nbsp;32 Flon 7, Léogane, Ayiti&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Byenveni sou J.A. PARYAJ LOTTO Paryaj !&nbsp;&nbsp;•&nbsp;&nbsp;Jwe responsab — 18 an ak plis sèlman&nbsp;&nbsp;•&nbsp;&nbsp;Email: tontonkondo@gmail.com&nbsp;&nbsp;•&nbsp;&nbsp;32 Flon 7, Léogane, Ayiti</div>
+  </div>
+</div>
+
+<!-- ADMIN NOTIF -->
+<div class="admin-notif" id="admin-notif">
+  <span id="admin-notif-icon" style="font-size:1.2em">🔔</span>
+  <span id="admin-notif-text" style="flex:1;font-size:13px"></span>
+  <button onclick="this.parentElement.classList.remove('show')" style="background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:17px">✕</button>
+</div>
+
+<!-- SLIDESHOW -->
+<div class="ss-wrap" id="ss-wrap">
+  <div class="ss-track" id="ss-track"></div>
+  <div class="ss-dots" id="ss-dots"></div>
+  <div class="ss-arrow left" onclick="ssPrev()">&#8249;</div>
+  <div class="ss-arrow right" onclick="ssNext()">&#8250;</div>
+</div>
+
+<!-- GAMES GRID -->
+<div class="games-section">
+  <div class="sec-title">Nou Jwe</div>
+  <div class="games-grid" id="games-grid">
+    <div class="gcard" data-cat="lotto" onclick="goPlay('borlette')">
+      <span class="gcard-icon">🎯</span><div class="gcard-name">Borlette</div><div class="gcard-desc">Lot1·Lot2·Lot3</div>
+    </div>
+    <div class="gcard" data-cat="lotto" onclick="goPlay('borlette')">
+      <span class="gcard-icon">🔢</span><div class="gcard-name">Lotto 3/4/5</div><div class="gcard-desc">Gain ×500</div>
+    </div>
+    <div class="gcard" data-cat="lotto" onclick="goPlay('borlette')">
+      <span class="gcard-icon">💍</span><div class="gcard-name">Mariage</div><div class="gcard-desc">Pè nimewo</div>
+    </div>
+    <div class="gcard" data-cat="casino" onclick="goPlay('keno')">
+      <span class="gcard-badge badge-pop">Pop</span>
+      <span class="gcard-icon">🎱</span><div class="gcard-name">Keno Lucky</div><div class="gcard-desc">80 nimewo</div>
+    </div>
+    <div class="gcard" data-cat="casino" onclick="goPlay('lucky6')">
+      <span class="gcard-icon">🍀</span><div class="gcard-name">Lucky 6</div><div class="gcard-desc">48 boul·×30</div>
+    </div>
+    <div class="gcard" data-cat="virtuel" onclick="goPlay('course')">
+      <span class="gcard-icon">🏎️</span><div class="gcard-name">Course Auto</div><div class="gcard-desc">6 vwati</div>
+    </div>
+    <div class="gcard" data-cat="casino" onclick="goPlay('roulette')">
+      <span class="gcard-icon">🎡</span><div class="gcard-name">Roulette</div><div class="gcard-desc">0–36·×35</div>
+    </div>
+    <div class="gcard" data-cat="casino" onclick="goPlay('helico')">
+      <span class="gcard-icon">🚁</span><div class="gcard-name">Hélicoptère</div><div class="gcard-desc">Monte & Cash</div>
+    </div>
+    <div class="gcard" data-cat="sports" onclick="goPlay('sports')">
+      <span class="gcard-badge badge-new"><span class="live-dot"></span>Live</span>
+      <span class="gcard-icon">⚽</span><div class="gcard-name">Paris Sportifs</div><div class="gcard-desc">Live·À venir</div>
+    </div>
+    <div class="gcard" data-cat="sports" onclick="goPlay('penalty')">
+      <span class="gcard-badge badge-hot">New</span>
+      <span class="gcard-icon">🥅</span><div class="gcard-name">Penalty</div><div class="gcard-desc">Tir au but</div>
+    </div>
+  </div>
+</div>
+
+<!-- MATCHES -->
+<div class="matches-section">
+  <div class="sec-title">⚽ Matchs an vedèt</div>
+  <div class="match-row">
+    <div class="mcard" onclick="goPlay('sports')">
+      <div class="mc-league">🇫🇷 Ligue 1</div>
+      <div class="mc-teams">PSG<span class="mc-vs">VS</span>Monaco</div>
+      <div class="mc-time"><span class="live-dot"></span> LIVE·67'</div>
+      <div class="mc-odds">
+        <div class="mc-odd"><div class="mc-odd-l">1</div><div class="mc-odd-v">1.45</div></div>
+        <div class="mc-odd"><div class="mc-odd-l">X</div><div class="mc-odd-v">4.20</div></div>
+        <div class="mc-odd"><div class="mc-odd-l">2</div><div class="mc-odd-v">6.50</div></div>
+      </div>
+    </div>
+    <div class="mcard" onclick="goPlay('sports')">
+      <div class="mc-league">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League</div>
+      <div class="mc-teams">Arsenal<span class="mc-vs">VS</span>Man City</div>
+      <div class="mc-time"><span class="live-dot"></span> LIVE·43'</div>
+      <div class="mc-odds">
+        <div class="mc-odd"><div class="mc-odd-l">1</div><div class="mc-odd-v">2.80</div></div>
+        <div class="mc-odd"><div class="mc-odd-l">X</div><div class="mc-odd-v">3.15</div></div>
+        <div class="mc-odd"><div class="mc-odd-l">2</div><div class="mc-odd-v">2.50</div></div>
+      </div>
+    </div>
+    <div class="mcard" onclick="goPlay('sports')">
+      <div class="mc-league">🇪🇸 La Liga</div>
+      <div class="mc-teams">Real<span class="mc-vs">VS</span>Barça</div>
+      <div class="mc-time">📅 Ce soir 20:00</div>
+      <div class="mc-odds">
+        <div class="mc-odd"><div class="mc-odd-l">1</div><div class="mc-odd-v">2.10</div></div>
+        <div class="mc-odd"><div class="mc-odd-l">X</div><div class="mc-odd-v">3.30</div></div>
+        <div class="mc-odd"><div class="mc-odd-l">2</div><div class="mc-odd-v">3.60</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="spacer-bot"></div>
+
+<!-- BOTTOM NAV -->
+<div class="bot-nav">
+  <div class="bn on"><i class="fas fa-home"></i>Akèy</div>
+  <div class="bn" onclick="goPlay('sports')"><i class="fas fa-futbol"></i>Sports</div>
+  <div class="bn" onclick="goPlay('roulette')"><i class="fas fa-dice"></i>Casino</div>
+  <div class="bn" onclick="goPlay('penalty')"><i class="fas fa-trophy"></i>Jwe</div>
+  <div class="bn" onclick="openModal('login-modal')" style="color:#22c55e;"><i class="fas fa-sign-in-alt"></i>Konekte</div>
+  <div class="bn" onclick="openModal('signup-modal')" style="color:#f5c800;"><i class="fas fa-user-plus"></i>Enskri</div>
+</div>
+
+<!-- AUTH GATE -->
+<div class="auth-gate" id="auth-gate">
+  <div class="auth-gate-box">
+    <div style="font-size:2.5em;margin-bottom:8px">🔐</div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.6em;font-weight:900;color:#f5c800;margin-bottom:7px">Ou dwe konekte</div>
+    <div style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:20px;line-height:1.6">Pou jwe oswa plase yon paryaj, ou dwe konekte oswa kreye yon kont gratis.</div>
+    <div style="display:flex;flex-direction:column;gap:9px">
+      <button class="m-btn" onclick="closeGate();openModal('login-modal')"><i class="fas fa-sign-in-alt"></i> KONEKTE</button>
+      <button class="m-btn" onclick="closeGate();openModal('signup-modal')" style="background:rgba(245,200,0,.12);border:1px solid #f5c800;color:#f5c800;">✨ KREYE KÒT GRATIS</button>
+      <button onclick="closeGate()" style="background:none;border:none;color:rgba(255,255,255,.3);font-size:12px;cursor:pointer;padding:7px">Anile</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN MODAL -->
+<div class="modal-overlay" id="login-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🔐 KONEKTE</div>
+    <div class="m-err" id="ml-err"></div>
+    <input type="tel" class="m-inp" id="ml-phone" placeholder="Nimewo telefòn" inputmode="numeric">
+    <div class="m-inp-wrap">
+      <input type="password" class="m-inp" id="ml-pwd" placeholder="Mot de passe">
+      <button class="m-eye" onclick="toggleMdp('ml-pwd',this)"><i class="fas fa-eye"></i></button>
+    </div>
+    <button class="m-btn" onclick="loginJoueurMain()">SE CONNECTER</button>
+    <div class="m-link">Pas de compte ? <a onclick="switchModal('signup-modal')">Enskri gratis</a></div>
+  </div>
+</div>
+
+<!-- SIGNUP MODAL -->
+<div class="modal-overlay" id="signup-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">✨ KREYE KONT OU</div>
+    <div class="m-err" id="mr-err"></div>
+    <input type="text" class="m-inp" id="mr-name" placeholder="Non konplè">
+    <input type="tel" class="m-inp" id="mr-phone" placeholder="Nimewo telefòn" inputmode="numeric">
+    <div class="m-inp-wrap">
+      <input type="password" class="m-inp" id="mr-pwd" placeholder="Mot de passe">
+      <button class="m-eye" onclick="toggleMdp('mr-pwd',this)"><i class="fas fa-eye"></i></button>
+    </div>
+    <div class="m-inp-wrap">
+      <input type="password" class="m-inp" id="mr-pwd2" placeholder="Konfime mot de passe">
+      <button class="m-eye" onclick="toggleMdp('mr-pwd2',this)"><i class="fas fa-eye"></i></button>
+    </div>
+    <button class="m-btn" onclick="registerJoueurMain()">KREYE KONT MWEN</button>
+    <div class="m-link">Deja enskri ? <a onclick="switchModal('login-modal')">Konekte</a></div>
+  </div>
+</div>
+
+<!-- STAFF MODAL -->
+<div class="modal-overlay" id="staff-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div style="text-align:center;margin-bottom:16px;">
+      <img src="logo.png" onerror="this.src='logo.jpeg';this.onerror=null" style="width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid #f5c800;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto;">
+      <div class="modal-title" style="margin-bottom:0">🔑 AKSÈ PÈSONÈL</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;">Administratè · Direktè · Caissier</div>
+    </div>
+    <div class="m-err" id="staff-err"></div>
+    <select id="staff-role" class="m-select" onchange="updateStaffForm()">
+      <option value="admin">👑 Administratè</option>
+      <option value="directeur">🏢 Direktè</option>
+      <option value="caissier">🏧 kesye</option>
+    </select>
+    <div id="staff-code-wrap" style="display:none;margin-bottom:11px">
+      <input type="text" class="m-inp" id="staff-code" placeholder="Idantifyan (ex: DIR-NORD)" style="margin-bottom:0;letter-spacing:2px;font-weight:800">
+    </div>
+    <div class="m-inp-wrap">
+      <input type="password" class="m-inp" id="staff-pwd" placeholder="Mot de passe">
+      <button class="m-eye" onclick="toggleMdp('staff-pwd',this)"><i class="fas fa-eye"></i></button>
+    </div>
+    <button class="m-btn gold" onclick="loginStaffMain()">AKSEDE</button>
+    <div style="text-align:center;margin-top:12px;">
+      <button onclick="event.stopPropagation();ouvrirInfo();" style="background:none;border:1px solid rgba(245,200,0,.3);color:rgba(245,200,0,.8);padding:7px 18px;border-radius:20px;font-size:12px;cursor:pointer;font-weight:700;"><i class="fas fa-info-circle"></i> À propos de J.A. PARYAJ LOTTO</button>
+    </div>
+  </div>
+</div>
+
+<!-- SECRET OVERLAY -->
+<div class="secret-ov" id="secret-ov">
+  <div class="secret-box">
+    <div style="font-size:1.8em;margin-bottom:7px">🔑</div>
+    <div style="font-size:15px;font-weight:800;color:#f5c800;margin-bottom:3px">Kòd aksè pèsonèl</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.5)">Antre kòd 12 karaktè</div>
+    <input type="text" class="secret-inp" id="secret-inp" maxlength="12" autocomplete="off" placeholder="• • • • • • • • • • • •">
+    <button class="m-btn gold" onclick="verifSecret()">VALIDE</button>
+    <button onclick="hideSecretOv()" style="width:100%;margin-top:7px;padding:9px;background:none;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:rgba(255,255,255,.45);cursor:pointer;font-size:12px">Anile</button>
+  </div>
+</div>
+
+<!-- INFO MODAL -->
+<div class="info-modal" id="info-modal" onclick="if(event.target===this)fermerInfo();">
+  <div class="info-modal-inner" style="background:#fff;color:#1a1a2e;border-radius:20px;padding:28px;max-width:750px;width:100%;margin:auto;position:relative;">
+    <button onclick="fermerInfo()" style="position:absolute;top:16px;right:16px;background:#f0f0f0;border:none;color:#555;font-size:20px;cursor:pointer;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:2">✕</button>
+
+    <!-- Logo header -->
+    <div style="text-align:center;margin-bottom:24px;padding-bottom:20px;border-bottom:2px solid #f0f0f0;">
+      <img src="logo.png" onerror="this.src='logo.jpeg';this.onerror=null" alt="J.A. PARYAJ LOTTO" style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:4px solid #1a3a8f;box-shadow:0 0 0 6px rgba(26,58,143,.1),0 8px 30px rgba(0,0,0,.15);margin-bottom:12px;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:2em;font-weight:900;color:#1a3a8f;letter-spacing:3px">J.A. PARYAJ LOTTO</div>
+      <div style="font-size:13px;color:#888;margin-top:4px">Lotto · Paryaj · Casino · Sports</div>
+    </div>
+
+    <!-- Contact info -->
+    <div class="info-section" style="margin-bottom:22px;">
+      <h3 style="color:#1a3a8f;font-size:15px;font-weight:800;margin-bottom:10px;padding-bottom:7px;border-bottom:2px solid #f0f0f0">📍 Kontakt & Siège Social</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:12px;">
+        <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:10px;padding:13px;">
+          <div style="font-size:1.4em;margin-bottom:4px">🏠</div>
+          <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px">Siège Social</div>
+          <div style="font-size:14px;font-weight:700;color:#1a3a8f;margin-top:3px">32 Flon 7, Léogane<br>Lwès, Ayiti</div>
+        </div>
+        <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:10px;padding:13px;">
+          <div style="font-size:1.4em;margin-bottom:4px">📧</div>
+          <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px">Email</div>
+          <div style="font-size:14px;font-weight:700;color:#1a3a8f;margin-top:3px"><a href="mailto:tontonkondo@gmail.com" style="color:#1a3a8f">tontonkondo@gmail.com</a></div>
+        </div>
+        <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:10px;padding:13px;">
+          <div style="font-size:1.4em;margin-bottom:4px">🎵</div>
+          <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px">TikTok</div>
+          <div style="font-size:14px;font-weight:700;color:#1a3a8f;margin-top:3px"><a href="https://www.tiktok.com/@tontonkondo" target="_blank" style="color:#1a3a8f">@tontonkondo</a></div>
+        </div>
+        <div style="background:#f8f9ff;border:1px solid #e0e8ff;border-radius:10px;padding:13px;">
+          <div style="font-size:1.4em;margin-bottom:4px">📸</div>
+          <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px">Instagram</div>
+          <div style="font-size:14px;font-weight:700;color:#1a3a8f;margin-top:3px"><a href="https://www.instagram.com/tontonkondo" target="_blank" style="color:#1a3a8f">@tontonkondo</a></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Jeux -->
+    <div style="margin-bottom:22px;">
+      <h3 style="color:#1a3a8f;font-size:15px;font-weight:800;margin-bottom:10px;padding-bottom:7px;border-bottom:2px solid #f0f0f0">🎮 Nos Jeux</h3>
+      <div style="display:flex;flex-wrap:wrap;gap:7px;">
+        <span style="background:#f0f4ff;border:1px solid #d0d8ff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;color:#1a3a8f">🎯 Borlette/Lotto</span>
+        <span style="background:#f0f4ff;border:1px solid #d0d8ff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;color:#1a3a8f">🎱 Keno Lucky</span>
+        <span style="background:#f0f4ff;border:1px solid #d0d8ff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;color:#1a3a8f">🍀 Lucky 6</span>
+        <span style="background:#f0f4ff;border:1px solid #d0d8ff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;color:#1a3a8f">🏎️ Course Auto</span>
+        <span style="background:#f0f4ff;border:1px solid #d0d8ff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;color:#1a3a8f">🚁 Hélicoptère</span>
+        <span style="background:#f0f4ff;border:1px solid #d0d8ff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;color:#1a3a8f">🎡 Roulette</span>
+        <span style="background:#f0f4ff;border:1px solid #d0d8ff;border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700;color:#1a3a8f">⚽ Paris Sportifs</span>
+      </div>
+    </div>
+
+    <!-- Full text content -->
+    
+    <div class="info-section">
+      <h3 style="color:#1a3a8f;font-size:15px;font-weight:800;margin-bottom:10px;padding-bottom:7px;border-bottom:2px solid #f0f0f0">Prezantasyon</h3>
+      <p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">J.A. PARYAJ LOTTO lotto paryaj 
+C'est une société de Paris sportif régie selon la loi haïtienne 
+Don le siège social Est a flon 7 # 32  J.A. PARYAJ LOTTO LOTTO PARYAJ participé dans différentes activités culturelles spécialement dans le sport musique et autres DIRIGÉ PAR MONSIEUR LAFLEUR DUTHEAU</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">L’essentiel
+Bien que limitées, les estimations mondiales standardisées des méfaits des jeux d’argent 
+et de hasard semblent indiquer que 1,2 % de la population adulte mondiale souffre d’un trouble du jeu. En outre, la pratique de jeux d’argent et de hasard est en général nuisible pour les personnes qui ne jouent pas.
+Les analystes de l’industrie estiment que les revenus mondiaux tirés des jeux d’argent atteindront 700 milliards de dollars des États-Unis (USD) d’ici à 2028 (1). Cet essor sera favorisé en grande partie par l’utilisation des smartphones dans les pays à revenu faible ou intermédiaire.
+Les personnes qui s’adonnent aux jeux d’argent à des niveaux nocifs sont à l’origine d’environ 60 % des pertes de revenus (2).
+Les jeux d’argent et de hasard peuvent menacer la santé, dans la mesure où ils entraînent une augmentation de l’incidence des maladies mentales et du suicide. Ils peuvent contribuer à la pauvreté, car les ménages dépensent pour ces jeux des sommes qu’ils auraient pu consacrer à des biens et des services essentiels.
+Les jeux d’argent et de hasard ont aussi d’autres méfaits, dont la rupture des relations, la violence familiale, de graves difficultés financières, la stigmatisation, la commission de délits en vue d’obtenir de l’argent (vol, fraude), la négligence des enfants et l’érosion des institutions civiles en raison de la corruption et d’activités politiques menées par les entreprises de l’industrie du jeu. Les jeux de hasard sont également un moyen courant de blanchir de l’argent obtenu par le biais d’activités illégales.
+La commercialisation et la numérisation accélèrent la normalisation des jeux d’argent et de hasard. Le parrainage et le marketing sont également des facteurs clés de l’essor mondial rapide des jeux d’argent.
+Vue d’ensemble
+Les jeux d’argent et de hasard consistent à miser de l’argent (ou un autre objet de valeur), avec la possibilité d’obtenir un intéressement financier lors d’une partie à l’issue incertaine. Les paris, les machines à sous, les jeux de casino, les loteries et les lotos sont des jeux d’argent et de hasard. On considère souvent que les plus grands méfaits sont causés par les machines de jeu électroniques et les jeux de casino. Ceux-ci sont disponibles à la fois dans des lieux physiques et en ligne. Bien que de nombreuses juridictions aient maintenant légalisé les jeux d’argent et de hasard, le statut juridique de ces jeux varie d’un pays à l’autre et à l’intérieur d’un même pays. Comme les jeux d’argent sont disponibles en ligne, ils sont accessibles presque partout, à tout moment, même dans les pays où ils sont interdits.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Ils peuvent entraîner de graves problèmes de santé liés à des difficultés financières, à des ruptures, à la violence familiale, à une maladie mentale ou au suicide. Les conséquences des méfaits des jeux d’argent et de hasard peuvent perdurer toute la vie et même toucher plusieurs générations. Les interventions à l’échelle de la population peuvent aider à prévenir et à atténuer ces méfaits. On peut, par exemple, mettre fin à la publicité et à la promotion et mettre en place la création de comptes centralisés pour obliger les personnes qui jouent à fixer des limites de perte et imposer des restrictions à l’accès (heures d’ouverture, densité). En outre, la réglementation doit être stricte et bien appliquée pour garantir le respect des lois existantes.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Ampleur du problème
+Les jeux d’argent et de hasard sont aujourd’hui autorisés par la loi dans de nombreux pays. Ils ont été normalisés par la mise en place de nouvelles associations commerciales avec des activités sportives et culturelles dont la promotion est maintenant très vive. Environ 5,5 % des femmes et 11,9 % des hommes dans le monde souffrent, à des degrés variables, des méfaits des jeux d’argent et de hasard (3). Selon une étude suédoise, les personnes atteintes d’un trouble du jeu étaient 15 fois plus susceptibles de se suicider que les membres de la population générale (4). Dans l’État de Victoria, en Australie, au moins 4,2 % des suicides étaient liés aux jeux d’argent et de hasard (5).</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Quand une personne s’adonne aux jeux à un haut niveau de risque, six autres personnes en moyenne (généralement des non-joueurs) en subissent les conséquences (6). Ce nombre est probablement beaucoup plus élevé dans les cultures fondées sur la parenté, y compris dans les peuples autochtones. Les jeux d’argent et de hasard peuvent également priver d’autres entreprises de revenus tirés des dépenses de consommation normales.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">La réglementation des jeux d’argent est un moyen courant d’autorégulation du secteur. Cependant, il existe de nombreux exemples de l’échec de cette approche. Le fonctionnement de nombreux produits de jeu est souvent peu transparent. Les machines de jeu électroniques sont parfois conçues pour pousser les utilisateurs et les utilisatrices à jouer longtemps. Les messages de promotion de la santé sont souvent inadaptés et reposent parfois sur le « nudge » qui encourage la consommation de produits nocifs (par exemple, en exploitant les biais cognitifs des joueurs et des joueuses) et peuvent favoriser la normalisation. Parallèlement à une réglementation stricte des produits de jeu et de leur disponibilité, des mises en garde claires sur les méfaits associés au jeu sont susceptibles d’être plus efficaces que les messages suggérant d’arrêter simplement lorsque le jeu n’est plus amusant, par exemple.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Il n’y a pas de consensus mondial sur la réglementation des jeux d’argent et de hasard en ligne. Des prestataires non agréés proposent régulièrement des produits de jeu non réglementés, et il est urgent de réglementer les jeux d’argent et de hasard en ligne.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Quelles sont les personnes à risque ?
+Lors d’événements importants de leur vie, notamment une séparation, un départ à la retraite, un accident ou le décès d’un être cher, certaines personnes peuvent être exposées à un risque accru. Les facteurs de stress sociaux tels que la pauvreté, la discrimination ou d’autres circonstances défavorables augmentent également les risques. La forte promotion des jeux d’argent et de hasard en ligne et dans le cadre du sport risque également de normaliser les jeux d’argent pour les enfants et les jeunes.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Signes et symptômes
+Le trouble du jeu est décrit aux côtés des troubles dus à l’utilisation de substances dans la cinquième édition du Manuel diagnostique et statistique des troubles mentaux (DSM-5), et dans la onzième révision de la Classification internationale des maladies (CIM-11). La CIM-11 décrit trois critères diagnostiques :</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">1) contrôle altéré sur les jeux ;</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">2) priorité croissante donnée aux jeux au point que ceux-ci dominent les autres aspects de la vie et les activités quotidiennes ; et</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">3) poursuite ou escalade de la pratique de jeux malgré l’occurrence de conséquences négatives.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Les méfaits du jeu apparaissent également bien en deçà des seuils cliniques. Par exemple, certaines personnes renoncent à des dépenses essentielles pour leur famille au profit du jeu. Ceci peut entraîner de l’insécurité alimentaire, des problèmes de logement et des difficultés d’accès aux soins et à l’éducation.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Transmission
+La facilité d’accès aux produits de jeu augmente le risque de s’y adonner. Les possibilités de jouer sont souvent disponibles de manière disproportionnée dans les zones les plus défavorisées. Les produits à haute intensité, dont les machines de jeu électroniques, les plateformes de pari rapide et les jeux de casino, y compris en ligne, sont facilement accessibles presque partout.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">La commercialisation des jeux d’argent et de hasard dans de nombreux pays non seulement favorise la normalisation, mais aussi augmente l’incidence des méfaits. Le parrainage ou toute autre association avec des ligues sportives populaires, ainsi que la colocation de produits de jeu dans des contextes sociaux, sont des mécanismes clés de promotion. La promotion agressive des jeux d’argent dans les médias sociaux et à forte audience augmente également le recours au jeu.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Prévention et lutte
+La prévention des méfaits des jeux d’argent et de hasard repose sur des approches de santé publique universelles à l’échelle de la population. On peut citer en exemple :</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">mettre fin à la publicité des jeux d’argent, à la promotion et au parrainage des sports et d’autres activités culturelles ;
+combattre la stigmatisation et la honte vécues par les personnes victimes des méfaits du jeu ;
+mettre en place la création de comptes centralisés et d’outils contraignants de pré-engagement et d’auto-exclusion efficaces ;
+instaurer des mesures de sécurité, y compris une limitation universelle des pertes, des mises maximales et des pauses obligatoires pendant les sessions de jeu ;
+réglementer efficacement l’activité des fournisseurs de jeux d’argent et de hasard, y compris grâce à des dispositifs suffisamment financés pour faire appliquer la loi ;
+lutter contre l’activité politique et l’influence de l’industrie du jeu sur la recherche ; et
+diffuser des mises en garde sur les méfaits associés aux produits de jeu.
+Traitement
+Il existe une gamme de thérapies pour les personnes atteintes de troubles du jeu. À l’heure actuelle, les plus efficaces sont la thérapie cognitivo-comportementale à long terme et les entretiens motivationnels. L’efficacité de l’auto-assistance, des interventions pharmacologiques et du soutien mutuel est moins avérée, bien que ces interventions soient parmi les plus utilisées. Certaines données montrent l’intérêt des thérapies sur Internet, bien que l’attrition soit un problème important.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Le taux de recours aux traitements des troubles du jeu est faible, environ 0,14 % de la population cherchant une aide officielle ou informelle pour régler ce type de problèmes. La stigmatisation et la honte empêchent souvent de demander de l’aide. L’approche réglementaire privilégiée par l’industrie des jeux d’argent et de hasard – le jeu dit « responsable » – aggrave le problème en rejetant la faute sur les personnes victimes des méfaits. Les interventions en matière de jeu responsable sont généralement inefficaces, en particulier lorsque l’adoption de mesures est facultative.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Les personnes qui cherchent à mieux maîtriser leur pratique des jeux d’argent ou à arrêter de jouer devraient disposer d’outils qui les y aident. Il s’agit notamment du pré-engagement universel (obligeant à fixer des limites contraignantes de temps et de dépenses) et de l’auto-exclusion (permettant de s’interdire l’accès aux fournisseurs de jeux d’argent). Les systèmes universels (également appelés obligatoires) sont les plus efficaces. Les systèmes volontaires sont peu utilisés et ne sont pas exécutoires. La prévention est la stratégie la plus rentable pour minimiser les méfaits des jeux d’argent et de hasard.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Problèmes
+Dans les pays où les jeux d’argent et de hasard ont été légalisés, les pouvoirs publics en tirent généralement des recettes fiscales substantielles. Cela peut créer une certaine dépendance et dissuader de lutter contre les méfaits. Les avantages économiques perçus des marchés des jeux d’argent et de hasard peuvent l’emporter sur les effets mal compris sur la santé et le bien-être.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">En général, les groupes de l’industrie des jeux d’argent s’opposent fermement aux réglementations à fort impact et à d’autres mesures qui nuisent à leurs intérêts commerciaux. Ces entreprises usent généralement de leur influence politique pour préserver leurs intérêts. L’industrie a aussi utilisé des fonds et d’autres formes d’aide pour influer sur le monde de la recherche. L’un des principaux objectifs de santé publique est de limiter la capacité des intérêts particuliers à influer sur le programme de recherche et les politiques publiques.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Impact mondial
+Les méfaits des jeux d’argent et de hasard augmentent à mesure que les marchés de ces jeux se développent, ce qui nuit à la santé et au bien-être des populations. Les jeux d’argent et de hasard non autorisés, illégaux ou délocalisés posent d’importants problèmes réglementaires à tous les gouvernements. Pour y faire face efficacement, les gouvernements doivent coopérer afin d’échanger des données, de protéger les consommateurs et les consommatrices contre les pratiques non réglementées et de percevoir les recettes fiscales légales. En l’absence de mesures de protection efficaces, les jeux d’argent et de hasard peuvent compromettre les progrès vers la réalisation des objectifs de développement durable (ODD), en particulier les objectifs 3, 10 et 16.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">Action de l’OMS
+L’OMS est consciente des effets négatifs des jeux d’argent et de hasard sur la santé. Il faut mener une action multisectorielle visant à atténuer les méfaits de ces jeux pour éviter qu’ils n’entravent la réalisation des ODD. L’OMS reconnaît la nécessité pour les États Membres de surveiller de près et de réglementer efficacement les opérations, les produits et les activités liés aux jeux d’argent et de hasard. Il faut notamment lutter contre la stigmatisation et la honte liées aux jeux d’argent et de hasard, éliminer la publicité et la promotion et privilégier d’autres démarches en amont pour prévenir et atténuer les méfaits du jeu.</p>
+<p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">L’OMS coordonne un groupe d’experts et d’expertes mondiaux pour renforcer les capacités afin de faire face aux conséquences des jeux d’argent et de hasard sur la santé publique. Les premières démarches comprennent la mise au point de nouveaux instruments de diagnostic des troubles du jeu afin de mieux tenir compte des populations ailleurs qu’en Amérique du Nord et la recherche d’un consensus entre experts sur les limites diagnostiques. L’OMS reconnaît que certaines juridictions ont mis en place des systèmes efficaces de réglementation des jeux d’argent et de hasard. Des démarches sont en cours pour documenter et diffuser les enseignements qui en ont été tirés, en particulier pour soutenir les pays à revenu faible ou intermédiaire où l’activité commerciale liée aux jeux d’argent augmente rapidement.</p>
+    </div>
+
+    <!-- Warning -->
+    <div style="background:#fff8e1;border:1px solid #ffd54f;border-radius:10px;padding:14px;margin-bottom:20px;">
+      <p style="color:#7a5f00;font-size:14px;line-height:1.7">⚠️ <strong>Le jeu peut créer une dépendance.</strong> Jouez de manière responsable. Ne misez que ce que vous pouvez vous permettre de perdre. Les jeux sont réservés aux personnes de <strong>18 ans et plus</strong>.</p>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align:center;padding-top:16px;border-top:2px solid #f0f0f0;">
+      <p style="font-size:13px;color:#888">© 2024 J.A. PARYAJ LOTTO Lotto Paryaj · Tous droits réservés</p>
+      <p style="font-size:13px;color:#888;margin-top:5px">Développé par <strong style="color:#1a3a8f">La Nova Technologie</strong></p>
+    </div>
+
+    <button onclick="fermerInfo()" style="width:100%;padding:13px;background:#e63946;color:#fff;border:none;border-radius:10px;font-weight:800;font-size:16px;cursor:pointer;margin-top:20px;letter-spacing:1px;">Fermer</button>
+  </div>
+</div>
+
+<div class="notif" id="notif-login"></div>
+<button class="secret-btn" onclick="showSecretOv()"></button>
+
+<script src="config.js"></script>
 <script>
-    const API_BASE = window.location.origin + '/api'; // utilise la même origine que la page
+const gJ   =()=>JSON.parse(localStorage.getItem('tk_joueurs'))||{};
+const sJ   =v =>localStorage.setItem('tk_joueurs',JSON.stringify(v));
+const gDirs=()=>JSON.parse(localStorage.getItem('tk_dirs'))||{};
+const gCaiss=()=>JSON.parse(localStorage.getItem('tk_caiss'))||{};
+const SECRET_CODE='jabank12';
+let pendingGame=null;
 
-    // Gestion des onglets
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tab = btn.dataset.tab;
-            document.querySelectorAll('.form-container').forEach(c => c.classList.remove('active'));
-            document.getElementById(`${tab}-form-container`).classList.add('active');
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-        });
-    });
+/* SLIDESHOW */
+const SLIDE_DEFS=[
+  {emoji:'🎯',bg:'linear-gradient(135deg,#0d2151,#1d8c3e)',title:'Borlette & Lotto',sub:'Tunisia·Florida·New York·Georgia·Texas',tag:'Lotto',game:'borlette'},
+  {emoji:'🎱',bg:'linear-gradient(135deg,#1a0d40,#2979ff)',title:'Keno Lucky',sub:'80 nimewo · Gain ×80',tag:'Keno',game:'keno'},
+  {emoji:'🏎️',bg:'linear-gradient(135deg,#0d2151,#e63946)',title:'Course Automobile',sub:'6 vwati · Gain ×5.50',tag:'Course',game:'course'},
+  {emoji:'⚽',bg:'linear-gradient(135deg,#0a2000,#28b04e)',title:'Penalty — Tir au But',sub:'9 kazye · Gain ×4.50',tag:'🔥 Nouvo',game:'penalty'},
+  {emoji:'🎡',bg:'linear-gradient(135deg,#1a0d40,#8a6820)',title:'Roulette Américaine',sub:'0–36 · Plein ×35',tag:'Casino',game:'roulette'},
+  {emoji:'🚁',bg:'linear-gradient(135deg,#061520,#1a3a8f)',title:'Jeu Hélicoptère',sub:'Monte · Encaisse · Evite Crash',tag:'Casino',game:'helico'},
+  {emoji:'🍀',bg:'linear-gradient(135deg,#0a2000,#1a6b2a)',title:'Lucky 6',sub:'48 boul · Gain ×30',tag:'Casino',game:'lucky6'},
+  {emoji:'💍',bg:'linear-gradient(135deg,#2a0d40,#9c27b0)',title:'Mariage',sub:'Jwèt pè nimewo',tag:'Lotto',game:'borlette'},
+];
+const track=document.getElementById('ss-track');
+const dotsEl=document.getElementById('ss-dots');
+let ssCur=0,ssTimer=null,ssCount=0;
 
-    // Connexion (propriétaire ou joueur)
-    document.getElementById('login-btn').addEventListener('click', async () => {
-        const identifier = document.getElementById('login-identifier').value.trim();
-        const password = document.getElementById('login-password').value;
-        const errorDiv = document.getElementById('login-error');
+function buildSlides(){
+  let loaded=0,checked=0,total=50;
+  const realSlides=[];
+  for(let i=1;i<=total;i++){
+    const def=SLIDE_DEFS[(i-1)%SLIDE_DEFS.length];
+    const idx=i;
+    // Test image
+    const tst=new Image();
+    tst.onload=()=>{
+      realSlides.push({src:tst.src,def,idx});
+      checked++;if(checked===total)finalize(realSlides);
+    };
+    tst.onerror=()=>{
+      // Try .jpg
+      const t2=new Image();
+      t2.onload=()=>{realSlides.push({src:t2.src,def,idx});checked++;if(checked===total)finalize(realSlides);};
+      t2.onerror=()=>{
+        // No image - add fallback slide for first 8
+        if(idx<=8) realSlides.push({src:null,def,idx});
+        checked++;if(checked===total)finalize(realSlides);
+      };
+      t2.src=idx+'.jpg';
+    };
+    tst.src=idx+'.png';
+  }
+}
 
-        if (!identifier || !password) {
-            errorDiv.innerText = 'Veuillez remplir tous les champs';
-            return;
-        }
+function finalize(slides){
+  slides.sort((a,b)=>a.idx-b.idx);
+  const show=slides.slice(0,20);
+  ssCount=show.length;
+  track.innerHTML='';dotsEl.innerHTML='';
+  show.forEach(({src,def,idx})=>{
+    const div=document.createElement('div');
+    div.className='ss-slide';
+    // Image or fallback
+    if(src){
+      const img=document.createElement('img');
+      img.className='ss-img loaded';img.src=src;img.alt='';
+      div.appendChild(img);
+    } else {
+      const fb=document.createElement('div');
+      fb.className='ss-fallback';
+      fb.style.background=def.bg;
+      const fbImg2=document.createElement('img');
+      fbImg2.src='logo.png';
+      fbImg2.onerror=function(){this.src='logo.jpeg';this.onerror=null;};
+      fbImg2.style.cssText='width:70px;height:70px;border-radius:50%;object-fit:cover;border:3px solid #f5c800;box-shadow:0 0 14px rgba(245,200,0,.4);';
+      const fbT2=document.createElement('div');
+      fbT2.style.cssText='font-size:1.8em;font-weight:900;color:#f5c800;letter-spacing:3px;font-family:sans-serif;';
+      fbT2.textContent='J.A. PARYAJ LOTTO';
+      const fbS2=document.createElement('div');
+      fbS2.style.cssText='font-size:11px;color:rgba(255,255,255,.6);';
+      fbS2.textContent=def.title;
+      fb.appendChild(fbImg2);fb.appendChild(fbT2);fb.appendChild(fbS2);
+      div.appendChild(fb);
+    }
+    // Overlay + caption
+    const ov=document.createElement('div');ov.className='ss-overlay';
+    const cap=document.createElement('div');cap.className='ss-caption';
+    const capTag=document.createElement('span');capTag.className='ss-tag';capTag.textContent=def.tag;
+    const capTitle=document.createElement('div');capTitle.className='ss-title';capTitle.textContent=def.title;
+    const capSub=document.createElement('div');capSub.className='ss-sub';capSub.textContent=def.sub;
+    cap.appendChild(capTag);cap.appendChild(capTitle);cap.appendChild(capSub);
+    div.appendChild(ov);div.appendChild(cap);
+    div.onclick=()=>goPlay(def.game);
+    track.appendChild(div);
+  });
+  const nd=Math.min(10,ssCount);
+  for(let i=0;i<nd;i++){
+    const d=document.createElement('div');
+    d.className='ss-dot'+(i===0?' on':'');
+    const ci=i;d.onclick=(e)=>{e.stopPropagation();ssGo(ci);};
+    dotsEl.appendChild(d);
+  }
+  ssGo(0);startSS();
+}
+function ssGo(n){
+  if(!ssCount)return;
+  ssCur=((n%ssCount)+ssCount)%ssCount;
+  track.style.transform='translateX(-'+ssCur*100+'%)';
+  dotsEl.querySelectorAll('.ss-dot').forEach((d,i)=>d.classList.toggle('on',i===ssCur%Math.min(10,ssCount)));
+}
+function ssNext(){stopSS();ssGo(ssCur+1);startSS();}
+function ssPrev(){stopSS();ssGo(ssCur-1);startSS();}
+function startSS(){ssTimer=setInterval(()=>ssGo(ssCur+1),4500);}
+function stopSS(){clearInterval(ssTimer);}
+let ssTx=0;
+document.getElementById('ss-wrap').addEventListener('touchstart',e=>{stopSS();ssTx=e.touches[0].clientX;},{passive:true});
+document.getElementById('ss-wrap').addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-ssTx;if(Math.abs(dx)>40){dx<0?ssNext():ssPrev();}else startSS();});
 
-        errorDiv.innerText = 'Connexion en cours...';
+/* filter removed */
 
-        try {
-            const response = await fetch(`${API_BASE}/auth/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ identifier, password })
-            });
-            const data = await response.json();
-            if (!response.ok || !data.success) {
-                errorDiv.innerText = data.error || 'Identifiants incorrects';
-                return;
-            }
-            // Stocker le token
-            localStorage.setItem('auth_token', data.token);
-            // Rediriger selon le rôle
-            if (data.role === 'owner') {
-                window.location.href = 'owner.html';
-            } else if (data.role === 'player') {
-                localStorage.setItem('player_id', data.playerId);
-                localStorage.setItem('player_name', data.name);
-                window.location.href = 'player.html';
-            } else {
-                errorDiv.innerText = 'Rôle inconnu';
-            }
-        } catch (err) {
-            errorDiv.innerText = 'Erreur de connexion au serveur';
-        }
-    });
+/* AUTH */
+function goPlay(game){pendingGame=game;showGate();}
+function showGate(){document.getElementById('auth-gate').classList.add('on');}
+function closeGate(){document.getElementById('auth-gate').classList.remove('on');}
+function afterLogin(){if(pendingGame)localStorage.setItem('tk_pending_game',pendingGame);window.location.href='app.html';}
 
-    // Inscription joueur
-    document.getElementById('register-btn').addEventListener('click', async () => {
-        const name = document.getElementById('reg-name').value.trim();
-        const phone = document.getElementById('reg-phone').value.trim();
-        const password = document.getElementById('reg-password').value;
-        const zone = document.getElementById('reg-zone').value.trim();
-        const errorDiv = document.getElementById('register-error');
+/* MODALS */
+document.querySelectorAll('.modal-overlay').forEach(ov=>{ov.addEventListener('click',e=>{if(e.target===ov)hideModal(ov.id);});});
+document.getElementById('auth-gate').addEventListener('click',e=>{if(e.target===e.currentTarget)closeGate();});
+// info-modal backdrop click handled inline
+function openModal(id){document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('on'));document.getElementById(id)?.classList.add('on');}
+function hideModal(id){document.getElementById(id)?.classList.remove('on');}
+function switchModal(id){document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('on'));document.getElementById(id)?.classList.add('on');}
+function ouvrirInfo(){
+  const m=document.getElementById('info-modal');
+  if(!m)return;
+  m.classList.add('on');
+  m.style.display='flex';
+  m.style.zIndex='9999';
+}
+function fermerInfo(){
+  const m=document.getElementById('info-modal');
+  if(!m)return;
+  m.classList.remove('on');
+  m.style.display='none';
+}
+function toggleMdp(id,btn){const inp=document.getElementById(id);if(!inp)return;inp.type=inp.type==='password'?'text':'password';btn.innerHTML=inp.type==='password'?'<i class="fas fa-eye"></i>':'<i class="fas fa-eye-slash"></i>';}
 
-        if (!name || !phone || !password) {
-            errorDiv.innerText = 'Nom, téléphone et mot de passe requis';
-            return;
-        }
-        if (password.length < 4) {
-            errorDiv.innerText = 'Le mot de passe doit comporter au moins 4 caractères';
-            return;
-        }
+/* SECRET */
+function showSecretOv(){document.getElementById('secret-ov').classList.add('on');setTimeout(()=>document.getElementById('secret-inp').focus(),100);}
+function hideSecretOv(){document.getElementById('secret-ov').classList.remove('on');}
+document.getElementById('secret-inp').addEventListener('keypress',e=>{if(e.key==='Enter')verifSecret();});
+function verifSecret(){
+  const val=document.getElementById('secret-inp').value.trim().toUpperCase();
+  if(val===SECRET_CODE){hideSecretOv();closeGate();document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('on'));openModal('staff-modal');showN('✅ Aksè otorize','ok');}
+  else{const inp=document.getElementById('secret-inp');inp.style.borderColor='#e63946';setTimeout(()=>inp.style.borderColor='rgba(255,255,255,.15)',1000);showN('Kòd enkòrèk','err');}
+}
+function updateStaffForm(){const r=document.getElementById('staff-role').value;document.getElementById('staff-code-wrap').style.display=(r!=='admin')?'block':'none';}
 
-        errorDiv.innerText = 'Inscription en cours...';
+/* LOGIN */
+async function loginJoueurMain(){
+  const phone=document.getElementById('ml-phone').value.trim();
+  const pwd=document.getElementById('ml-pwd').value;
+  const err=document.getElementById('ml-err');err.classList.remove('show');
+  const btn=document.querySelector('#login-modal .m-btn');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Connexion...';}
+  try {
+    const data = await fetch(CONFIG.SERVER_URL+'/api/auth/player',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({phone,pwd})
+    }).then(r=>r.json().then(d=>({ok:r.ok,...d})));
+    if(!data.ok) throw new Error(data.error||'Erreur');
+    localStorage.setItem('tk_token', data.token);
+    localStorage.setItem('tk_session_role','joueur');
+    afterLogin();
+  } catch(e) {
+    err.textContent=e.message;err.classList.add('show');
+    if(btn){btn.disabled=false;btn.textContent='SE CONNECTER';}
+  }
+}
+async function registerJoueurMain(){
+  const name=document.getElementById('mr-name').value.trim();
+  const phone=document.getElementById('mr-phone').value.trim();
+  const pwd=document.getElementById('mr-pwd').value;
+  const pwd2=document.getElementById('mr-pwd2').value;
+  const err=document.getElementById('mr-err');err.classList.remove('show');
+  if(!name||!phone||!pwd){err.textContent='Tout champ obligatoires.';err.classList.add('show');return;}
+  if(pwd!==pwd2){err.textContent='Mot de passe pa menm.';err.classList.add('show');return;}
+  try {
+    const r = await fetch(CONFIG.SERVER_URL+'/api/auth/register',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,phone,pwd})
+    }).then(r=>r.json().then(d=>({ok:r.ok,...d})));
+    if(!r.ok) throw new Error(r.error||'Erreur');
+    showN('✅ Kont kreye! Konekte ou.','ok');
+    switchModal('login-modal');
+    document.getElementById('ml-phone').value=phone;
+  } catch(e) { err.textContent=e.message; err.classList.add('show'); }
+}
+async function loginStaffMain(){
+  const role=document.getElementById('staff-role').value;
+  const code=document.getElementById('staff-code').value.trim().toUpperCase();
+  const pwd=document.getElementById('staff-pwd').value;
+  const err=document.getElementById('staff-err');err.classList.remove('show');
+  try {
+    let endpoint, body;
+    if(role==='admin')      { endpoint='/api/auth/admin';    body={pwd}; }
+    else if(role==='directeur') { endpoint='/api/auth/director'; body={code,pwd}; }
+    else                    { endpoint='/api/auth/cashier';   body={code,pwd}; }
+    const r = await fetch(CONFIG.SERVER_URL+endpoint,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    }).then(r=>r.json().then(d=>({ok:r.ok,...d})));
+    if(!r.ok) throw new Error(r.error||'Erreur');
+    localStorage.setItem('tk_token', r.token);
+    localStorage.setItem('tk_session_role', role);
+    if(code) localStorage.setItem('tk_session_code', code);
+    window.location.href='app.html';
+  } catch(e) { err.textContent=e.message; err.classList.add('show'); }
+}
 
-        try {
-            const response = await fetch(`${API_BASE}/auth/player/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, phone, password, zone })
-            });
-            const data = await response.json();
-            if (!response.ok || !data.success) {
-                errorDiv.innerText = data.error || 'Échec de l\'inscription';
-                return;
-            }
-            // Inscription réussie : on connecte directement
-            localStorage.setItem('auth_token', data.token);
-            localStorage.setItem('player_id', data.playerId);
-            localStorage.setItem('player_name', data.name);
-            window.location.href = 'player.html';
-        } catch (err) {
-            errorDiv.innerText = 'Erreur réseau';
-        }
-    });
+/* ADMIN MESSAGES */
+function loadAdminMessages(){
+  const msg=localStorage.getItem('tk_ticker_msg');
+  if(msg){const el=document.getElementById('ticker-text');if(el){el.textContent=msg+'    '+msg;}}
+  const notif=localStorage.getItem('tk_admin_notif');
+  if(notif){try{const n=JSON.parse(notif);const bar=document.getElementById('admin-notif');document.getElementById('admin-notif-text').textContent=n.text||'';document.getElementById('admin-notif-icon').textContent=n.icon||'🔔';if(n.bg)bar.style.background=n.bg;bar.classList.add('show');}catch(e){}}
+}
+
+/* NOTIF */
+function showN(msg,type){const n=document.getElementById('notif-login');n.textContent=msg;n.className='notif '+type+' on';setTimeout(()=>n.classList.remove('on'),3000);}
+
+/* INIT */
+loadAdminMessages();
+buildSlides();
 </script>
 </body>
 </html>
