@@ -840,7 +840,11 @@ async function loginStaffMain(){
     localStorage.setItem('tk_session_role', role);
     if(code) localStorage.setItem('tk_session_code', code);
     window.location.href='app.html';
-  } catch(e) { err.textContent=e.message; err.classList.add('show'); }
+  } catch(e) {
+    console.error('loginStaffMain error:', e);
+    err.textContent = e.message || 'Erreur connexion — vérifiez la console';
+    err.classList.add('show');
+  }
 }
 
 /* ADMIN MESSAGES */

@@ -3386,7 +3386,10 @@ async function refreshDir(){
         <td>${c.name}</td>
         <td><code style="color:var(--gold)">${c.code}</code></td>
         <td>${JEU_LABELS[c.jeu]||c.jeu}</td>
-        <td><button class="tbtn r" onclick="supprimerCaissier('${c.code}')">Supprimer</button></td>
+        <td style="display:flex;gap:5px;">
+          <button class="tbtn" onclick="resetPwdCaissier('${c.code}')" style="background:var(--blue);font-size:11px;padding:4px 8px;">🔑 MDP</button>
+          <button class="tbtn r" onclick="supprimerCaissier('${c.code}')">Suppr.</button>
+        </td>
       </tr>`).join('')
     : '<tr><td colspan="4" style="color:var(--muted);text-align:center">Aucun caissier</td></tr>';
 
@@ -3416,6 +3419,24 @@ async function refreshDir(){
 }
 
 
+
+async function resetPwdCaissier(code){
+  const newPwd = prompt('Nouveau mot de passe pour le caissier '+code+':');
+  if(!newPwd||newPwd.length<3){ showNotif('Mot de passe trop court (min 3 caractères)','err'); return; }
+  const dirPwd = prompt('Confirmez avec votre propre mot de passe directeur:');
+  if(!dirPwd){ return; }
+  try {
+    await apiPost('/api/cashier/reset-pwd', {
+      dir_code: CDir.code,
+      cashier_code: code,
+      new_pwd: newPwd,
+      dir_pwd: dirPwd
+    });
+    showNotif('✅ Mot de passe de '+code+' réinitialisé','ok');
+  } catch(e){
+    showNotif('Erreur: '+e.message,'err');
+  }
+}
 
 async function supprimerCaissier(code){
   if(!confirm('Supprimer ce caissier ?')) return;

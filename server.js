@@ -473,6 +473,27 @@ app.post('/api/auth/director', async (req, res) => {
   }
 });
 
+// ── DEBUG TEMPORAIRE: Reset mot de passe caissier par le directeur ──
+app.post('/api/cashier/reset-pwd', async (req, res) => {
+  try {
+    const { dir_code, cashier_code, new_pwd, dir_pwd } = req.body;
+    if (!dir_code||!cashier_code||!new_pwd||!dir_pwd) return res.status(400).json({ error: 'Champs manquants' });
+    // Vérifier le directeur
+    const dr = await pool.query("SELECT pwd_hash FROM directors WHERE code=$1 AND active=TRUE",[dir_code.toUpperCase()]);
+    if(!dr.rows.length) return res.status(404).json({ error: 'Directeur introuvable' });
+    const dirOk = await bcrypt.compare(dir_pwd, dr.rows[0].pwd_hash);
+    if(!dirOk) return res.status(401).json({ error: 'Mot de passe directeur incorrect' });
+    // Vérifier que le caissier appartient au directeur
+    const cr = await pool.query("SELECT code FROM cashiers WHERE code=$1 AND dir_code=$2 AND active=TRUE",[cashier_code.toUpperCase(), dir_code.toUpperCase()]);
+    if(!cr.rows.length) return res.status(404).json({ error: 'Caissier non trouvé pour ce directeur' });
+    // Réinitialiser le mot de passe
+    const hash = await bcrypt.hash(new_pwd, 10);
+    await pool.query("UPDATE cashiers SET pwd_hash=$1 WHERE code=$2",[hash, cashier_code.toUpperCase()]);
+    console.log('reset-pwd: mot de passe réinitialisé pour', cashier_code.toUpperCase());
+    res.json({ success: true, message: 'Mot de passe réinitialisé' });
+  } catch(e) { console.error('reset-pwd:', e.message); res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/auth/cashier', async (req, res) => {
   try {
     const { code, pwd } = req.body;
