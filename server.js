@@ -1156,12 +1156,22 @@ app.get('/api/admin/cashier-check/:code', requireAdmin, async (req, res) => {
 app.get('/api/dir/cashiers', requireDirector, async (req, res) => {
   try {
     const dirCode = req.session.role === 'directeur' ? req.session.user_code : req.query.dir_code;
+    console.log('/api/dir/cashiers - dirCode:', dirCode, 'role:', req.session.role);
+    if (!dirCode) return res.json({ cashiers: [] });
     const r = await pool.query(
-      "SELECT c.code, c.name, c.phone, c.jeu, c.active, c.created_at, COUNT(p.id) AS nb_joueurs FROM cashiers c LEFT JOIN players p ON p.caiss_code=c.code AND p.active=TRUE WHERE c.dir_code=$1 AND c.active=TRUE GROUP BY c.code ORDER BY c.created_at DESC",
+      `SELECT c.code, c.name, c.phone, c.jeu, c.active, c.created_at,
+              (SELECT COUNT(*) FROM players p WHERE p.caiss_code=c.code AND p.active=TRUE) AS nb_joueurs
+       FROM cashiers c
+       WHERE c.dir_code=$1 AND c.active=TRUE
+       ORDER BY c.created_at DESC`,
       [dirCode]
     );
+    console.log('/api/dir/cashiers - trouvé:', r.rows.length, 'caissiers pour', dirCode);
     res.json({ cashiers: r.rows });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) {
+    console.error('/api/dir/cashiers error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── DIRECTEUR: Lister SES joueurs ──
