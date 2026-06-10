@@ -466,7 +466,7 @@ body{background:#061a2e;color:#fff;font-family:'Barlow',sans-serif;min-height:10
       <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;">Administratè · Direktè · Caissier</div>
     </div>
     <div class="m-err" id="staff-err"></div>
-    <select id="staff-role" class="m-select" onchange="updateStaffForm()">
+    <select id="staff-role" class="m-select" onchange="updateStaffForm()" onclick="updateStaffForm()">
       <option value="admin">👑 Administratè</option>
       <option value="directeur">🏢 Direktè</option>
       <option value="caissier">🏧 kesye</option>
@@ -779,7 +779,20 @@ function verifSecret(){
   if(val===SECRET_CODE){hideSecretOv();closeGate();document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('on'));openModal('staff-modal');showN('✅ Aksè otorize','ok');}
   else{const inp=document.getElementById('secret-inp');inp.style.borderColor='#e63946';setTimeout(()=>inp.style.borderColor='rgba(255,255,255,.15)',1000);showN('Kòd enkòrèk','err');}
 }
-function updateStaffForm(){const r=document.getElementById('staff-role').value;document.getElementById('staff-code-wrap').style.display=(r!=='admin')?'block':'none';}
+function updateStaffForm(){
+  const r=document.getElementById('staff-role').value;
+  const wrap=document.getElementById('staff-code-wrap');
+  const inp=document.getElementById('staff-code');
+  if(r!=='admin'){
+    wrap.style.display='block';
+    inp.placeholder = r==='directeur' ? 'Identifyan Direktè (ex: DIR-NORD)' : 'Identifyan Kesye (ex: CAISS-01)';
+    inp.value='';
+    setTimeout(()=>inp.focus(),100);
+  } else {
+    wrap.style.display='none';
+    inp.value='';
+  }
+}
 
 /* LOGIN */
 async function loginJoueurMain(){
@@ -824,27 +837,33 @@ async function registerJoueurMain(){
 async function loginStaffMain(){
   const role=document.getElementById('staff-role').value;
   const code=document.getElementById('staff-code').value.trim().toUpperCase();
-  const pwd=document.getElementById('staff-pwd').value;
+  const pwd=document.getElementById('staff-pwd').value.trim();
   const err=document.getElementById('staff-err');err.classList.remove('show');
+  // Validation côté client
+  if(role!=='admin' && !code){
+    err.textContent='Entrez votre identifiant';err.classList.add('show');
+    document.getElementById('staff-code-wrap').style.display='block';
+    document.getElementById('staff-code').focus();
+    return;
+  }
+  if(!pwd){err.textContent='Entrez votre mot de passe';err.classList.add('show');return;}
   try {
     let endpoint, body;
-    if(role==='admin')      { endpoint='/api/auth/admin';    body={pwd}; }
+    if(role==='admin')          { endpoint='/api/auth/admin';    body={pwd}; }
     else if(role==='directeur') { endpoint='/api/auth/director'; body={code,pwd}; }
-    else                    { endpoint='/api/auth/cashier';   body={code,pwd}; }
-    const r = await fetch(CONFIG.SERVER_URL+endpoint,{
-      method:'POST',headers:{'Content-Type':'application/json'},
+    else                        { endpoint='/api/auth/cashier';  body={code,pwd}; }
+    const resp = await fetch(CONFIG.SERVER_URL+endpoint,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify(body)
-    }).then(r=>r.json().then(d=>({ok:r.ok,...d})));
-    if(!r.ok) throw new Error(r.error||'Erreur');
+    });
+    const r = await resp.json();
+    if(!resp.ok) throw new Error(r.error||'Identifian oswa mo depas enkòrèk');
     localStorage.setItem('tk_token', r.token);
     localStorage.setItem('tk_session_role', role);
     if(code) localStorage.setItem('tk_session_code', code);
     window.location.href='app.html';
-  } catch(e) {
-    console.error('loginStaffMain error:', e);
-    err.textContent = e.message || 'Erreur connexion — vérifiez la console';
-    err.classList.add('show');
-  }
+  } catch(e) { err.textContent=e.message; err.classList.add('show'); }
 }
 
 /* ADMIN MESSAGES */
