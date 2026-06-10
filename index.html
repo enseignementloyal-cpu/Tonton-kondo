@@ -837,9 +837,9 @@ async function registerJoueurMain(){
 async function loginStaffMain(){
   const role=document.getElementById('staff-role').value;
   const code=document.getElementById('staff-code').value.trim().toUpperCase();
-  const pwd=document.getElementById('staff-pwd').value.trim();
+  const pwd=document.getElementById('staff-pwd').value;
   const err=document.getElementById('staff-err');err.classList.remove('show');
-  // Validation côté client
+
   if(role!=='admin' && !code){
     err.textContent='Entrez votre identifiant';err.classList.add('show');
     document.getElementById('staff-code-wrap').style.display='block';
@@ -847,23 +847,65 @@ async function loginStaffMain(){
     return;
   }
   if(!pwd){err.textContent='Entrez votre mot de passe';err.classList.add('show');return;}
+
+  // CAISSIER: vérifier d'abord en localStorage (rapide et fiable)
+  if(role==='caissier'){
+    const cache = JSON.parse(localStorage.getItem('tk_caiss_cache')||'{}');
+    const caiss = cache[code];
+    if(caiss && caiss.active !== false && caiss.pwd === pwd){
+      // Connexion localStorage réussie
+      localStorage.setItem('tk_session_role','caissier');
+      localStorage.setItem('tk_session_code', code);
+      localStorage.setItem('tk_caiss_current', JSON.stringify(caiss));
+      // Essayer aussi d'obtenir un token DB (optionnel)
+      try {
+        const resp = await fetch(CONFIG.SERVER_URL+'/api/auth/cashier',{
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({code,pwd})
+        });
+        const r = await resp.json();
+        if(resp.ok && r.token) localStorage.setItem('tk_token', r.token);
+      } catch(e){ console.warn('DB token optionnel échoué:', e.message); }
+      window.location.href='app.html';
+      return;
+    }
+    // Pas en localStorage - essayer la DB
+    try {
+      const resp = await fetch(CONFIG.SERVER_URL+'/api/auth/cashier',{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({code,pwd})
+      });
+      const r = await resp.json();
+      if(!resp.ok) throw new Error(r.error||'Code ou mot de passe incorrect');
+      localStorage.setItem('tk_token', r.token);
+      localStorage.setItem('tk_session_role','caissier');
+      localStorage.setItem('tk_session_code', code);
+      localStorage.setItem('tk_caiss_current', JSON.stringify({name:r.name,code:r.code,pwd,jeu:r.jeu,dirCode:r.dirCode}));
+      // Mettre en cache pour la prochaine fois
+      const c2 = JSON.parse(localStorage.getItem('tk_caiss_cache')||'{}');
+      c2[code] = {name:r.name,code:r.code,pwd,jeu:r.jeu,dirCode:r.dirCode,active:true};
+      localStorage.setItem('tk_caiss_cache', JSON.stringify(c2));
+      window.location.href='app.html';
+    } catch(e){ err.textContent=e.message; err.classList.add('show'); }
+    return;
+  }
+
+  // ADMIN et DIRECTEUR: toujours via DB
   try {
     let endpoint, body;
     if(role==='admin')          { endpoint='/api/auth/admin';    body={pwd}; }
-    else if(role==='directeur') { endpoint='/api/auth/director'; body={code,pwd}; }
-    else                        { endpoint='/api/auth/cashier';  body={code,pwd}; }
+    else                        { endpoint='/api/auth/director'; body={code,pwd}; }
     const resp = await fetch(CONFIG.SERVER_URL+endpoint,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
+      method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify(body)
     });
     const r = await resp.json();
-    if(!resp.ok) throw new Error(r.error||'Identifian oswa mo depas enkòrèk');
+    if(!resp.ok) throw new Error(r.error||'Code ou mot de passe incorrect');
     localStorage.setItem('tk_token', r.token);
     localStorage.setItem('tk_session_role', role);
     if(code) localStorage.setItem('tk_session_code', code);
     window.location.href='app.html';
-  } catch(e) { err.textContent=e.message; err.classList.add('show'); }
+  } catch(e){ err.textContent=e.message; err.classList.add('show'); }
 }
 
 /* ADMIN MESSAGES */

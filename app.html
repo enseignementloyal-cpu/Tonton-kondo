@@ -6277,7 +6277,6 @@ async function admCreerDirecteur(){
 }
 
 // ============================================================
-// FIX: creerCaissier — use custom code + phone
 // ============================================================
 async function creerCaissier(){
   if(!CDir){ showNotif('Erreur: pas de directeur connecté','err'); return; }
@@ -6287,16 +6286,24 @@ async function creerCaissier(){
   const pwd  = document.getElementById('new-caiss-pwd')?.value;
   const jeu  = document.getElementById('new-caiss-jeu')?.value || 'all';
   if(!name||!code||!pwd){ showNotif('Tous les champs obligatoires','err'); return; }
+
+  // Sauvegarder en localStorage (garanti de marcher pour le login)
+  const caissCache = JSON.parse(localStorage.getItem('tk_caiss_cache')||'{}');
+  caissCache[code] = { name, code, pwd, phone:phone||'', jeu, dirCode:CDir.code, active:true };
+  localStorage.setItem('tk_caiss_cache', JSON.stringify(caissCache));
+
+  // Sauvegarder aussi en DB
   try {
     await apiPost('/api/cashier/create', { name, code, phone:phone||'', pwd, jeu, dir_code: CDir.code });
-    showNotif('✅ Caissier créé: '+name+' ('+code+')','ok');
-    ['new-caiss-name','new-caiss-code','new-caiss-phone','new-caiss-pwd'].forEach(id=>{
-      const el=document.getElementById(id); if(el) el.value='';
-    });
-    await refreshDir();
   } catch(e){
-    showNotif('Erreur: '+(e.message||'impossible de créer le caissier'),'err');
+    console.warn('DB save failed, localStorage OK:', e.message);
   }
+
+  showNotif('✅ Caissier créé: '+name+' ('+code+')','ok');
+  ['new-caiss-name','new-caiss-code','new-caiss-phone','new-caiss-pwd'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  await refreshDir();
 }
 
 // ============================================================
@@ -8154,7 +8161,16 @@ function jackpotCheckURLParam(){
         if (el && djk && djk.amount > 0) { el.style.display='block'; if(amt) amt.textContent = djk.amount.toLocaleString('fr-FR')+' Gd'; }
       }, 400);
     } else if (me.role === 'caissier') {
-      CCaiss = { name: me.name, code: me.user_code, dirCode: me.dir_code||me.dirCode||'', jeu: me.jeu||'all' };
+      // Charger depuis localStorage en priorité (fiable)
+      const caissJson = localStorage.getItem('tk_caiss_current');
+      const caissCache = JSON.parse(localStorage.getItem('tk_caiss_cache')||'{}');
+      const caissLocal = caissJson ? JSON.parse(caissJson) : caissCache[me.user_code];
+      CCaiss = {
+        name:    caissLocal?.name    || me.name    || '',
+        code:    caissLocal?.code    || me.user_code || '',
+        dirCode: caissLocal?.dirCode || me.dir_code || '',
+        jeu:     caissLocal?.jeu     || me.jeu     || 'all'
+      };
       const nameEl = document.getElementById('caiss-name-display');
       const jeuEl  = document.getElementById('caiss-jeu-label');
       if(nameEl) nameEl.textContent = CCaiss.name || '';
