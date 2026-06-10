@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>J.A. PARYAJ LOTTO — App</title>
+<title>J.A PARYAJ LOTTO — App</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 /* ===================================================
-   J.A. PARYAJ LOTTO — Fèy Estil (tk_style.css)
+   J.A PARYAJ LOTTO — Fèy Estil (tk_style.css)
    Développé par La Nova Technologie
    =================================================== */
 
@@ -565,12 +565,12 @@ th{background:var(--blue);color:#fff;font-size:12px;font-weight:700;}
 <div id="sc-landing" class="screen" style="display:none">
   <div class="land-hero logo-bg">
     <div class="land-hero-particles" id="hero-particles"></div>
-    <img src="logo.png" onerror="this.src='logo.jpeg';this.onerror=function(){this.style.display='none';document.getElementById('logo-fb').style.display='block'}" class="land-logo logo-circle anim-float" alt="J.A. PARYAJ LOTTO" style="margin:0 auto 12px;">
+    <img src="logo.png" onerror="this.src='logo.jpeg';this.onerror=function(){this.style.display='none';document.getElementById('logo-fb').style.display='block'}" class="land-logo logo-circle anim-float" alt="J.A PARYAJ LOTTO" style="margin:0 auto 12px;">
     <div id="logo-fb" style="display:none;font-family:'Barlow Condensed',sans-serif;font-size:2.8em;font-weight:900;color:var(--gold)">J.A. <span style="color:#fff">PARYAJ LOTTO</span></div>
     <div class="land-title anim-fadeup" style="animation-delay:.1s">J.A. <span>PARYAJ LOTTO</span></div>
     <div class="land-sub anim-fadeup" style="animation-delay:.2s">Paryaj · Lotto · Casino · Sports</div>
     <button onclick="ouvrirInfo()" class="anim-fadeup" style="margin-top:16px;padding:9px 22px;background:rgba(245,200,0,.12);border:1px solid rgba(245,200,0,.4);border-radius:20px;color:var(--gold);font-weight:700;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;animation-delay:.3s;transition:background .2s,transform .15s;">
-      <i class="fas fa-info-circle"></i> À propos de J.A. PARYAJ LOTTO
+      <i class="fas fa-info-circle"></i> À propos de J.A PARYAJ LOTTO
     </button>
   </div>
 
@@ -722,7 +722,7 @@ th{background:var(--blue);color:#fff;font-size:12px;font-weight:700;}
         <div class="track-wrap" id="race-track">
           <div class="track-header">
             <div>
-              <span style="font-size:12px;font-weight:800;color:var(--gold)">🏁 Circuit J.A. PARYAJ LOTTO</span>
+              <span style="font-size:12px;font-weight:800;color:var(--gold)">🏁 Circuit J.A PARYAJ LOTTO</span>
               <div style="font-size:10px;color:var(--muted);margin-top:2px">5 tours</div>
             </div>
             <div style="text-align:right">
@@ -1302,7 +1302,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
       </div>
       <div class="card" style="margin-top:10px">
         <h3>🏪 Recharge en caisse physique</h3>
-        <p style="font-size:13px;color:var(--muted)">Vous pouvez aussi recharger votre compte directement auprès d'un caissier J.A. PARYAJ LOTTO dans notre espace de jeu. Donnez votre numéro de téléphone au caissier.</p>
+        <p style="font-size:13px;color:var(--muted)">Vous pouvez aussi recharger votre compte directement auprès d'un caissier J.A PARYAJ LOTTO dans notre espace de jeu. Donnez votre numéro de téléphone au caissier.</p>
       </div>
     </div>
   </div>
@@ -2332,7 +2332,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
   <!-- HEADER jackpot style -->
   <div style="width:100%;text-align:center;padding:10px 0 6px;border-bottom:1px solid rgba(255,255,255,.08);">
     <div id="canim-title" style="font-family:'Barlow Condensed',sans-serif;font-size:1.5em;font-weight:900;color:#f5c800;letter-spacing:2px;">🎱 TIRAGE EN COURS</div>
-    <div id="canim-draw-label" style="font-size:11px;color:rgba(255,255,255,.5);letter-spacing:1px;margin-top:2px;">J.A. PARYAJ LOTTO</div>
+    <div id="canim-draw-label" style="font-size:11px;color:rgba(255,255,255,.5);letter-spacing:1px;margin-top:2px;">J.A PARYAJ LOTTO</div>
   </div>
 
   <!-- KENO : grille 80 boules + tambour -->
@@ -2393,6 +2393,21 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
     <div id="canim-course-status" style="text-align:center;color:var(--gold);font-weight:700;margin-top:10px;font-size:15px;"></div>
   </div>
 
+  <!-- Roulette -->
+  <div id="canim-roulette" style="display:none;width:100%;max-width:500px;padding:14px;text-align:center;">
+    <canvas id="canim-rou-canvas" width="280" height="280" style="border-radius:50%;border:4px solid var(--gold);"></canvas>
+    <div id="canim-rou-result" style="margin-top:12px;font-family:'Barlow Condensed',sans-serif;font-size:2em;font-weight:900;color:var(--gold);"></div>
+    <div id="canim-rou-status" style="font-size:13px;color:var(--muted);margin-top:4px;"></div>
+  </div>
+
+  <!-- Penalty -->
+  <div id="canim-penalty" style="display:none;width:100%;max-width:400px;padding:14px;">
+    <div style="position:relative;width:100%;max-width:360px;margin:0 auto;">
+      <canvas id="canim-pen-canvas" width="360" height="220" style="border-radius:8px;border:2px solid #4ade80;"></canvas>
+    </div>
+    <div id="canim-pen-status" style="text-align:center;font-size:14px;font-weight:700;color:var(--gold);margin-top:10px;"></div>
+  </div>
+
   <!-- Borlette -->
   <div id="canim-borlette" style="display:none;width:100%;max-width:400px;padding:20px;">
     <div style="text-align:center;">
@@ -2432,8 +2447,8 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
 
     <!-- Logo header -->
     <div style="text-align:center;margin-bottom:24px;padding-bottom:20px;border-bottom:2px solid #f0f0f0;">
-      <img src="logo.png" onerror="this.src='logo.jpeg';this.onerror=null" alt="J.A. PARYAJ LOTTO" style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:4px solid #1a3a8f;box-shadow:0 0 0 6px rgba(26,58,143,.1),0 8px 30px rgba(0,0,0,.15);margin-bottom:12px;">
-      <div style="font-family:'Barlow Condensed',sans-serif;font-size:2em;font-weight:900;color:#1a3a8f;letter-spacing:3px">J.A. PARYAJ LOTTO</div>
+      <img src="logo.png" onerror="this.src='logo.jpeg';this.onerror=null" alt="J.A PARYAJ LOTTO" style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:4px solid #1a3a8f;box-shadow:0 0 0 6px rgba(26,58,143,.1),0 8px 30px rgba(0,0,0,.15);margin-bottom:12px;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:2em;font-weight:900;color:#1a3a8f;letter-spacing:3px">J.A PARYAJ LOTTO</div>
       <div style="font-size:13px;color:#888;margin-top:4px">Lotto · Paryaj · Casino · Sports</div>
     </div>
 
@@ -2482,9 +2497,9 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
     
     <div class="info-section">
       <h3 style="color:#1a3a8f;font-size:15px;font-weight:800;margin-bottom:10px;padding-bottom:7px;border-bottom:2px solid #f0f0f0">Prezantasyon</h3>
-      <p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">J.A. PARYAJ LOTTO lotto paryaj 
+      <p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">J.A PARYAJ LOTTO lotto paryaj 
 C'est une société de Paris sportif régie selon la loi haïtienne 
-Don le siège social Est a flon 7 # 32  J.A. PARYAJ LOTTO LOTTO PARYAJ participé dans différentes activités culturelles spécialement dans le sport musique et autres DIRIGÉ PAR MONSIEUR LAFLEUR DUTHEAU</p>
+Don le siège social Est a flon 7 # 32  J.A PARYAJ LOTTO LOTTO PARYAJ participé dans différentes activités culturelles spécialement dans le sport musique et autres DIRIGÉ PAR MONSIEUR LAFLEUR DUTHEAU</p>
 <p style="font-size:14px;color:#333;line-height:1.75;margin-bottom:8px">L’essentiel
 Bien que limitées, les estimations mondiales standardisées des méfaits des jeux d’argent 
 et de hasard semblent indiquer que 1,2 % de la population adulte mondiale souffre d’un trouble du jeu. En outre, la pratique de jeux d’argent et de hasard est en général nuisible pour les personnes qui ne jouent pas.
@@ -2542,7 +2557,7 @@ L’OMS est consciente des effets négatifs des jeux d’argent et de hasard sur
 
     <!-- Footer -->
     <div style="text-align:center;padding-top:16px;border-top:2px solid #f0f0f0;">
-      <p style="font-size:13px;color:#888">© 2024 J.A. PARYAJ LOTTO Lotto Paryaj · Tous droits réservés</p>
+      <p style="font-size:13px;color:#888">© 2024 J.A PARYAJ LOTTO Lotto Paryaj · Tous droits réservés</p>
       <p style="font-size:13px;color:#888;margin-top:5px">Développé par <strong style="color:#1a3a8f">La Nova Technologie</strong></p>
     </div>
 
@@ -4672,7 +4687,7 @@ function printBorTicket(bets,total,ticketRef){
     .total-row{display:flex;justify-content:space-between;font-weight:bold;margin-top:8px;font-size:30px;}
     .footer{text-align:center;margin-top:14px;font-size:20px;border-top:1px dashed #000;padding-top:8px;}
   </style></head><body>
-  <div class="hdr"><strong>J.A. PARYAJ LOTTO</strong><small>Borlette · Lotto</small></div>
+  <div class="hdr"><strong>J.A PARYAJ LOTTO</strong><small>Borlette · Lotto</small></div>
   <div class="info">
     <p>Ticket #: ${ticketId}</p>
     <p>Tiraj: ${drawName}</p>
@@ -4683,7 +4698,7 @@ function printBorTicket(bets,total,ticketRef){
   ${bets.map(b=>`<div class="bet-row"><span>${abbr[b.game]||b.game} ${b.number}${b.option?' op'+b.option:''}</span><span>${b.amount} G</span></div>`).join('')}
   <hr>
   <div class="total-row"><span>TOTAL</span><span>${total} Gdes</span></div>
-  <div class="footer"><p>Tikè valid pou 90 jou</p><p><strong>J.A. PARYAJ LOTTO S.A.</strong></p></div>
+  <div class="footer"><p>Tikè valid pou 90 jou</p><p><strong>J.A PARYAJ LOTTO S.A.</strong></p></div>
   </body></html>`);
   pw.document.close();
   pw.onload=()=>{pw.focus();pw.print();};
@@ -5212,22 +5227,22 @@ function afficherResultatsCaisse(resultats, totalGain){
 async function jouerAnimationCaisse(jeuType, resultats){
   const overlay = document.getElementById('caisse-anim-overlay');
   overlay.style.display = 'flex';
-
-  // Masquer toutes les sections animation
-  ['canim-keno','canim-lucky6','canim-course','canim-borlette'].forEach(id=>{
+  ['canim-keno','canim-lucky6','canim-course','canim-borlette','canim-roulette'].forEach(id=>{
     const el = document.getElementById(id); if(el) el.style.display='none';
   });
-
   if(jeuType === 'keno'){
     await animCaisseKeno(resultats.filter(r=>r.jeuType==='keno'));
   } else if(jeuType === 'lucky6'){
     await animCaisseLucky6(resultats.filter(r=>r.jeuType==='lucky6'));
   } else if(jeuType === 'course'){
     await animCaisseCourse(resultats.filter(r=>r.jeuType==='course'));
-  } else if(['borlette','lotto3','lotto4','lotto5','mariage'].includes(jeuType)){
+  } else if(jeuType === 'roulette'){
+    await animCaisseRoulette(resultats.filter(r=>r.jeuType==='roulette'));
+  } else if(jeuType === 'penalty'){
+    await animCaissePenalty(resultats.filter(r=>r.jeuType==='penalty'));
+  } else {
     await animCaisseBorlette(resultats.filter(r=>['borlette','lotto3','lotto4','lotto5','mariage'].includes(r.jeuType)));
   }
-
   overlay.style.display = 'none';
 }
 
@@ -5342,96 +5357,108 @@ async function animCaisseLucky6(resultats){
   const drumNum  = document.getElementById('canim-l6-drum-num');
   const resultEl = document.getElementById('canim-l6-result');
 
-  // 4 couleurs par groupe de 12 (style image Keno)
-  const L6C = [
-    {min:1,  max:12, bg:'#7c3aed', light:'#a78bfa'}, // violet
-    {min:13, max:24, bg:'#1565c0', light:'#60a5fa'}, // bleu
-    {min:25, max:36, bg:'#c0152a', light:'#ff6680'}, // rouge
-    {min:37, max:48, bg:'#d97706', light:'#fbbf24'}, // orange/doré
+  // Lucky 6 : 48 boules en 6 rangées × 8 colonnes — couleur par rangée
+  const ROW_COLS = [
+    '#e53935','#e91e63','#9c27b0','#3f51b5','#2196f3','#00bcd4','#4caf50','#ff9800'
   ];
-  const getCol = n => L6C.find(c=>n>=c.min&&n<=c.max)||L6C[0];
+  const getRowColor = n => ROW_COLS[Math.floor((n-1)/6)] || '#888';
+  const getLight = n => {
+    const colors = ['#ff8a80','#ff80ab','#ea80fc','#82b1ff','#80d8ff','#a7ffeb','#b9f6ca','#ffd180'];
+    return colors[Math.floor((n-1)/6)] || '#fff';
+  };
 
-  // Construire grille 48 boules (6 rangées × 8)
+  // Grille 48 boules en 8 rangées × 6 colonnes (Lucky 6 = 6 par ligne)
+  gridEl.style.gridTemplateColumns = 'repeat(6,1fr)';
   gridEl.innerHTML = '';
   drawnEl.innerHTML = '';
   resultEl.textContent = '';
 
   for(let n=1; n<=48; n++){
-    const c = getCol(n);
+    const col   = getRowColor(n);
+    const light = getLight(n);
     const isJoued = jouedNums.includes(n);
     const div = document.createElement('div');
     div.id = 'l6ball-'+n;
     div.textContent = n;
     div.style.cssText = `
       display:flex;align-items:center;justify-content:center;
-      width:100%;aspect-ratio:1;border-radius:6px;
-      font-size:clamp(10px,2.5vw,14px);font-weight:900;
-      background:${isJoued
-        ? `radial-gradient(circle at 35% 30%,${c.light},${c.bg})`
-        : `${c.bg}55`};
-      color:${isJoued ? '#fff' : c.light+'99'};
-      border:2px solid ${isJoued ? c.light : c.bg+'88'};
-      box-shadow:${isJoued ? `0 0 10px ${c.light}66` : 'none'};
+      width:100%;aspect-ratio:1;border-radius:50%;
+      font-size:clamp(10px,2.8vw,15px);font-weight:900;
+      background:${isJoued ? `radial-gradient(circle at 35% 30%,${light},${col})` : col+'44'};
+      color:${isJoued ? '#fff' : light+'88'};
+      border:2px solid ${isJoued ? light : col+'66'};
+      box-shadow:${isJoued ? `0 0 10px ${light}66` : 'none'};
       transition:all .25s;`;
     gridEl.appendChild(div);
   }
 
-  // Durée totale : 90 secondes — 35 boules tirées
-  // Délai entre boules = 90000ms / 35 ≈ 2571ms
+  // Tirage : 35 boules en 90 secondes
   const TOTAL_MS = 90000;
-  const delayBetween = Math.floor(TOTAL_MS / winNums.length);
+  const delay = Math.floor(TOTAL_MS / winNums.length);
+
+  // Afficher les 6 numéros joués en lignes
+  const jouedRow = document.createElement('div');
+  jouedRow.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;';
+  jouedNums.forEach(n=>{
+    const c=getRowColor(n), l=getLight(n);
+    const b = document.createElement('div');
+    b.style.cssText = `display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;font-size:13px;font-weight:900;background:radial-gradient(circle at 35% 30%,${l},${c});color:#fff;border:2px solid ${l};`;
+    b.textContent = n;
+    jouedRow.appendChild(b);
+  });
+  drawnEl.appendChild(jouedRow);
+
+  const drawnRow = document.createElement('div');
+  drawnRow.id = 'l6-drawn-row';
+  drawnRow.style.cssText = 'display:flex;gap:5px;flex-wrap:wrap;';
+  drawnEl.appendChild(drawnRow);
 
   let hits = 0;
   for(let i=0; i<winNums.length; i++){
-    await new Promise(res=>setTimeout(res, delayBetween));
+    await new Promise(res=>setTimeout(res, delay));
     const num   = winNums[i];
     const isHit = jouedNums.includes(num);
-    const c     = getCol(num);
+    const col   = getRowColor(num);
+    const light = getLight(num);
     if(isHit) hits++;
 
-    // Tambour
     if(drumNum){
       drumNum.style.transition = 'none';
       drumNum.style.transform  = 'scale(0)';
       drumNum.textContent = num;
-      await new Promise(res=>setTimeout(res, 50));
+      await new Promise(res=>setTimeout(res,40));
       drumNum.style.transition = 'transform .2s cubic-bezier(.34,1.56,.64,1)';
       drumNum.style.transform  = 'scale(1)';
     }
 
-    // Allumer dans la grille
     const ballEl = document.getElementById('l6ball-'+num);
     if(ballEl){
-      ballEl.style.background = `radial-gradient(circle at 35% 30%,${c.light},${c.bg})`;
+      ballEl.style.background = `radial-gradient(circle at 35% 30%,${light},${col})`;
       ballEl.style.color      = '#fff';
-      ballEl.style.border     = `2px solid ${c.light}`;
-      ballEl.style.boxShadow  = `0 0 18px ${c.light}99`;
-      ballEl.style.transform  = 'scale(1.25)';
-      setTimeout(()=>{ ballEl.style.transform='scale(1)'; }, 300);
+      ballEl.style.border     = `2px solid ${light}`;
+      ballEl.style.boxShadow  = `0 0 18px ${light}99`;
+      ballEl.style.transform  = 'scale(1.3)';
+      setTimeout(()=>{ ballEl.style.transform='scale(1)'; }, 280);
     }
 
-    // Grande boule dans zone tirées
     const big = document.createElement('div');
     big.textContent = num;
     big.style.cssText = `
       display:inline-flex;align-items:center;justify-content:center;
-      width:44px;height:44px;border-radius:8px;
-      font-size:15px;font-weight:900;
-      background:radial-gradient(circle at 35% 30%,${isHit?c.light:c.bg+'66'},${isHit?c.bg:'#1a1a1a'});
-      color:${isHit?'#fff':'#666'};
-      border:3px solid ${isHit?c.light:'rgba(255,255,255,.1)'};
-      box-shadow:${isHit?`0 0 18px ${c.light}99`:'none'};
-      animation:ballPop .35s cubic-bezier(.34,1.56,.64,1) both;`;
-    drawnEl.appendChild(big);
+      width:34px;height:34px;border-radius:50%;
+      font-size:12px;font-weight:900;
+      background:radial-gradient(circle at 35% 30%,${isHit?light:col+'55'},${isHit?col:'#111'});
+      color:${isHit?'#fff':'#555'};
+      border:2px solid ${isHit?light:'rgba(255,255,255,.1)'};
+      box-shadow:${isHit?`0 0 14px ${light}99`:'none'};
+      animation:ballPop .3s cubic-bezier(.34,1.56,.64,1) both;`;
+    drawnRow.appendChild(big);
 
-    // Décompte temps restant
-    const remaining = Math.round((winNums.length - i - 1) * delayBetween / 1000);
-    statusEl.textContent = `Boule ${i+1}/${winNums.length} — ${hits}/6 trouvés — ${remaining}s restantes`;
+    const rem = Math.round((winNums.length-i-1)*delay/1000);
+    statusEl.textContent = `Boule ${i+1}/${winNums.length} — ${hits}/6 trouvés — ${rem}s`;
   }
 
-  resultEl.textContent = r.gain>0
-    ? `🏆 ${hits}/6 → +${r.gain} Gd`
-    : `❌ ${hits}/6 trouvés — Perdu`;
+  resultEl.textContent = r.gain>0 ? `🏆 ${hits}/6 → +${r.gain} Gd` : `❌ ${hits}/6 — Perdu`;
   resultEl.style.color = r.gain>0 ? 'var(--green2)' : 'var(--red)';
   await new Promise(res=>setTimeout(res, 3000));
 }
@@ -5519,6 +5546,130 @@ async function animCaisseBorlette(resultats){
     if(numEl) numEl.style.color = 'var(--gold)';
   }
 }
+
+async function animCaisseRoulette(resultats){
+  if(!resultats.length) return;
+  const r = resultats[0];
+  document.getElementById('canim-roulette').style.display = '';
+  // Masquer les autres sections
+  ['canim-keno','canim-lucky6','canim-course','canim-borlette'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.style.display='none';
+  });
+  document.getElementById('canim-title').textContent = '🎡 ROULETTE — TIRAGE';
+
+  const canvas = document.getElementById('canim-rou-canvas');
+  const ctx    = canvas.getContext('2d');
+  const cx = canvas.width/2, cy = canvas.height/2, rad = cx - 10;
+
+  const ROUGE = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+  const nums  = [0,...Array.from({length:36},(_,i)=>i+1)];
+  const slice = (Math.PI*2) / nums.length;
+
+  function drawWheel(angle){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    nums.forEach((n,i)=>{
+      const start = angle + i*slice, end = start + slice;
+      ctx.beginPath();
+      ctx.moveTo(cx,cy);
+      ctx.arc(cx,cy,rad,start,end);
+      ctx.fillStyle = n===0?'#2d7a2d': ROUGE.includes(n)?'#c0152a':'#1a1a2e';
+      ctx.fill();
+      ctx.strokeStyle='#fff3'; ctx.lineWidth=1; ctx.stroke();
+      // Numéro
+      ctx.save();
+      ctx.translate(cx,cy);
+      ctx.rotate(start+slice/2);
+      ctx.fillStyle='#fff'; ctx.font='bold 9px Arial'; ctx.textAlign='right';
+      ctx.fillText(n, rad-4, 3);
+      ctx.restore();
+    });
+    // Centre
+    ctx.beginPath();
+    ctx.arc(cx,cy,18,0,Math.PI*2);
+    ctx.fillStyle='#111'; ctx.fill();
+    ctx.strokeStyle='#f5c800'; ctx.lineWidth=3; ctx.stroke();
+    // Pointeur
+    ctx.beginPath();
+    ctx.moveTo(cx, cy-rad+2);
+    ctx.lineTo(cx-8, cy-rad+18);
+    ctx.lineTo(cx+8, cy-rad+18);
+    ctx.fillStyle='#f5c800'; ctx.fill();
+  }
+
+  // Résultat depuis le serveur
+  const winNum = r.winData?.result ?? Math.floor(Math.random()*37);
+  const isRouge = ROUGE.includes(winNum);
+  const winIdx  = nums.indexOf(winNum);
+  const targetAngle = -(winIdx*slice + slice/2) + Math.PI/2;
+
+  // Animation : tourner 5 tours + s'arrêter sur le bon numéro
+  const totalRot = Math.PI*2*5 + ((targetAngle % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
+  const duration = 6000;
+  const start    = performance.now();
+  let   angle    = 0;
+
+  await new Promise(resolve=>{
+    function frame(now){
+      const t = Math.min((now-start)/duration, 1);
+      const ease = 1-Math.pow(1-t,4);
+      angle = ease * totalRot;
+      drawWheel(angle);
+      if(t < 1){ requestAnimationFrame(frame); }
+      else { drawWheel(targetAngle % (Math.PI*2)); resolve(); }
+    }
+    requestAnimationFrame(frame);
+  });
+
+  const resEl = document.getElementById('canim-rou-result');
+  const stEl  = document.getElementById('canim-rou-status');
+  resEl.textContent = winNum;
+  resEl.style.color = winNum===0?'#2d7a2d': isRouge?'#c0152a':'#fff';
+  stEl.textContent  = winNum===0?'ZÉRO — Vert': isRouge?`${winNum} — ROUGE`:`${winNum} — NOIR`;
+  stEl.style.color  = r.gain>0?'var(--green2)':'var(--red)';
+  if(r.gain>0){
+    resEl.style.textShadow='0 0 20px var(--gold)';
+    document.getElementById('canim-title').textContent='🏆 GAGNÉ!';
+  }
+  await new Promise(res=>setTimeout(res, 3000));
+}
+
+async function animCaissePenalty(resultats){
+  if(!resultats.length) return;
+  const r = resultats[0];
+  // Utiliser l'overlay borlette pour penalty (texte simple)
+  document.getElementById('canim-borlette').style.display = '';
+  document.getElementById('canim-title').textContent = '⚽ PENALTY — TIRAGE';
+  const numEl = document.getElementById('canim-bor-num');
+  const stEl  = document.getElementById('canim-bor-status');
+
+  const ZONES_LABEL={hg:'↖ Haut Gauche',hc:'⬆ Haut Centre',hd:'↗ Haut Droite',mg:'⬅ Milieu G.',mc:'⬜ Centre',md:'➡ Milieu D.',bg:'↙ Bas Gauche',bc:'⬇ Bas Centre',bd:'↘ Bas Droite'};
+  const ZONES = Object.keys(ZONES_LABEL);
+
+  numEl.style.fontSize = '2em';
+  stEl.textContent = 'Le joueur prend son élan...';
+  await new Promise(res=>setTimeout(res, 1500));
+
+  // Animation ballon qui roule
+  for(let i=0;i<8;i++){
+    numEl.textContent = ['⚽','🏃','⚽','💨','⚽','💨','⚽','🎯'][i];
+    await new Promise(res=>setTimeout(res, 300));
+  }
+
+  const winZone = r.winData?.winnerZone || ZONES[Math.floor(Math.random()*ZONES.length)];
+  const scored  = r.winData?.scored ?? (r.gain>0);
+  const jouedZone = r.pari?.cleanNumber;
+
+  numEl.textContent = scored ? '⚽ BUT!' : '🧤 ARRÊT!';
+  numEl.style.color = scored ? 'var(--green2)' : 'var(--red)';
+  stEl.textContent  = `Zone visée: ${ZONES_LABEL[jouedZone]||jouedZone} — Tir: ${ZONES_LABEL[winZone]||winZone}`;
+  stEl.style.color  = scored ? 'var(--green2)' : 'var(--red)';
+  document.getElementById('canim-title').textContent = scored ? '🏆 BUT MARQUÉ!' : '🧤 ARRÊTÉ!';
+
+  await new Promise(res=>setTimeout(res, 3000));
+  numEl.style.color = 'var(--gold)';
+  numEl.style.fontSize = '6em';
+}
+
 // ===== FIN ANIMATIONS CAISSIER =====
 
 // Imprimer UN seul ticket (avant jeu)
@@ -5571,7 +5722,7 @@ function imprimerTicketIndividuel(bet, resultat, joueur){
   b,strong{color:#000;}
 </style></head><body>
 <div class="center">
-  <div class="title">J.A. PARYAJ LOTTO</div>
+  <div class="title">J.A PARYAJ LOTTO</div>
   <div class="slogan">PEYE TAW TAW</div>
   <div class="sub">Trou du Nord, No — Ayiti</div>
 </div>
@@ -5595,7 +5746,7 @@ ${hasResult
 <div class="footer">
   <div>Tike valid pou 90 jou apre tiraj</div>
   <div>Jwe responsab - 18+ selman</div>
-  <div>J.A. PARYAJ LOTTO — PEYE TAW TAW</div>
+  <div>J.A PARYAJ LOTTO — PEYE TAW TAW</div>
 </div>
 </body></html>`);
   pw.document.close();
@@ -5618,7 +5769,7 @@ function imprimerTicketCaisse(bets,resultats,total,totalGain,joueur){
   const date=new Date().toLocaleString('fr-FR',{timeZone:'America/Port-au-Prince'});
   const ticketId=Math.floor(Math.random()*1000000).toString().padStart(6,'0');
   const hasResults=resultats&&resultats.length>0;
-  pw.document.write(`<!DOCTYPE html><html><head><title>Ticket J.A. PARYAJ LOTTO</title><style>
+  pw.document.write(`<!DOCTYPE html><html><head><title>Ticket J.A PARYAJ LOTTO</title><style>
     @page{size:80mm auto;margin:2mm;}
     body{font-family:'Courier New',monospace;font-size:26px;font-weight:bold;width:76mm;margin:0 auto;padding:4mm;background:white;color:black;}
     .hdr{text-align:center;border-bottom:2px dashed #000;padding-bottom:8px;margin-bottom:8px;}
@@ -5632,7 +5783,7 @@ function imprimerTicketCaisse(bets,resultats,total,totalGain,joueur){
     .gain-row{display:flex;justify-content:space-between;font-weight:bold;font-size:28px;color:green;}
     .footer{text-align:center;margin-top:14px;font-size:18px;border-top:1px dashed #000;padding-top:8px;}
   </style></head><body>
-  <div class="hdr"><strong>J.A. PARYAJ LOTTO</strong><small>Paryaj · Casino · Lotto</small></div>
+  <div class="hdr"><strong>J.A PARYAJ LOTTO</strong><small>Paryaj · Casino · Lotto</small></div>
   <div class="info">
     <p>Ticket #: ${ticketId}</p>
     <p>Date: ${date}</p>
@@ -5651,7 +5802,7 @@ function imprimerTicketCaisse(bets,resultats,total,totalGain,joueur){
   <div class="footer">
     <p>Tikè valid pou 90 jou</p>
     <p>Jwe responsab — 18+</p>
-    <p><strong>J.A. PARYAJ LOTTO S.A.</strong></p>
+    <p><strong>J.A PARYAJ LOTTO S.A.</strong></p>
   </div>
   </body></html>`);
   pw.document.close();
@@ -8109,7 +8260,7 @@ body{background:#000;color:#fff;height:100vh;display:flex;flex-direction:column;
   <div class="amount">${amount}</div>
   <div class="currency">GOURDES HAÏTIENS</div>
 </div>
-<div class="ticker"><div class="ticker-inner">🎰 JACKPOT J.A. PARYAJ LOTTO — Bureau ${d.name} — ${amount} Gd — Chak tikè ka genyen jackpot la! &nbsp;&nbsp;&nbsp; 🎰 JACKPOT J.A. PARYAJ LOTTO — Bureau ${d.name} — ${amount} Gd — Chak tikè ka genyen jackpot la!</div></div>
+<div class="ticker"><div class="ticker-inner">🎰 JACKPOT J.A PARYAJ LOTTO — Bureau ${d.name} — ${amount} Gd — Chak tikè ka genyen jackpot la! &nbsp;&nbsp;&nbsp; 🎰 JACKPOT J.A PARYAJ LOTTO — Bureau ${d.name} — ${amount} Gd — Chak tikè ka genyen jackpot la!</div></div>
 <div class="refresh">Rafraîchi chaque 30s</div>
 </body></html>`;
   const blob=new Blob([html],{type:'text/html'});

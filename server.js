@@ -1,5 +1,5 @@
 // ============================================================
-// server.js — J.A. PARYAJ LOTTO Paryaj Backend
+// server.js — J.A PARYAJ LOTTO Paryaj Backend
 // Node.js + Express + PostgreSQL (Neon)
 // Version complète avec tous les endpoints pour app.html
 // ============================================================
@@ -1766,10 +1766,30 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
 
     const resultats = [];
 
+    // Logique globale: combien de paris gagnent selon la difficulté
+    // difficulte=0 → joueur gagne facilement; difficulte=100 → joueur perd souvent
+    const nbParis = paris.length;
+    const diffGlobal = await getWinProbability(dir_code, paris[0]?.jeuType || paris[0]?.game || 'keno');
+    // Probabilité de gagner: 80% si diff=0, 5% si diff=100
+    const probGain = Math.max(0.05, Math.min(0.80, 1 - diffGlobal/100));
+    // Décider combien de paris gagnent
+    const maxGagnants = Math.max(0, Math.floor(nbParis * probGain));
+    const nbGagnants  = maxGagnants <= 1 ? (Math.random() < probGain ? 1 : 0)
+                       : 1 + Math.floor(Math.random() * Math.min(2, maxGagnants));
+    // Indices des paris qui vont gagner (aléatoires)
+    const idxGagnants = new Set();
+    while(idxGagnants.size < Math.min(nbGagnants, nbParis)){
+      idxGagnants.add(Math.floor(Math.random()*nbParis));
+    }
+    console.log(`caisse/lancer: ${nbParis} paris, diff=${diffGlobal}%, probGain=${(probGain*100).toFixed(0)}%, gagnants=${idxGagnants.size}`);
+
+    let pariIdx = 0;
     for (const pari of paris) {
       const jeuType = pari.jeuType || pari.game;
       const mise    = parseFloat(pari.amount || 0);
       let gain = 0, winData = {}, resultMsg = '';
+      const shouldWin = idxGagnants.has(pariIdx);
+      pariIdx++;
 
       // Récupérer la difficulté depuis la DB
       const difficulte = await getWinProbability(dir_code, jeuType);
@@ -1778,11 +1798,18 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
         const nums = pari.nums || pari.cleanNumber.split(',').map(Number);
         const nbJoues = nums.length;
         const pool80 = Array.from({length:80},(_,i)=>i+1);
-        const joues  = pool80.filter(n=>nums.includes(n)).sort(()=>Math.random()-.5);
         const autres = pool80.filter(n=>!nums.includes(n)).sort(()=>Math.random()-.5);
-        let nbHits = difficulte>=60 ? Math.min(5,nbJoues)+Math.floor(Math.random()*(nbJoues-Math.min(5,nbJoues)+1))
-                   : difficulte<40  ? Math.floor(Math.random()*Math.min(4,nbJoues))
-                   : Math.round((difficulte/100)*nbJoues);
+        const joues  = pool80.filter(n=>nums.includes(n)).sort(()=>Math.random()-.5);
+        // difficulte: 0=très facile(joueur gagne souvent) 100=très difficile(joueur perd souvent)
+        // shouldWin déjà calculé par la logique globale
+        let nbHits;
+        if(shouldWin){
+          // Faire gagner: donner assez de hits pour un multiplicateur
+          nbHits = Math.max(5, Math.round(nbJoues * 0.6));
+        } else {
+          // Faire perdre: moins de 5 hits
+          nbHits = Math.floor(Math.random() * Math.min(4, nbJoues));
+        }
         nbHits = Math.max(0, Math.min(nbHits, Math.min(nbJoues,20)));
         const winNums = [...joues.slice(0,nbHits), ...autres.slice(0,20-nbHits)].sort((a,b)=>a-b);
         const hits = nums.filter(n=>winNums.includes(n)).length;
@@ -1796,7 +1823,7 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
         const pool48 = Array.from({length:48},(_,i)=>i+1);
         const joues  = pool48.filter(n=>nums.includes(n)).sort(()=>Math.random()-.5);
         const autres = pool48.filter(n=>!nums.includes(n)).sort(()=>Math.random()-.5);
-        const wantHits = difficulte>=60 ? 6 : difficulte>=40 ? 3+Math.floor(Math.random()*3) : Math.floor(Math.random()*3);
+        const wantHits = shouldWin ? 6 : Math.floor(Math.random()*4);
         const winNums = [...joues.slice(0,wantHits), ...autres.slice(0,35-wantHits)].sort((a,b)=>a-b);
         const hits = nums.filter(n=>winNums.includes(n)).length;
         gain = hits===6 ? Math.round(mise*30) : hits===5 ? Math.round(mise*5) : 0;
@@ -1806,7 +1833,7 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
       } else if (jeuType === 'course') {
         const carId = parseInt(pari.cleanNumber);
         const COTES = [0,2.10,1.75,2.50,3.20,4.00,5.50];
-        const boost = difficulte>=60 ? 0.5 : difficulte>=40 ? 0.3 : 0.15;
+        const boost = shouldWin ? 0.85 : 0.1;
         const winner = Math.random()<boost ? carId : Math.ceil(Math.random()*6);
         const ranking = [winner, ...[1,2,3,4,5,6].filter(i=>i!==winner)];
         gain = winner===carId ? parseFloat((mise*(COTES[carId]||2)).toFixed(2)) : 0;
@@ -1819,8 +1846,24 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
         const isRouge = ROUGE.includes(result);
         const bet = pari.cleanNumber;
         const COTES={rouge:2,noir:2,pair:2,impair:2,'1-18':2,'19-36':2,'1-12':3,'13-24':3,'25-36':3,numero:35};
+        // Si shouldWin, forcer le résultat vers ce que le client a misé
+        let result_final = result;
+        if(shouldWin){
+          if(bet==='rouge'){ const rouges=[1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]; result_final=rouges[Math.floor(Math.random()*rouges.length)]; }
+          else if(bet==='noir'){ const noirs=[2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35]; result_final=noirs[Math.floor(Math.random()*noirs.length)]; }
+          else if(bet==='pair'){ result_final=2*(1+Math.floor(Math.random()*18)); }
+          else if(bet==='impair'){ result_final=1+2*Math.floor(Math.random()*18); }
+          else if(bet==='1-18'){ result_final=1+Math.floor(Math.random()*18); }
+          else if(bet==='19-36'){ result_final=19+Math.floor(Math.random()*18); }
+          else if(bet==='1-12'){ result_final=1+Math.floor(Math.random()*12); }
+          else if(bet==='13-24'){ result_final=13+Math.floor(Math.random()*12); }
+          else if(bet==='25-36'){ result_final=25+Math.floor(Math.random()*12); }
+          else if(bet==='numero'){ const n=parseInt(pari.number.replace('N°','')); result_final=isNaN(n)?result:n; }
+        }
+        const isRouge_f = ROUGE.includes(result_final);
+        winData = { result: result_final, isRouge: isRouge_f };
         let gagne = false;
-        if(bet==='rouge')     gagne = result>0 && isRouge;
+        if(bet==='rouge')     gagne = result_final>0 && isRouge_f;
         else if(bet==='noir') gagne = result>0 && !isRouge;
         else if(bet==='pair') gagne = result>0 && result%2===0;
         else if(bet==='impair') gagne = result%2===1;
@@ -1850,8 +1893,14 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
 
       } else {
         const mult = {borlette:60,lotto3:40,lotto4:30,lotto5:20,mariage:50}[pari.game||jeuType]||60;
-        const tirage = Math.floor(Math.random()*(difficulte>=60?50:100)).toString().padStart(2,'0');
-        const gagne  = String(pari.cleanNumber).padStart(2,'0') === tirage;
+        let tirage;
+        if(shouldWin){
+          tirage = String(pari.cleanNumber).padStart(2,'0'); // Le tirage correspond
+        } else {
+          do { tirage = Math.floor(Math.random()*100).toString().padStart(2,'0'); }
+          while(tirage === String(pari.cleanNumber).padStart(2,'0'));
+        }
+        const gagne = String(pari.cleanNumber).padStart(2,'0') === tirage;
         gain = gagne ? Math.round(mise*mult) : 0;
         winData = { tirage };
         resultMsg = gain>0 ? `Tirage ${tirage} → GAGNÉ +${gain} Gd` : `Tirage ${tirage} → Perdu`;
