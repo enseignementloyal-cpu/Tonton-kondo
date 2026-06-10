@@ -3421,17 +3421,10 @@ async function refreshDir(){
 
 
 async function resetPwdCaissier(code){
-  const newPwd = prompt('Nouveau mot de passe pour le caissier '+code+':');
-  if(!newPwd||newPwd.length<3){ showNotif('Mot de passe trop court (min 3 caractères)','err'); return; }
-  const dirPwd = prompt('Confirmez avec votre propre mot de passe directeur:');
-  if(!dirPwd){ return; }
+  const newPwd = prompt('Nouveau mot de passe pour le caissier '+code+' (min 3 caractères):');
+  if(!newPwd||newPwd.length<3){ showNotif('Mot de passe trop court','err'); return; }
   try {
-    await apiPost('/api/cashier/reset-pwd', {
-      dir_code: CDir.code,
-      cashier_code: code,
-      new_pwd: newPwd,
-      dir_pwd: dirPwd
-    });
+    await apiPost('/api/cashier/reset-pwd', { code, new_pwd: newPwd });
     showNotif('✅ Mot de passe de '+code+' réinitialisé','ok');
   } catch(e){
     showNotif('Erreur: '+e.message,'err');
@@ -3441,7 +3434,7 @@ async function resetPwdCaissier(code){
 async function supprimerCaissier(code){
   if(!confirm('Supprimer ce caissier ?')) return;
   try {
-    await apiPost('/api/dir/cashiers/delete', { code });
+    await apiPost('/api/cashier/delete', { code });
     showNotif('Caissier supprimé','ok');
     refreshDir();
   } catch(e) {
@@ -6295,7 +6288,7 @@ async function creerCaissier(){
   const jeu  = document.getElementById('new-caiss-jeu')?.value || 'all';
   if(!name||!code||!pwd){ showNotif('Tous les champs obligatoires','err'); return; }
   try {
-    await apiPost('/api/cashiers', { name, code, phone:phone||'', pwd, jeu, dir_code: CDir.code });
+    await apiPost('/api/cashier/create', { name, code, phone:phone||'', pwd, jeu, dir_code: CDir.code });
     showNotif('✅ Caissier créé: '+name+' ('+code+')','ok');
     ['new-caiss-name','new-caiss-code','new-caiss-phone','new-caiss-pwd'].forEach(id=>{
       const el=document.getElementById(id); if(el) el.value='';
@@ -6765,7 +6758,7 @@ async function resoudrePariDB(id, statut){
 async function admSuppCaissDB(id){
   if(!confirm('Supprimer ce caissier ?')) return;
   try {
-    await apiPost('/api/admin/cashiers/delete', { id });
+    await apiPost('/api/cashier/delete', { id });
     showNotif('Caissier supprimé','ok'); refreshAdmin();
   } catch(e){ showNotif('Erreur: '+e.message,'err'); }
 }

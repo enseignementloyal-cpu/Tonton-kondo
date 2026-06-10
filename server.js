@@ -473,63 +473,6 @@ app.post('/api/auth/director', async (req, res) => {
   }
 });
 
-// ── DEBUG TEMPORAIRE: Reset mot de passe caissier par le directeur ──
-app.post('/api/cashier/reset-pwd', async (req, res) => {
-  try {
-    const { dir_code, cashier_code, new_pwd, dir_pwd } = req.body;
-    if (!dir_code||!cashier_code||!new_pwd||!dir_pwd) return res.status(400).json({ error: 'Champs manquants' });
-    // Vérifier le directeur
-    const dr = await pool.query("SELECT pwd_hash FROM directors WHERE code=$1 AND active=TRUE",[dir_code.toUpperCase()]);
-    if(!dr.rows.length) return res.status(404).json({ error: 'Directeur introuvable' });
-    const dirOk = await bcrypt.compare(dir_pwd, dr.rows[0].pwd_hash);
-    if(!dirOk) return res.status(401).json({ error: 'Mot de passe directeur incorrect' });
-    // Vérifier que le caissier appartient au directeur
-    const cr = await pool.query("SELECT code FROM cashiers WHERE code=$1 AND dir_code=$2 AND active=TRUE",[cashier_code.toUpperCase(), dir_code.toUpperCase()]);
-    if(!cr.rows.length) return res.status(404).json({ error: 'Caissier non trouvé pour ce directeur' });
-    // Réinitialiser le mot de passe
-    const hash = await bcrypt.hash(new_pwd, 10);
-    await pool.query("UPDATE cashiers SET pwd_hash=$1 WHERE code=$2",[hash, cashier_code.toUpperCase()]);
-    console.log('reset-pwd: mot de passe réinitialisé pour', cashier_code.toUpperCase());
-    res.json({ success: true, message: 'Mot de passe réinitialisé' });
-  } catch(e) { console.error('reset-pwd:', e.message); res.status(500).json({ error: e.message }); }
-});
-
-app.post('/api/auth/cashier', async (req, res) => {
-  try {
-    const { code, pwd } = req.body;
-    if (!code || !pwd) return res.status(400).json({ error: 'Code et mot de passe obligatoires' });
-
-    const r = await pool.query(
-      "SELECT c.*, d.name AS dir_name FROM cashiers c LEFT JOIN directors d ON c.dir_code=d.code WHERE c.code=$1 AND c.active=TRUE",
-      [code.toUpperCase()]
-    );
-    const caiss = r.rows[0];
-    if (!caiss) {
-      console.log('auth/cashier: code non trouvé:', code.toUpperCase());
-      return res.status(401).json({ error: 'Code introuvable' });
-    }
-    if (!caiss.pwd_hash) {
-      console.log('auth/cashier: pas de hash pour', code.toUpperCase());
-      return res.status(401).json({ error: 'Compte mal configuré — contactez l\'administrateur' });
-    }
-    const ok = await bcrypt.compare(pwd, caiss.pwd_hash);
-    if (!ok) {
-      console.log('auth/cashier: mot de passe incorrect pour', code.toUpperCase());
-      return res.status(401).json({ error: 'Mot de passe incorrect' });
-    }
-    const token = genToken();
-    await pool.query(
-      "INSERT INTO sessions (id, role, user_code, expires_at) VALUES ($1, 'caissier', $2, NOW() + INTERVAL '30 days')",
-      [token, caiss.code]
-    );
-    console.log('auth/cashier: connexion réussie pour', caiss.code);
-    res.json({ token, role: 'caissier', code: caiss.code, name: caiss.name, dirCode: caiss.dir_code, jeu: caiss.jeu });
-  } catch (e) {
-    console.error('auth/cashier error:', e.message);
-    res.status(500).json({ error: e.message });
-  }
-});
-
 app.post('/api/auth/player', async (req, res) => {
   try {
     const { phone, pwd } = req.body;
@@ -1119,58 +1062,108 @@ app.delete('/api/admin/directors/:code', requireAdmin, async (req, res) => {
   await pool.query("UPDATE directors SET active=FALSE WHERE code=$1", [req.params.code]);
   res.json({ success: true });
 });
-
-app.get('/api/admin/cashiers', requireAdmin, async (req, res) => {
+app.post('/api/auth/cashier', async (req, res) => {
   try {
-    const r = await pool.query("SELECT c.*,d.name AS dir_name FROM cashiers c LEFT JOIN directors d ON c.dir_code=d.code ORDER BY c.created_at DESC");
-    res.json({ cashiers: r.rows });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-app.post('/api/admin/cashiers/delete', requireAdmin, async (req, res) => {
-  try {
-    const { id } = req.body;
-    await pool.query("UPDATE cashiers SET active=FALSE WHERE id=$1", [id]);
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-app.post('/api/admin/cashiers', requireAdmin, async (req, res) => {
-  const { name, code, dir_code, phone, pwd, jeu } = req.body;
-  if (!name||!code||!pwd) return res.status(400).json({ error: 'Champs obligatoires' });
-  const hash = await bcrypt.hash(pwd, 10);
-  const r = await pool.query("INSERT INTO cashiers (name,code,dir_code,phone,pwd_hash,jeu) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *", [name, code.toUpperCase(), dir_code, phone||'', hash, jeu||'all']);
-  res.json({ success: true, cashier: r.rows[0] });
-});
-
-// Route accessible par le directeur pour créer un caissier
-app.post('/api/cashiers', requireAuth, async (req, res) => {
-  try {
-    if (!['admin','directeur'].includes(req.session.role)) return res.status(403).json({ error: 'Non autorisé' });
-    const { name, code, phone, pwd, jeu, dir_code } = req.body;
-    if (!name||!code||!pwd) return res.status(400).json({ error: 'Nom, code et mot de passe obligatoires' });
-    const effectiveDirCode = req.session.role === 'directeur' ? req.session.user_code : (dir_code || req.session.user_code);
-    const hash = await bcrypt.hash(pwd, 10);
-    const existing = await pool.query("SELECT code FROM cashiers WHERE code=$1", [code.toUpperCase()]);
-    if (existing.rows.length) return res.status(400).json({ error: 'Ce code caissier existe déjà' });
+    const { code, pwd } = req.body;
+    if (!code || !pwd) return res.status(400).json({ error: 'Code et mot de passe requis' });
+    const codeUpper = code.toUpperCase();
     const r = await pool.query(
-      "INSERT INTO cashiers (name,code,dir_code,phone,pwd_hash,jeu) VALUES ($1,$2,$3,$4,$5,$6) RETURNING code,name,dir_code,phone,jeu",
-      [name, code.toUpperCase(), effectiveDirCode, phone||'', hash, jeu||'all']
+      "SELECT * FROM cashiers WHERE code=$1 AND active=TRUE",
+      [codeUpper]
     );
+    if (!r.rows.length) return res.status(401).json({ error: 'Code introuvable' });
+    const caiss = r.rows[0];
+    const ok = await bcrypt.compare(String(pwd), caiss.pwd_hash);
+    if (!ok) return res.status(401).json({ error: 'Mot de passe incorrect' });
+    const token = genToken();
+    await pool.query(
+      "INSERT INTO sessions (id, role, user_code, expires_at) VALUES ($1, 'caissier', $2, NOW() + INTERVAL '30 days')",
+      [token, caiss.code]
+    );
+    res.json({ token, role: 'caissier', code: caiss.code, name: caiss.name, dirCode: caiss.dir_code, jeu: caiss.jeu||'all' });
+  } catch(e) {
+    console.error('auth/cashier:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
+// CAISSIER — CRÉATION (directeur ou admin)
+// ═══════════════════════════════════════════════════════════
+app.post('/api/cashier/create', requireAuth, async (req, res) => {
+  try {
+    if (!['admin','directeur'].includes(req.session.role)) {
+      return res.status(403).json({ error: 'Non autorisé' });
+    }
+    const { name, code, phone, pwd, jeu } = req.body;
+    if (!name || !code || !pwd) return res.status(400).json({ error: 'Nom, code et mot de passe obligatoires' });
+    const codeUpper = code.toUpperCase();
+    const dirCode = req.session.role === 'directeur' ? req.session.user_code : req.body.dir_code;
+    // Vérifier doublon
+    const ex = await pool.query("SELECT code FROM cashiers WHERE code=$1", [codeUpper]);
+    if (ex.rows.length) return res.status(400).json({ error: 'Ce code existe déjà: ' + codeUpper });
+    // Hasher le mot de passe
+    const hash = await bcrypt.hash(String(pwd), 10);
+    const r = await pool.query(
+      "INSERT INTO cashiers (name, code, dir_code, phone, pwd_hash, jeu) VALUES ($1,$2,$3,$4,$5,$6) RETURNING code, name, dir_code, phone, jeu",
+      [name.trim(), codeUpper, dirCode||null, (phone||'').trim(), hash, jeu||'all']
+    );
+    console.log('cashier/create: créé', codeUpper, 'pour dir', dirCode);
     res.json({ success: true, cashier: r.rows[0] });
-  } catch(e) { res.status(500).json({ error: e.message }); }
+  } catch(e) {
+    console.error('cashier/create:', e.message);
+    res.status(500).json({ error: e.message });
+  }
 });
 
-// ── DIAGNOSTIC: Vérifier un caissier (admin seulement) ──
-app.get('/api/admin/cashier-check/:code', requireAdmin, async (req, res) => {
+// ═══════════════════════════════════════════════════════════
+// CAISSIER — SUPPRESSION (directeur ou admin)
+// ═══════════════════════════════════════════════════════════
+app.post('/api/cashier/delete', requireAuth, async (req, res) => {
   try {
-    const r = await pool.query(
-      "SELECT code, name, dir_code, jeu, active, created_at, (pwd_hash IS NOT NULL) AS has_hash, LENGTH(pwd_hash) AS hash_len FROM cashiers WHERE code=$1",
-      [req.params.code.toUpperCase()]
-    );
-    if (!r.rows.length) return res.status(404).json({ error: 'Caissier non trouvé' });
-    res.json(r.rows[0]);
-  } catch(e) { res.status(500).json({ error: e.message }); }
+    if (!['admin','directeur'].includes(req.session.role)) {
+      return res.status(403).json({ error: 'Non autorisé' });
+    }
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: 'Code manquant' });
+    const codeUpper = code.toUpperCase();
+    if (req.session.role === 'directeur') {
+      // Le directeur ne peut supprimer que ses propres caissiers
+      await pool.query("UPDATE cashiers SET active=FALSE WHERE code=$1 AND dir_code=$2", [codeUpper, req.session.user_code]);
+    } else {
+      await pool.query("UPDATE cashiers SET active=FALSE WHERE code=$1", [codeUpper]);
+    }
+    console.log('cashier/delete:', codeUpper);
+    res.json({ success: true });
+  } catch(e) {
+    console.error('cashier/delete:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
+// CAISSIER — RESET MOT DE PASSE (directeur ou admin)
+// ═══════════════════════════════════════════════════════════
+app.post('/api/cashier/reset-pwd', requireAuth, async (req, res) => {
+  try {
+    if (!['admin','directeur'].includes(req.session.role)) {
+      return res.status(403).json({ error: 'Non autorisé' });
+    }
+    const { code, new_pwd } = req.body;
+    if (!code || !new_pwd) return res.status(400).json({ error: 'Code et nouveau mot de passe requis' });
+    const codeUpper = code.toUpperCase();
+    const hash = await bcrypt.hash(String(new_pwd), 10);
+    if (req.session.role === 'directeur') {
+      await pool.query("UPDATE cashiers SET pwd_hash=$1 WHERE code=$2 AND dir_code=$3 AND active=TRUE", [hash, codeUpper, req.session.user_code]);
+    } else {
+      await pool.query("UPDATE cashiers SET pwd_hash=$1 WHERE code=$2 AND active=TRUE", [hash, codeUpper]);
+    }
+    console.log('cashier/reset-pwd:', codeUpper);
+    res.json({ success: true });
+  } catch(e) {
+    console.error('cashier/reset-pwd:', e.message);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── DIRECTEUR: Lister SES caissiers ──
@@ -1228,25 +1221,6 @@ app.get('/api/dir/stats', requireDirector, async (req, res) => {
   } catch(e) { console.error('/api/dir/stats:',e.message); res.status(500).json({ error: e.message }); }
 });
 
-// ── DIRECTEUR: Supprimer un caissier ──
-app.post('/api/dir/cashiers/delete', requireDirector, async (req, res) => {
-  try {
-    const { code } = req.body;
-    if (!code) return res.status(400).json({ error: 'Code manquant' });
-    const dirCode = req.session.role === 'directeur' ? req.session.user_code : null;
-    const q = dirCode
-      ? "UPDATE cashiers SET active=FALSE WHERE code=$1 AND dir_code=$2"
-      : "UPDATE cashiers SET active=FALSE WHERE code=$1";
-    const params = dirCode ? [code.toUpperCase(), dirCode] : [code.toUpperCase()];
-    await pool.query(q, params);
-    res.json({ success: true });
-  } catch(e) { res.status(500).json({ error: e.message }); }
-});
-
-app.delete('/api/admin/cashiers/:code', requireAdmin, async (req, res) => {
-  await pool.query("UPDATE cashiers SET active=FALSE WHERE code=$1", [req.params.code]);
-  res.json({ success: true });
-});
 
 app.get('/api/admin/bets', requireAdmin, async (req, res) => {
   const limit = parseInt(req.query.limit) || 100;
