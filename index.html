@@ -466,13 +466,13 @@ body{background:#061a2e;color:#fff;font-family:'Barlow',sans-serif;min-height:10
       <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;">Administratè · Direktè · Caissier</div>
     </div>
     <div class="m-err" id="staff-err"></div>
-    <select id="staff-role" class="m-select" onchange="updateStaffForm()" onclick="updateStaffForm()">
+    <select id="staff-role" class="m-select" onchange="updateStaffForm()">
       <option value="admin">👑 Administratè</option>
       <option value="directeur">🏢 Direktè</option>
-      <option value="caissier">🏧 kesye</option>
+      <option value="caissier">🏧 Kesye</option>
     </select>
-    <div id="staff-code-wrap" style="display:none;margin-bottom:11px">
-      <input type="text" class="m-inp" id="staff-code" placeholder="Idantifyan (ex: DIR-NORD)" style="margin-bottom:0;letter-spacing:2px;font-weight:800">
+    <div id="staff-code-wrap" style="margin-bottom:11px">
+      <input type="text" class="m-inp" id="staff-code" placeholder="Idantifyan (ex: CAISS-01)" style="margin-bottom:0;letter-spacing:2px;font-weight:800;text-transform:uppercase">
     </div>
     <div class="m-inp-wrap">
       <input type="password" class="m-inp" id="staff-pwd" placeholder="Mot de passe">
@@ -780,17 +780,15 @@ function verifSecret(){
   else{const inp=document.getElementById('secret-inp');inp.style.borderColor='#e63946';setTimeout(()=>inp.style.borderColor='rgba(255,255,255,.15)',1000);showN('Kòd enkòrèk','err');}
 }
 function updateStaffForm(){
-  const r=document.getElementById('staff-role').value;
-  const wrap=document.getElementById('staff-code-wrap');
-  const inp=document.getElementById('staff-code');
-  if(r!=='admin'){
-    wrap.style.display='block';
-    inp.placeholder = r==='directeur' ? 'Identifyan Direktè (ex: DIR-NORD)' : 'Identifyan Kesye (ex: CAISS-01)';
-    inp.value='';
-    setTimeout(()=>inp.focus(),100);
+  const r = document.getElementById('staff-role').value;
+  const inp = document.getElementById('staff-code');
+  const wrap = document.getElementById('staff-code-wrap');
+  if(r === 'admin'){
+    wrap.style.visibility = 'hidden';
+    inp.value = '';
   } else {
-    wrap.style.display='none';
-    inp.value='';
+    wrap.style.visibility = 'visible';
+    inp.placeholder = r==='directeur' ? 'Idantifyan Direktè (ex: DIR-NORD)' : 'Idantifyan Kesye (ex: CAISS-01)';
   }
 }
 
@@ -836,15 +834,16 @@ async function registerJoueurMain(){
 }
 async function loginStaffMain(){
   const role = document.getElementById('staff-role').value;
-  const code = document.getElementById('staff-code').value.trim().toUpperCase();
-  const pwd  = document.getElementById('staff-pwd').value;
+  const codeRaw = document.getElementById('staff-code').value || '';
+  const code = codeRaw.trim().toUpperCase();
+  const pwd  = document.getElementById('staff-pwd').value || '';
   const err  = document.getElementById('staff-err');
   err.classList.remove('show');
+  console.log('[loginStaffMain] role='+role+' code='+JSON.stringify(code)+' pwd_len='+pwd.length);
 
   if(role !== 'admin' && !code){
     err.textContent = 'Entrez votre identifiant';
     err.classList.add('show');
-    document.getElementById('staff-code-wrap').style.display = 'block';
     document.getElementById('staff-code').focus();
     return;
   }

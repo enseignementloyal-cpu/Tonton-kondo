@@ -128,6 +128,9 @@ const JACKPOT_PCT       = 5; // 5%
       BEGIN ALTER TABLE bets ADD COLUMN game_type TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END;
       BEGIN ALTER TABLE bets ADD COLUMN numeros_joues TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END;
       BEGIN ALTER TABLE bets ADD COLUMN match_info JSONB; EXCEPTION WHEN duplicate_column THEN NULL; END;
+      BEGIN ALTER TABLE bets ADD COLUMN draw TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END;
+      BEGIN ALTER TABLE bets ADD COLUMN sub_type TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END;
+      BEGIN ALTER TABLE bets ADD COLUMN selection TEXT; EXCEPTION WHEN duplicate_column THEN NULL; END;
     END $$;
 
     -- Tirages Keno publiés par l'admin
@@ -1928,18 +1931,25 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
         );
       }
 
-      // Enregistrer pari en DB avec les bonnes colonnes
-      await client.query(
-        `INSERT INTO bets (player_phone,dir_code,caiss_code,type,game_type,sub_type,selection,mise,gain_potentiel,statut,draw)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-        [
-          phone||null, dir_code, caiss_code,
-          jeuType, pari.game||jeuType, pari.ticketId||null,
-          pari.number||pari.cleanNumber, mise, gain,
-          gain>0 ? 'gagne' : 'perdu',
-          pari.drawId||''
-        ]
-      );
+      // Enregistrer pari en DB
+      try {
+        await client.query(
+          `INSERT INTO bets (player_phone,dir_code,caiss_code,type,game_type,sub_type,selection,mise,gain_potentiel,statut,draw)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+          [
+            phone||null, dir_code||null, caiss_code||null,
+            String(jeuType||'keno'), String(pari.game||jeuType||'keno'),
+            String(pari.ticketId||'').substring(0,50),
+            String(pari.number||pari.cleanNumber||'?').substring(0,200),
+            Number(mise)||0, Number(gain)||0,
+            gain>0 ? 'gagne' : 'perdu',
+            String(pari.drawId||'').substring(0,50)
+          ]
+        );
+        console.log('[caisse/lancer] pari enregistré:', jeuType, 'gain:', gain);
+      } catch(insertErr) {
+        console.error('[caisse/lancer] INSERT ERREUR:', insertErr.message);
+      }
 
       // Jackpot
       if (dir_code) {
