@@ -1065,15 +1065,28 @@ app.delete('/api/admin/directors/:code', requireAdmin, async (req, res) => {
 app.post('/api/auth/cashier', async (req, res) => {
   try {
     const { code, pwd } = req.body;
+    console.log('[auth/cashier] code='+JSON.stringify(code)+' pwd_len='+String(pwd||'').length);
     if (!code || !pwd) return res.status(400).json({ error: 'Code et mot de passe requis' });
-    const codeUpper = code.toUpperCase();
-    const r = await pool.query(
-      "SELECT * FROM cashiers WHERE code=$1 AND active=TRUE",
-      [codeUpper]
-    );
-    if (!r.rows.length) return res.status(401).json({ error: 'Code introuvable' });
+    const codeUpper = String(code).trim().toUpperCase();
+    const pwdClean  = String(pwd).trim();
+    // Chercher avec ET sans active=TRUE pour diagnostiquer
+    const rAll = await pool.query("SELECT code,name,dir_code,jeu,active,LENGTH(pwd_hash) AS hashlen FROM cashiers WHERE code=$1", [codeUpper]);
+    console.log('[auth/cashier] rows all (sans filtre):', rAll.rows.length, rAll.rows.map(r=>({code:r.code,active:r.active,hashlen:r.hashlen})));
+    const r = await pool.query("SELECT * FROM cashiers WHERE code=$1 AND active=TRUE", [codeUpper]);
+    console.log('[auth/cashier] rows active=TRUE:', r.rows.length);
+    if (!r.rows.length) {
+      // Si existait mais inactive — réactiver automatiquement
+      if (rAll.rows.length > 0) {
+        console.log('[auth/cashier] caissier trouvé mais inactive — tentative réactivation');
+        await pool.query("UPDATE cashiers SET active=TRUE WHERE code=$1", [codeUpper]);
+        const r2 = await pool.query("SELECT * FROM cashiers WHERE code=$1", [codeUpper]);
+        if(r2.rows.length) r.rows.push(r2.rows[0]);
+      }
+      if (!r.rows.length) return res.status(401).json({ error: 'Code introuvable: ' + codeUpper });
+    }
     const caiss = r.rows[0];
-    const ok = await bcrypt.compare(String(pwd), caiss.pwd_hash);
+    const ok = await bcrypt.compare(pwdClean, caiss.pwd_hash);
+    console.log('[auth/cashier] compare result:', ok, 'hash_len:', caiss.pwd_hash?.length);
     if (!ok) return res.status(401).json({ error: 'Mot de passe incorrect' });
     const token = genToken();
     await pool.query(
@@ -1082,7 +1095,7 @@ app.post('/api/auth/cashier', async (req, res) => {
     );
     res.json({ token, role: 'caissier', code: caiss.code, name: caiss.name, dirCode: caiss.dir_code, jeu: caiss.jeu||'all' });
   } catch(e) {
-    console.error('auth/cashier:', e.message);
+    console.error('[auth/cashier] ERROR:', e.message);
     res.status(500).json({ error: e.message });
   }
 });
