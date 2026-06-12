@@ -3200,19 +3200,27 @@ function showRechargeModal(method){goTo('sc-jauth');setTimeout(()=>{showBox('box
 
 
 // ===== CAISSIER AUTH =====
-function authSec(){
-  const cod=document.getElementById('scod').value.trim().toUpperCase();
-  const pwd=document.getElementById('spwd').value;
-  const err=document.getElementById('serr');err.classList.remove('show');
-  const caiss=gCaiss();
-  const found=Object.values(caiss).find(c=>c.code===cod&&c.pwd===pwd);
-  if(!found){err.textContent='Code ou mot de passe incorrect.';err.classList.add('show');return;}
-  CCaiss=found;
-  document.getElementById('caiss-name-display').textContent=found.name;
-  document.getElementById('caiss-jeu-display').textContent=JEU_LABELS[found.jeu]||found.jeu;
-  document.getElementById('caiss-jeu-label').textContent=JEU_LABELS[found.jeu]||found.jeu;
-  refreshSec();
-  goTo('sc-sec');
+async function authSec(){
+  const cod = document.getElementById('scod').value.trim().toUpperCase();
+  const pwd = document.getElementById('spwd').value;
+  const err = document.getElementById('serr');
+  err.classList.remove('show');
+  if(!cod || !pwd){ err.textContent='Entrez votre code et mot de passe.'; err.classList.add('show'); return; }
+  try {
+    const data = await apiPost('/api/auth/cashier', { code: cod, pwd });
+    setToken(data.token);
+    localStorage.setItem('tk_session_role','caissier');
+    CCaiss = { name: data.name, code: data.code, dirCode: data.dirCode, jeu: data.jeu||'all' };
+    document.getElementById('caiss-name-display').textContent = CCaiss.name;
+    const jeuDisp = document.getElementById('caiss-jeu-display');
+    if(jeuDisp) jeuDisp.textContent = JEU_LABELS[CCaiss.jeu]||CCaiss.jeu;
+    document.getElementById('caiss-jeu-label').textContent = JEU_LABELS[CCaiss.jeu]||CCaiss.jeu;
+    refreshSec();
+    goTo('sc-sec');
+  } catch(e) {
+    err.textContent = e.message || 'Code ou mot de passe incorrect.';
+    err.classList.add('show');
+  }
 }
 
 function selSecTab(el){
