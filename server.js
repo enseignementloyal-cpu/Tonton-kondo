@@ -303,20 +303,29 @@ function isWin(probability) {
   return rand <= probability;
 }
 
-function getKenoMultiplier(hits, selectedCount) {
-  const table = {
-    1: {1: 3},
-    2: {2: 5},
-    3: {3: 8},
-    4: {4: 12},
-    5: {5: 18},
-    6: {6: 25, 5: 5, 4: 2},
-    7: {7: 40, 6: 10, 5: 3},
-    8: {8: 60, 7: 15, 6: 5},
-    9: {9: 100, 8: 20, 7: 8},
-    10: {10: 150, 9: 30, 8: 12}
+// Table de gains Keno selon le nombre de boules trouvées (hits)
+// Le multiplicateur varie dans une fourchette selon la difficulté (difficulte: 0=facile, 100=difficile)
+// Plus le jeu est "difficile", plus le multiplicateur tend vers le bas de la fourchette
+function getKenoMultiplier(hits, selectedCount, difficulte) {
+  if (hits < 5) return 0; // Sous 5 numéros trouvés: aucun gain
+  // Fourchettes [min, max] de multiplicateur par nombre de hits
+  const ranges = {
+    5:  [1.5, 1.5],
+    6:  [3,   34],
+    7:  [4,   6],
+    8:  [10,  15],
+    9:  [16,  30],
+    10: [16,  30],
   };
-  return table[selectedCount]?.[hits] || 0;
+  const range = ranges[Math.min(hits,10)];
+  if (!range) return 0;
+  const [min, max] = range;
+  if (min === max) return min;
+  // difficulte 0 (facile) → proche du max ; difficulte 100 (difficile) → proche du min
+  const d = (difficulte === undefined || difficulte === null) ? 50 : difficulte;
+  const factor = 1 - (d / 100); // 1 = facile, 0 = difficile
+  const mult = min + (max - min) * factor;
+  return Math.round(mult * 100) / 100;
 }
 
 // Fonction générique pour les appels PlopPlop entrants (dépôts)
@@ -448,6 +457,31 @@ app.get('/health', async (req, res) => {
 });
 
 // ── AUTHENTIFICATION ──────────────────────────────────────
+
+// ── DIAGNOSTIC CAISSIER (à supprimer après résolution) ──
+app.get('/api/diag/cashier/:code', async (req, res) => {
+  try {
+    const r = await pool.query(
+      "SELECT code, name, dir_code, jeu, active, created_at, (pwd_hash IS NOT NULL AND LENGTH(pwd_hash)>0) AS has_hash, LENGTH(pwd_hash) AS hash_len FROM cashiers WHERE code=$1",
+      [req.params.code.toUpperCase()]
+    );
+    if(!r.rows.length) return res.json({ found: false, code: req.params.code.toUpperCase() });
+    res.json({ found: true, ...r.rows[0] });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Test connexion caissier direct
+app.post('/api/diag/cashier-login', async (req, res) => {
+  try {
+    const { code, pwd } = req.body;
+    const r = await pool.query("SELECT code,name,active,LENGTH(pwd_hash) AS hl,pwd_hash FROM cashiers WHERE code=$1",[String(code).toUpperCase()]);
+    if(!r.rows.length) return res.json({ step:'lookup', found:false });
+    const row = r.rows[0];
+    const ok  = await bcrypt.compare(String(pwd), row.pwd_hash);
+    res.json({ step:'compare', found:true, active:row.active, hash_len:row.hl, compare_ok:ok, name:row.name });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/auth/admin', async (req, res) => {
   try {
     const { pwd } = req.body;
@@ -1288,6 +1322,27 @@ app.post('/api/admin/reset-password', requireAdmin, async (req, res) => {
 });
 
 // GET: lire la difficulté d'un jeu (global ou par directeur)
+// GET: récupérer toutes les difficultés (globales + par directeur) en une fois
+app.get('/api/admin/settings/all-game-diffs', requireAdmin, async (req, res) => {
+  try {
+    const GAMES = ['keno','lucky6','course','helico','roulette','penalty'];
+    // Global depuis settings
+    const global = {};
+    for (const g of GAMES) {
+      const r = await pool.query("SELECT value FROM settings WHERE key=$1", [`${g}_default_diff`]);
+      global[g] = r.rows.length ? parseInt(r.rows[0].value) : 45;
+    }
+    // Par directeur depuis game_difficulty
+    const perDir = {};
+    const r2 = await pool.query("SELECT dir_code, game_name, win_probability FROM game_difficulty WHERE dir_code IS NOT NULL");
+    r2.rows.forEach(row => {
+      if (!perDir[row.dir_code]) perDir[row.dir_code] = {};
+      perDir[row.dir_code][row.game_name] = row.win_probability;
+    });
+    res.json({ global, perDir });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/admin/settings/game-diff', requireAdmin, async (req, res) => {
   try {
     const { game_name, dir_code } = req.query;
@@ -1733,6 +1788,57 @@ app.post('/api/games/helico/update', requireAuth, async (req, res) => {
 });
 
 // ── AUTRES ROUTES API (bets, transactions, etc.) ──────────
+// ── CAISSIER: Derniers paris enregistrés par ce caissier ──
+app.get('/api/cashier/bets', requireAuth, async (req, res) => {
+  try {
+    if (!['caissier','admin','directeur'].includes(req.session.role)) {
+      return res.status(403).json({ error: 'Non autorisé' });
+    }
+    const limit = parseInt(req.query.limit) || 20;
+    let rows;
+    if (req.session.role === 'caissier') {
+      const r = await pool.query(
+        `SELECT b.id, b.type, b.game_type, b.sub_type, b.selection, b.mise, b.gain_potentiel, b.statut, b.draw, b.created_at,
+                p.name AS player_name, p.phone AS player_phone
+         FROM bets b
+         LEFT JOIN players p ON b.player_phone = p.phone
+         WHERE b.caiss_code = $1
+         ORDER BY b.created_at DESC LIMIT $2`,
+        [req.session.user_code, limit]
+      );
+      rows = r.rows;
+    } else if (req.session.role === 'directeur') {
+      const r = await pool.query(
+        `SELECT b.id, b.type, b.game_type, b.sub_type, b.selection, b.mise, b.gain_potentiel, b.statut, b.draw, b.created_at,
+                p.name AS player_name, p.phone AS player_phone, c.name AS caiss_name
+         FROM bets b
+         LEFT JOIN players p ON b.player_phone = p.phone
+         LEFT JOIN cashiers c ON b.caiss_code = c.code
+         WHERE b.dir_code = $1
+         ORDER BY b.created_at DESC LIMIT $2`,
+        [req.session.user_code, limit]
+      );
+      rows = r.rows;
+    } else {
+      const r = await pool.query(
+        `SELECT b.id, b.type, b.game_type, b.sub_type, b.selection, b.mise, b.gain_potentiel, b.statut, b.draw, b.created_at,
+                p.name AS player_name, p.phone AS player_phone, c.name AS caiss_name
+         FROM bets b
+         LEFT JOIN players p ON b.player_phone = p.phone
+         LEFT JOIN cashiers c ON b.caiss_code = c.code
+         ORDER BY b.created_at DESC LIMIT $1`,
+        [limit]
+      );
+      rows = r.rows;
+    }
+    res.json({ bets: rows });
+  } catch(e) {
+    console.error('/api/cashier/bets:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+
 
 // ── CAISSE: LANCER JEU (enregistrement DB + calcul résultats) ──
 app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
@@ -1788,10 +1894,20 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
     const diffGlobal = await getWinProbability(dir_code, paris[0]?.jeuType || paris[0]?.game || 'keno');
     // Probabilité de gagner: 80% si diff=0, 5% si diff=100
     const probGain = Math.max(0.05, Math.min(0.80, 1 - diffGlobal/100));
-    // Décider combien de paris gagnent
-    const maxGagnants = Math.max(0, Math.floor(nbParis * probGain));
-    const nbGagnants  = maxGagnants <= 1 ? (Math.random() < probGain ? 1 : 0)
-                       : 1 + Math.floor(Math.random() * Math.min(2, maxGagnants));
+
+    let nbGagnants;
+    if (nbParis <= 1) {
+      nbGagnants = Math.random() < probGain ? 1 : 0;
+    } else if (diffGlobal >= 70 && nbParis >= 6) {
+      // Jeu difficile + beaucoup de tickets (6-10+) :
+      // garantir au moins 1 ticket gagnant (anti-découragement)
+      nbGagnants = 1;
+    } else {
+      const maxGagnants = Math.max(0, Math.floor(nbParis * probGain));
+      nbGagnants = maxGagnants <= 1 ? (Math.random() < probGain ? 1 : 0)
+                 : 1 + Math.floor(Math.random() * Math.min(2, maxGagnants));
+    }
+
     // Indices des paris qui vont gagner (aléatoires)
     const idxGagnants = new Set();
     while(idxGagnants.size < Math.min(nbGagnants, nbParis)){
@@ -1816,23 +1932,34 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
         const pool80 = Array.from({length:80},(_,i)=>i+1);
         const autres = pool80.filter(n=>!nums.includes(n)).sort(()=>Math.random()-.5);
         const joues  = pool80.filter(n=>nums.includes(n)).sort(()=>Math.random()-.5);
-        // difficulte: 0=très facile(joueur gagne souvent) 100=très difficile(joueur perd souvent)
-        // shouldWin déjà calculé par la logique globale
+
         let nbHits;
-        if(shouldWin){
-          // Faire gagner: donner assez de hits pour un multiplicateur
-          nbHits = Math.max(5, Math.round(nbJoues * 0.6));
+        if (shouldWin) {
+          // Gagnant: nombre de hits dépend de la difficulté, JAMAIS plus que nbJoues
+          let target;
+          if (difficulte >= 70) {
+            target = Math.random() < 0.7 ? 5 : 6; // jeu très difficile: gain minimal
+          } else if (difficulte >= 40) {
+            target = 5 + Math.floor(Math.random() * 2); // 5-6
+          } else {
+            target = 5 + Math.floor(Math.random() * 6); // 5-10
+          }
+          // Plafonner au nombre de numéros joués (et au minimum 5 pour gagner)
+          nbHits = Math.min(target, nbJoues);
+          if (nbHits < 5) nbHits = Math.min(5, nbJoues); // si le joueur a joué <5, max possible
         } else {
-          // Faire perdre: moins de 5 hits
-          nbHits = Math.floor(Math.random() * Math.min(4, nbJoues));
+          // Perdant: moins de 5 hits (0-4), plafonné par nbJoues
+          nbHits = Math.floor(Math.random() * Math.min(5, nbJoues));
         }
-        nbHits = Math.max(0, Math.min(nbHits, Math.min(nbJoues,20)));
+        nbHits = Math.max(0, Math.min(nbHits, Math.min(nbJoues, 20)));
+
         const winNums = [...joues.slice(0,nbHits), ...autres.slice(0,20-nbHits)].sort((a,b)=>a-b);
         const hits = nums.filter(n=>winNums.includes(n)).length;
-        const mult = getKenoMultiplier(hits, nbJoues) || 0;
-        gain = mult > 0 ? Math.round(mise * mult) : 0;
+        const mult = getKenoMultiplier(hits, nbJoues, difficulte);
+        gain = mult > 0 ? Math.round(mise * mult * 100) / 100 : 0;
         winData = { winningNumbers: winNums, hits, multiplier: mult };
         resultMsg = gain>0 ? `${hits}/${nbJoues} boules ×${mult} → +${gain} Gd` : `${hits}/${nbJoues} boules → Perdu`;
+        console.log(`[keno] shouldWin=${shouldWin} difficulte=${difficulte} nbJoues=${nbJoues} nbHits_target=${nbHits} hits_reel=${hits} mult=${mult} gain=${gain}`);
 
       } else if (jeuType === 'lucky6') {
         const nums = pari.nums || pari.cleanNumber.split(',').map(Number);

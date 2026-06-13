@@ -1939,11 +1939,23 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
           <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span></div>
           <button onclick="saveGameDiff('course')" style="margin-top:8px;padding:5px 14px;background:var(--red);color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
         </div>
-        <div style="background:var(--bg2);border-radius:10px;padding:14px;border-left:4px solid var(--green2);">
+        <div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid var(--green2);">
           <div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>🚁 Hélicoptère</b><span style="color:var(--green2);font-weight:900" id="helico-pct-lbl">45%</span></div>
           <input type="range" id="helico-diff-range" min="0" max="80" step="5" value="45" style="width:100%;accent-color:var(--green2)" oninput="updateDiffLabel('helico',this.value)">
           <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span></div>
           <button onclick="saveGameDiff('helico')" style="margin-top:8px;padding:5px 14px;background:var(--green2);color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
+        </div>
+        <div style="background:var(--bg2);border-radius:10px;padding:14px;margin-bottom:10px;border-left:4px solid #ff6b00;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>🎡 Roulette</b><span style="color:#ff6b00;font-weight:900" id="roulette-pct-lbl">45%</span></div>
+          <input type="range" id="roulette-diff-range" min="0" max="80" step="5" value="45" style="width:100%;accent-color:#ff6b00" oninput="updateDiffLabel('roulette',this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span></div>
+          <button onclick="saveGameDiff('roulette')" style="margin-top:8px;padding:5px 14px;background:#ff6b00;color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
+        </div>
+        <div style="background:var(--bg2);border-radius:10px;padding:14px;border-left:4px solid #4ade80;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px"><b>⚽ Penalty</b><span style="color:#4ade80;font-weight:900" id="penalty-pct-lbl">45%</span></div>
+          <input type="range" id="penalty-diff-range" min="0" max="80" step="5" value="45" style="width:100%;accent-color:#4ade80" oninput="updateDiffLabel('penalty',this.value)">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#666;margin-top:3px"><span>0%</span><span>20%</span><span>40%</span><span>60%</span><span>80%</span></div>
+          <button onclick="saveGameDiff('penalty')" style="margin-top:8px;padding:5px 14px;background:#4ade80;color:#000;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px">Appliquer</button>
         </div>
       </div>
       <!-- Ticker & Notifications -->
@@ -2615,7 +2627,10 @@ async function apiCall(method, path, body) {
   const opts = { method, headers: { 'Content-Type': 'application/json', 'X-Session-Token': getToken() } };
   if (body) opts.body = JSON.stringify(body);
   const r = await fetch(API + path, opts);
-  const data = await r.json();
+  const text = await r.text();
+  let data;
+  try { data = JSON.parse(text); }
+  catch(e) { throw new Error(r.status===404 ? 'Route introuvable: '+path : 'Réponse serveur invalide ('+r.status+')'); }
   if (!r.ok) throw new Error(data.error || 'Erreur serveur');
   return data;
 }
@@ -4956,6 +4971,7 @@ function selAdmTab(el){
       if(tab==='params' && typeof renderGameBlockList==='function') renderGameBlockList();
       if(tab==='params' && typeof loadPaymentParamsToForm==='function') loadPaymentParamsToForm();
       if(tab==='params' && typeof loadPlopConfigToForm==='function') loadPlopConfigToForm();
+      if(tab==='params' && typeof loadGlobalDiffSliders==='function') loadGlobalDiffSliders();
     }
   }, 50);
 }
@@ -6597,6 +6613,21 @@ function applyPaymentParamsToUI(){
 // ===== FIN PARAMÈTRES PAIEMENT =====
 
 // ===== CONFIG PLOPPLOP ADMIN =====
+async function loadGlobalDiffSliders(){
+  const games = ['keno','lucky6','course','helico','roulette','penalty'];
+  try {
+    const data = await apiGet('/api/admin/settings/all-game-diffs');
+    const global = data.global || {};
+    games.forEach(g => {
+      const val = global[g] !== undefined ? global[g] : 45;
+      const range = document.getElementById(g+'-diff-range');
+      const lbl   = document.getElementById(g+'-pct-lbl');
+      if(range) range.value = val;
+      if(lbl)   lbl.textContent = val+'%';
+    });
+  } catch(e){ console.warn('loadGlobalDiffSliders:', e.message); }
+}
+
 async function loadPlopConfigToForm(){
   try {
     const s = await apiGet('/api/admin/settings');
@@ -6755,7 +6786,7 @@ async function saveDirGameDiff(dirCode, game, val){
   }
 }
 
-function renderDirDiffList(){
+async function renderDirDiffList(){
   const el = document.getElementById('dir-diff-list');
   if(!el) return;
   const dirs = gDirs();
@@ -6764,12 +6795,20 @@ function renderDirDiffList(){
     el.innerHTML='<div style="color:var(--muted);font-size:13px;padding:10px">Aucun directeur configuré.</div>';
     return;
   }
-  const games = ['keno','lucky6','course','helico'];
-  const gameLabels = {keno:'🎱 Keno',lucky6:'🍀 Lucky 6',course:'🏎️ Course',helico:'🚁 Hélico'};
+  const games = ['keno','lucky6','course','roulette','penalty','helico'];
+  const gameLabels = {keno:'🎱 Keno',lucky6:'🍀 Lucky 6',course:'🏎️ Course',roulette:'🎡 Roulette',penalty:'⚽ Penalty',helico:'🚁 Hélico'};
+
+  // Charger toutes les difficultés depuis la DB
+  let perDir = {};
+  try {
+    const data = await apiGet('/api/admin/settings/all-game-diffs');
+    perDir = data.perDir || {};
+  } catch(e){ console.warn('all-game-diffs:', e.message); }
+
   el.innerHTML = dlist.map(d => {
+    const dirDiffs = perDir[d.code] || {};
     const gameSliders = games.map(g => {
-      const stored = localStorage.getItem('tk_diff_dir_'+d.code+'_'+g);
-      const val = stored !== null ? parseInt(stored) : 45;
+      const val = dirDiffs[g] !== undefined ? dirDiffs[g] : 45;
       return `<div style="margin-bottom:8px">
         <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
           <span>${gameLabels[g]}</span>
