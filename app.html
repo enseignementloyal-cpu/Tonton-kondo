@@ -1523,6 +1523,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
             <option value="roulette">🎡 Roulette Américaine</option>
             <option value="penalty">⚽ Penalty</option>
             <option value="football">⚽ Football (Paris Sportifs)</option>
+            <option value="luckyx">🌟 Lucky X</option>
           </select>
         </div>
 
@@ -1635,6 +1636,19 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
           <div class="fg"><label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Mise (Gd)</label>
             <input type="number" id="caisse-foot-mise" value="50" min="1" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none">
           </div>
+        </div>
+
+        <!-- Formulaire Lucky X Caissier -->
+        <div id="caisse-luckyx-form" style="display:none">
+          <div style="background:linear-gradient(135deg,#0d1520,#1a2a3e);border-radius:10px;padding:12px;border:1px solid #2a3850;text-align:center;">
+            <div style="font-size:13px;font-weight:700;color:#4a9eff;margin-bottom:8px;">🌟 LUCKY X</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Le jeu démarre directement — le joueur sélectionne ses boules</div>
+            <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;" id="caisse-luckyx-tickets-preview"></div>
+          </div>
+          <div class="fg" style="margin-top:8px;"><label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Mise par ticket (Gd)</label>
+            <input type="number" id="caisse-luckyx-mise" value="50" min="1" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none">
+          </div>
+          <button onclick="lancerLuckyXCaisse()" style="width:100%;padding:10px;background:linear-gradient(180deg,#ffd700,#c8900a);color:#1a1000;font-weight:900;font-size:14px;border:none;border-radius:8px;cursor:pointer;margin-top:6px;letter-spacing:1px;">🌟 OUVRIR LUCKY X</button>
         </div>
 
         <!-- Boutons action -->
@@ -6164,7 +6178,7 @@ async function renderJoueurDraws(){
 // ==================== PATCH: updateCaisseForm initialise les grilles ====================
 function updateCaisseForm(){
   const jeu=document.getElementById('caisse-jeu-type')?.value||'borlette';
-  ['borlette','keno','lucky6','course','roulette','penalty','football'].forEach(j=>{
+  ['borlette','keno','lucky6','luckyx','course','roulette','penalty','football'].forEach(j=>{
     const el=document.getElementById('caisse-'+j+'-form');
     if(el) el.style.display=j===jeu?'':'none';
   });
@@ -8505,7 +8519,7 @@ function jackpotCheckURLParam(){
 
 const RING_PALETTE = ["#e74c3c","#ff7043","#ffd700","#4caf50","#2196f3","#e91e63","#9c27b0","#90a4ae"];
 const TOTAL_DRAWS = 30;
-const DRAW_INTERVAL_MS = 1600;
+const DRAW_INTERVAL_MS = 600;
 
 function getBallRingColor(n){ return RING_PALETTE[(n-1) % RING_PALETTE.length]; }
 
@@ -8681,9 +8695,10 @@ function lxDrawHTML(){
   },0);
   const isComplete = phase==='complete';
 
-  function slotHTML(slots,colCount){
-    return slots.map(ball=>{
-      if(!ball) return `<div style="width:54px;height:54px;border-radius:50%;background:radial-gradient(circle,#1a4e9e,#0d2f6e);border:2px solid rgba(255,255,255,.1);box-shadow:inset 0 2px 6px rgba(0,0,0,.4);"></div>`;
+  function slotHTML(slots,isRight){
+    return slots.map((ball,si)=>{
+      const slotId = `lx-slot-${isRight?'R':'L'}-${si}`;
+      if(!ball) return `<div id="${slotId}" style="width:54px;height:54px;border-radius:50%;background:radial-gradient(circle,#1a4e9e,#0d2f6e);border:2px solid rgba(255,255,255,.1);box-shadow:inset 0 2px 6px rgba(0,0,0,.4);"></div>`;
       const ring = ball.color;
       const isMatch = allPickedNums.has(ball.number);
       return `<div class="lx-ball-drop" style="width:54px;height:54px;border-radius:50%;background:radial-gradient(circle at 38% 35%,#2a2a3e,#0d0d1a);border:3px solid ${ring};box-shadow:${isMatch?'0 0 0 3px #ffd700,0 0 18px rgba(255,215,0,.7)':`0 0 8px ${ring}55`};display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;">
@@ -8692,8 +8707,8 @@ function lxDrawHTML(){
     }).join('');
   }
 
-  const leftGrid = `<div style="display:grid;grid-template-columns:repeat(3,54px);grid-template-rows:repeat(5,54px);gap:8px;">${slotHTML(leftSlots)}</div>`;
-  const rightGrid = `<div style="display:grid;grid-template-columns:repeat(3,54px);grid-template-rows:repeat(5,54px);gap:8px;">${slotHTML(rightSlots)}</div>`;
+  const leftGrid = `<div style="display:grid;grid-template-columns:repeat(3,54px);grid-template-rows:repeat(5,54px);gap:8px;">${slotHTML(leftSlots,false)}</div>`;
+  const rightGrid = `<div style="display:grid;grid-template-columns:repeat(3,54px);grid-template-rows:repeat(5,54px);gap:8px;">${slotHTML(rightSlots,true)}</div>`;
 
   // Drum balls HTML
   const DRUM_CFG = [
@@ -8757,7 +8772,7 @@ function lxDrawHTML(){
     <!-- Header 2 -->
     <div style="background:#080e1c;border-bottom:1px solid #1e2d4a;padding:3px 20px;display:flex;align-items:center;justify-content:space-between;font-size:9px;flex-shrink:0;">
       <span style="color:#7aaccc;">JACKPOT <strong style="color:#ffd700;">${(dailyWinnings*3).toFixed(0)}</strong></span>
-      <span style="font-weight:900;color:#ffd700;letter-spacing:2px;">DAILY: ${dailyWinnings.toFixed(2)}</span>
+      <span style="font-weight:900;color:#ffd700;letter-spacing:2px;" data-lx-daily>DAILY: ${dailyWinnings.toFixed(2)}</span>
       <span style="color:#7aaccc;">BALLS: <strong style="color:#ffd700;">${drawnBalls.length}</strong></span>
     </div>
     <!-- Main area -->
@@ -8795,7 +8810,7 @@ function lxDrawHTML(){
     <div style="display:flex;align-items:center;background:#050b18;padding:4px 12px;gap:10px;font-size:8px;font-weight:700;border-top:1px solid #1e2d4a;flex-shrink:0;">
       ${["RED #e74c3c","BLUE #2196f3","GREEN #4caf50","YELLOW #ffc107","PINK #e91e63"].map(s=>{const[l,c]=s.split(' ');return`<div style="display:flex;align-items:center;gap:2px;"><span style="color:#8aaccc;">${l}</span>${[...Array(4)].map(()=>`<div style="width:11px;height:6px;border-radius:2px;background:${c};"></div>`).join('')}</div>`;}).join('')}
       <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
-        <div style="width:80px;height:6px;border-radius:3px;background:#1e2d4a;overflow:hidden;"><div style="height:100%;border-radius:3px;background:#4a9eff;width:${(drawnBalls.length/30)*100}%;transition:width .4s;"></div></div>
+        <div style="width:80px;height:6px;border-radius:3px;background:#1e2d4a;overflow:hidden;"><div data-lx-prog style="height:100%;border-radius:3px;background:#4a9eff;width:${(drawnBalls.length/30)*100}%;transition:width .4s;"></div></div>
         <span style="color:#8aaccc;">TOTAL</span><span style="font-size:13px;font-weight:900;color:#fff;">${drawnBalls.length}</span>
       </div>
     </div>
@@ -8866,30 +8881,65 @@ window.lxStartDraw = function(){
   lxState.drumInterval = setInterval(()=>{
     lxState.drumNums = Array(13).fill(0).map(()=>Math.floor(Math.random()*48)+1);
     lxUpdateDrumNums();
-  }, 220);
+  }, 120);
   lxState.drawTimer = setTimeout(lxDrawNext, 1400);
 };
 
 function lxDrawNext(){
   const idx = lxState.drawIndex;
   const ball = lxState.pendingBalls[idx];
-  if(!ball){
+  if(!ball || idx >= TOTAL_DRAWS){
     lxState.phase = 'complete';
     lxState.isSpinning = false;
     if(lxState.drumInterval){ clearInterval(lxState.drumInterval); lxState.drumInterval=null; }
-    lxRender();
+    lxRender(); // full render seulement à la fin
     return;
   }
+  // Placer la boule
   lxState.drawSequence = idx+1;
-  setTimeout(()=>{
-    if(idx < 15) { const s=[...lxState.leftSlots]; s[idx]=ball; lxState.leftSlots=s; }
-    else { const s=[...lxState.rightSlots]; s[idx-15]=ball; lxState.rightSlots=s; }
-    lxState.drawnBalls = [...lxState.drawnBalls, ball];
-    lxState.dailyWinnings = parseFloat((lxState.dailyWinnings + Math.random()*0.5).toFixed(2));
-    lxState.drawIndex++;
-    lxUpdateDrawUI();
-    lxState.drawTimer = setTimeout(lxDrawNext, DRAW_INTERVAL_MS);
-  }, DRAW_INTERVAL_MS*0.5);
+  if(idx < 15) { const s=[...lxState.leftSlots]; s[idx]=ball; lxState.leftSlots=s; }
+  else { const s=[...lxState.rightSlots]; s[idx-15]=ball; lxState.rightSlots=s; }
+  lxState.drawnBalls = [...lxState.drawnBalls, ball];
+  lxState.dailyWinnings = parseFloat((lxState.dailyWinnings + Math.random()*0.3).toFixed(2));
+  lxState.drawIndex++;
+  // Mise à jour DOM partielle (pas de full render)
+  lxUpdateDrawPartial(ball, idx);
+  lxState.drawTimer = setTimeout(lxDrawNext, DRAW_INTERVAL_MS);
+}
+
+function lxUpdateDrawPartial(ball, idx){
+  const c = document.getElementById('luckyx-container');
+  if(!c) return;
+  // Mettre à jour le numéro dans le tambour
+  const drumSeq = c.querySelector('#lx-draw-seq');
+  if(drumSeq) drumSeq.textContent = idx+1;
+  // Mettre à jour compteur total
+  const totalEl = c.querySelector('[data-lx-total]');
+  if(totalEl) totalEl.textContent = lxState.drawnBalls.length;
+  // Mettre à jour la progress bar
+  const progEl = c.querySelector('[data-lx-prog]');
+  if(progEl) progEl.style.width = (lxState.drawnBalls.length/TOTAL_DRAWS*100)+'%';
+  // Mettre à jour le daily
+  const dayEl = c.querySelector('[data-lx-daily]');
+  if(dayEl) dayEl.textContent = 'DAILY: '+lxState.dailyWinnings.toFixed(2);
+  // Créer la boule visuellement dans le bon slot
+  const ring = ball.color;
+  const allPickedNums = new Set(lxState.tickets.flatMap(t=>t.numbers));
+  const isMatch = allPickedNums.has(ball.number);
+  const slotId = idx < 15 ? 'lx-slot-L-'+idx : 'lx-slot-R-'+(idx-15);
+  const slotEl = c.querySelector('#'+slotId);
+  if(slotEl){
+    slotEl.innerHTML = `<div class="lx-ball-drop" style="width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at 38% 35%,#2a2a3e,#0d0d1a);border:3px solid ${ring};box-shadow:${isMatch?'0 0 0 3px #ffd700,0 0 18px rgba(255,215,0,.7)':`0 0 8px ${ring}55`};display:flex;align-items:center;justify-content:center;">
+      <span style="font-size:14px;font-weight:900;color:${ring};text-shadow:0 0 8px ${ring}99;">${ball.number}</span>
+    </div>`;
+  }
+  // Mettre à jour les badges ticket
+  lxState.tickets.forEach((t,ti)=>{
+    const drawnNums = new Set(lxState.drawnBalls.map(b=>b.number));
+    const matches = t.numbers.filter(n=>drawnNums.has(n)).length;
+    const badgeEl = c.querySelector(`[data-lx-badge="${ti}"]`);
+    if(badgeEl) badgeEl.textContent = matches+' ✓';
+  });
 }
 
 function lxUpdateDrumNums(){
@@ -8921,7 +8971,7 @@ async function loadCaisseFootballMatches(){
       matches = window.cachedFootballMatches;
     } else {
       // Charger depuis l'API
-      const data = await apiGet('/api/football');
+      const data = await apiGet('/api/matches');
       const all = data.upcoming||data.matches||[];
       matches = all.slice(0,20);
       window.cachedFootballMatches = matches;
@@ -8968,6 +9018,21 @@ window.selectCaisseMatch = function(matchDataStr){
 // ═══ LUCKY X DANS CAISSE/LANCER ══════════════════════════════
 // (Le football utilise la même logique que les sports joueur)
 // ═════════════════════════════════════════════════════════════
+
+window.lancerLuckyXCaisse = function(){
+  // Ouvrir le jeu Lucky X en mode caissier
+  // Changer l'onglet vers Lucky X et initialiser
+  const mise = parseFloat(document.getElementById('caisse-luckyx-mise')?.value)||50;
+  lxState.caisseMode = true;
+  lxState.caisseMise = mise;
+  goTo('sc-jauth'); // Aller vers la page joueur
+  setTimeout(()=>{
+    // Simuler clic sur onglet Lucky X
+    const btn = document.querySelector('.atab[data-tab="luckyx"]');
+    if(btn) btn.click();
+    else { switchToTab({dataset:{tab:'luckyx'}}); }
+  }, 100);
+};
 window.initLuckyX = function(){
   const c = document.getElementById('luckyx-container');
   if(!c) return;
