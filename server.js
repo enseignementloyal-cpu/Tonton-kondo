@@ -2024,7 +2024,6 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
       } else if (jeuType === 'penalty') {
         const ZONES = ['hg','hc','hd','mg','mc','md','bg','bc','bd'];
         const COTES_PEN = {hg:4,hc:2.5,hd:4,mg:2,mc:1.5,md:2,bg:3,bc:2,bd:3};
-        // Le gardien plonge d'un côté (chance de sauver selon difficulté)
         const winnerZone = ZONES[Math.floor(Math.random()*ZONES.length)];
         const saveProb = difficulte < 40 ? 0.6 : difficulte < 60 ? 0.4 : 0.25;
         const saved = pari.cleanNumber === winnerZone && Math.random() < saveProb;
@@ -2033,6 +2032,18 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
         gain = scored ? Math.round(mise * cote) : 0;
         winData = { winnerZone, scored };
         resultMsg = scored ? `⚽ But! Zone ${pari.number} → +${gain} Gd` : `🧤 Arrêt! → Perdu`;
+
+      } else if (jeuType === 'football') {
+        // Paris sportif football
+        const pronostic = pari.cleanNumber; // home|draw|away
+        const cote = parseFloat(pari.cote) || 2.5;
+        // Résultat basé sur shouldWin + cote (cote élevée = moins probable)
+        const baseProb = shouldWin ? Math.max(0.4, 1 - cote/10) : Math.min(0.2, 0.5 - difficulte/200);
+        const gagne = Math.random() < (shouldWin ? 0.7 : 0.15);
+        gain = gagne ? Math.round(mise * cote * 100) / 100 : 0;
+        const resultLabel = pronostic==='home'?'Victoire Domicile':pronostic==='draw'?'Nul':'Victoire Extérieur';
+        winData = { pronostic, gagne, cote };
+        resultMsg = gagne ? `✅ ${resultLabel} → +${gain} Gd` : `❌ ${resultLabel} → Perdu`;
 
       } else {
         const mult = {borlette:60,lotto3:40,lotto4:30,lotto5:20,mariage:50}[pari.game||jeuType]||60;

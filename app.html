@@ -661,6 +661,7 @@ th{background:var(--blue);color:#fff;font-size:12px;font-weight:700;}
     <div class="atab" data-tab="roulette" onclick="switchToTab(this)">🎡 Roulette</div>
     <div class="atab" data-tab="penalty" onclick="switchToTab(this)">⚽ Penalty</div>
     <div class="atab" data-tab="borlette" onclick="switchToTab(this)">🎯 Borlette</div>
+    <div class="atab" data-tab="luckyx" id="tab-luckyx-btn" onclick="switchToTab(this)">🌟 Lucky X</div>
     <div class="atab" data-tab="sports" id="tab-sports-btn" onclick="switchToTab(this)">⚽ Sports</div>
     <div class="atab" data-tab="recharge" id="tab-recharge-btn" onclick="switchToTab(this)">💳 Recharge</div>
     <div class="atab" data-tab="retrait" onclick="switchToTab(this)">💸 Retrait</div>
@@ -880,6 +881,11 @@ th{background:var(--blue);color:#fff;font-size:12px;font-weight:700;}
 
 
   <!-- ROULETTE -->
+  <!-- ═══ LUCKY X JEU ═══ -->
+  <div class="asec" id="tab-luckyx" style="padding:0;overflow:hidden;height:calc(100vh - 120px);">
+    <div id="luckyx-container" style="width:100%;height:100%;"></div>
+  </div>
+
   <div class="asec" id="tab-roulette" style="padding:10px 12px 80px;max-width:900px;margin:0 auto;">
     <div style="text-align:center;margin-bottom:16px;">
       <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:1.8em;font-weight:900;color:var(--gold);letter-spacing:2px;">🎡 Roulette Américaine</h2>
@@ -1359,6 +1365,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
       <button class="chip active" id="htab-depot"  onclick="selHistTab('depot',this)">💵 Dépôts/Retraits</button>
       <button class="chip" id="htab-lotto"   onclick="selHistTab('lotto',this)">🎯 Lotterie</button>
       <button class="chip" id="htab-casino"  onclick="selHistTab('casino',this)">🎰 Casino</button>
+      <button class="chip" id="htab-luckyx" onclick="selHistTab('luckyx',this)">🌟 Lucky X</button>
       <button class="chip" id="htab-sports"  onclick="selHistTab('sports',this)">⚽ Paris Sportifs</button>
       <button class="chip" id="htab-all"     onclick="selHistTab('all',this)">📋 Tout</button>
     </div>
@@ -1515,6 +1522,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
             <option value="course">🏎️ Course Automobile</option>
             <option value="roulette">🎡 Roulette Américaine</option>
             <option value="penalty">⚽ Penalty</option>
+            <option value="football">⚽ Football (Paris Sportifs)</option>
           </select>
         </div>
 
@@ -1608,6 +1616,25 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
             </select>
           </div>
           <div class="fg"><label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Mise (Gd)</label><input type="number" id="caisse-pen-mise" value="50" min="1" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none"></div>
+        </div>
+
+        <!-- Formulaire Football Caissier -->
+        <div id="caisse-football-form" style="display:none">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600;">⚽ Sélectionner un match</div>
+          <div id="caisse-football-matches" style="max-height:200px;overflow-y:auto;background:var(--bg2);border-radius:8px;border:1px solid var(--border);padding:6px;">
+            <div style="text-align:center;color:var(--muted);padding:10px;font-size:12px;">⏳ Chargement des matchs...</div>
+          </div>
+          <div id="caisse-football-selected" style="display:none;margin-top:8px;padding:8px;background:var(--bg3);border-radius:8px;font-size:12px;color:var(--gold);"></div>
+          <div class="fg" style="margin-top:8px;"><label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Pronostic</label>
+            <select id="caisse-foot-pronostic" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none">
+              <option value="home">🏠 Victoire Domicile (1)</option>
+              <option value="draw">🤝 Match Nul (X)</option>
+              <option value="away">✈️ Victoire Extérieur (2)</option>
+            </select>
+          </div>
+          <div class="fg"><label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Mise (Gd)</label>
+            <input type="number" id="caisse-foot-mise" value="50" min="1" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none">
+          </div>
         </div>
 
         <!-- Boutons action -->
@@ -2888,7 +2915,7 @@ async function loadJackpotData() {
 }
 
 
-const JEU_LABELS={keno:'🎯 Keno Lucky',lucky6:'🍀 Lucky 6',course:'🏎️ Course Auto',sports:'⚽ Paris Sportifs',helico:'🚁 Hélicoptère',all:'🎰 Tous les jeux'};
+const JEU_LABELS={keno:'🎯 Keno Lucky',lucky6:'🍀 Lucky 6',luckyx:'🌟 Lucky X',course:'🏎️ Course Auto',sports:'⚽ Paris Sportifs',helico:'🚁 Hélicoptère',roulette:'🎡 Roulette',penalty:'⚽ Penalty',all:'🎰 Tous les jeux'};
 
 // ===== NAVIGATION =====
 let curSc='sc-landing';
@@ -6137,7 +6164,7 @@ async function renderJoueurDraws(){
 // ==================== PATCH: updateCaisseForm initialise les grilles ====================
 function updateCaisseForm(){
   const jeu=document.getElementById('caisse-jeu-type')?.value||'borlette';
-  ['borlette','keno','lucky6','course','roulette','penalty'].forEach(j=>{
+  ['borlette','keno','lucky6','course','roulette','penalty','football'].forEach(j=>{
     const el=document.getElementById('caisse-'+j+'-form');
     if(el) el.style.display=j===jeu?'':'none';
   });
@@ -6148,6 +6175,9 @@ function updateCaisseForm(){
       const wrap=document.getElementById('caisse-rou-numero-wrap');
       if(wrap) wrap.style.display = rouType.value==='numero'?'':'none';
     };
+  }
+  if(jeu==='football'){
+    loadCaisseFootballMatches();
   }
   if(jeu==='keno'){
     const g=document.getElementById('caisse-keno-grid');
@@ -6240,6 +6270,23 @@ function ajouterAuPanierCaisse(){
     const COTES_PEN={hg:4,hc:2.5,hd:4,mg:2,mc:1.5,md:2,bg:3,bc:2,bd:3};
     const ZONES_LABEL={hg:'Haut Gauche',hc:'Haut Centre',hd:'Haut Droite',mg:'Milieu Gauche',mc:'Milieu Centre',md:'Milieu Droite',bg:'Bas Gauche',bc:'Bas Centre',bd:'Bas Droite'};
     caissePanier.push({id:Date.now()+Math.random(),ticketId:genTicketId(),game:'penalty',number:ZONES_LABEL[zone]||zone,cleanNumber:zone,amount:miseFb,cote:COTES_PEN[zone]||2,jeuType:'penalty'});
+  } else if(jeuFb==='football'){
+    const selEl = document.getElementById('caisse-football-selected');
+    const matchInfo = selEl?.dataset?.match;
+    if(!matchInfo){ showNotif('Sélectionnez un match','err'); return; }
+    const pronostic = document.getElementById('caisse-foot-pronostic').value;
+    miseFb = parseFloat(document.getElementById('caisse-foot-mise').value)||0;
+    if(miseFb<=0){ showNotif('Mise invalide','err'); return; }
+    const match = JSON.parse(matchInfo);
+    const cotes = {home:match.coteHome||2.5, draw:match.coteDraw||3.0, away:match.coteAway||2.8};
+    const labels = {home:'Victoire '+match.home, draw:'Nul', away:'Victoire '+match.away};
+    const numLabel = `${match.home} vs ${match.away} — ${labels[pronostic]} (×${cotes[pronostic]})`;
+    caissePanier.push({
+      id:Date.now()+Math.random(), ticketId:genTicketId(),
+      game:'football', number:numLabel, cleanNumber:pronostic,
+      amount:miseFb, cote:cotes[pronostic],
+      jeuType:'football', matchId:match.id, matchInfo:match
+    });
   }
   if(joueurFileActif!==null&&joueurFile[joueurFileActif]) joueurFile[joueurFileActif].panier=caissePanier;
   renderPanierCaisse();renderJoueurFile();updateCaisseDisplay();updateBoutonsCaisse();
@@ -6693,6 +6740,7 @@ function togglePlopSecret(){
 // ===== BLOCAGE DES JEUX =====
 const GAMES_LIST = [
   { id: 'casino',   label: 'Casino (Keno / Lucky 6 / Course)', emoji: '🎰' },
+  { id: 'luckyx',   label: 'Lucky X',                           emoji: '🌟' },
   { id: 'borlette', label: 'Borlette / Lotto',                  emoji: '🎯' },
   { id: 'roulette', label: 'Roulette Américaine',                emoji: '🎡' },
   { id: 'penalty',  label: 'Penalty',                            emoji: '⚽' },
@@ -7903,7 +7951,16 @@ function loadAdminMessageFields(){
 
 // ===== MAIN TAB SWITCHER =====
 function switchToTab(el){
-  const tab = el.dataset.tab;
+  const tab = el?.dataset?.tab || (typeof el==='string'?el:'');
+  if(tab==='luckyx'){
+    document.querySelectorAll('#sc-app .asec').forEach(s=>s.classList.remove('on'));
+    document.querySelectorAll('#sc-app .atab').forEach(t=>t.classList.remove('on'));
+    const sec=document.getElementById('tab-luckyx');
+    if(sec) sec.classList.add('on');
+    if(el && el.classList) el.classList.add('on');
+    setTimeout(initLuckyX,50);
+    return;
+  }
   // Vérifier si le jeu est bloqué
   const blocked = getBlockedGames();
   if(blocked[tab]){
@@ -8439,6 +8496,486 @@ function jackpotCheckURLParam(){
 
 
 
+
+
+// ═══════════════════════════════════════════════════════════════
+// LUCKY X — Jeu complet (port du React vers Vanilla JS)
+// ═══════════════════════════════════════════════════════════════
+(function(){
+
+const RING_PALETTE = ["#e74c3c","#ff7043","#ffd700","#4caf50","#2196f3","#e91e63","#9c27b0","#90a4ae"];
+const TOTAL_DRAWS = 30;
+const DRAW_INTERVAL_MS = 1600;
+
+function getBallRingColor(n){ return RING_PALETTE[(n-1) % RING_PALETTE.length]; }
+
+let lxState = {
+  phase: 'selection', // selection | tickets | drawing | complete
+  selection: [],
+  tickets: [],
+  drawnBalls: [],
+  leftSlots: Array(15).fill(null),
+  rightSlots: Array(15).fill(null),
+  drawSequence: 0,
+  isSpinning: false,
+  round: 81107,
+  dailyWinnings: 1459,
+  drawIndex: 0,
+  pendingBalls: [],
+  drawTimer: null,
+  drumInterval: null,
+  drumNums: Array(13).fill(0).map(()=>Math.floor(Math.random()*48)+1),
+};
+
+function lxGenDraw(){
+  const used = new Set();
+  const balls = [];
+  while(balls.length < TOTAL_DRAWS){
+    const n = Math.floor(Math.random()*48)+1;
+    if(!used.has(n)){ used.add(n); balls.push({number:n,color:getBallRingColor(n)}); }
+  }
+  return balls;
+}
+
+function lxRender(){
+  const c = document.getElementById('luckyx-container');
+  if(!c) return;
+  if(lxState.phase==='selection') c.innerHTML = lxSelectionHTML();
+  else if(lxState.phase==='tickets') c.innerHTML = lxTicketsHTML();
+  else c.innerHTML = lxDrawHTML();
+  lxBindEvents();
+  if(lxState.phase==='drawing' || lxState.phase==='complete') lxUpdateDrawUI();
+}
+
+// ── SELECTION SCREEN ──────────────────────────────────────────
+function lxSelectionHTML(){
+  const {selection,tickets} = lxState;
+  const hasTix = tickets.length > 0;
+  const hasSel = selection.length > 0;
+  let ballGrid = '';
+  for(let n=1;n<=48;n++){
+    const ring = getBallRingColor(n);
+    const sel = selection.includes(n);
+    ballGrid += `<button onclick="lxToggleBall(${n})" style="
+      width:44px;height:44px;border-radius:50%;padding:0;cursor:pointer;
+      background:${sel?'radial-gradient(circle at 38% 35%,#ffe066,#c8900a)':'radial-gradient(circle at 38% 35%,#2a2a3e,#0d0d1a)'};
+      border:${sel?'3px solid #ffd700':`3px solid ${ring}`};
+      box-shadow:${sel?'0 0 0 2px #ffd700,0 0 14px rgba(255,215,0,.55)':`0 0 0 1px ${ring}44`};
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .12s;position:relative;">
+      <span style="font-size:12px;font-weight:900;color:${sel?'#1a1000':ring};z-index:1;">${n}</span>
+    </button>`;
+  }
+  const selBalls = selection.map(n=>{
+    return `<div onclick="lxToggleBall(${n})" style="
+      width:28px;height:28px;border-radius:50%;
+      background:radial-gradient(circle at 35% 30%,#ffe066,#c8900a);
+      border:2px solid #ffd700;display:flex;align-items:center;justify-content:center;
+      font-size:10px;font-weight:900;color:#1a1000;cursor:pointer;flex-shrink:0;">${n}</div>`;
+  }).join('');
+  return `<div style="height:100%;display:flex;flex-direction:column;background:linear-gradient(160deg,#1a5bab,#0d3580);overflow:hidden;">
+    <!-- Header -->
+    <div style="background:#080e1c;border-bottom:2px solid #1e2d4a;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffd700,#c8900a);display:flex;align-items:center;justify-content:center;font-size:14px;">🎯</div>
+        <div>
+          <div style="font-size:16px;font-weight:900;color:#4a9eff;letter-spacing:3px;">LUCKY X</div>
+          <div style="font-size:7px;color:#4a6a8a;letter-spacing:2px;">CHOOSE YOUR WAY</div>
+        </div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:7px;color:#4a6a8a;letter-spacing:2px;">JACKPOT</div>
+        <div style="font-size:22px;font-weight:900;color:#ffd700;line-height:1;">${lxState.dailyWinnings.toLocaleString()}</div>
+        <div style="font-size:7px;color:#4a6a8a;">TIRAGE #${lxState.round}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        ${hasTix?`<button onclick="lxGoTo('tickets')" style="background:rgba(255,215,0,.12);border:1px solid #ffd70066;color:#ffd700;font-weight:700;font-size:10px;padding:4px 8px;border-radius:5px;cursor:pointer;">🎟 ${tickets.length}</button>`:''}
+        <button onclick="lxHandlePlay()" style="
+          background:${hasTix?'linear-gradient(180deg,#ffd700,#c8900a)':'linear-gradient(180deg,#ffd70055,#c8900a44)'};
+          color:#1a1000;font-weight:900;font-size:14px;border:2px solid #ffd700;
+          border-radius:8px;padding:8px 20px;cursor:pointer;letter-spacing:2px;">▶ JOUER</button>
+      </div>
+    </div>
+    <!-- Selection bar -->
+    <div style="background:#111a2e;border-bottom:1px solid #1e2d4a;padding:6px 14px;display:flex;align-items:center;gap:8px;flex-shrink:0;">
+      <span style="font-size:9px;color:#8aaccc;font-weight:700;letter-spacing:1px;flex-shrink:0;">SÉLECTION</span>
+      <div style="display:flex;gap:4px;flex:1;min-height:28px;align-items:center;flex-wrap:wrap;">
+        ${hasSel?selBalls:'<span style="font-size:9px;color:#3a5a7a;font-style:italic;">Cliquez sur les boules (max 10)</span>'}
+      </div>
+      <span style="font-size:10px;font-weight:700;color:${selection.length===10?'#e74c3c':'#8aaccc'};flex-shrink:0;">${selection.length}/10</span>
+      <button onclick="lxCreateTicket()" ${!hasSel?'disabled':''} style="
+        background:${hasSel?'linear-gradient(180deg,#ffd700,#c8900a)':'#1a2a3a'};
+        color:${hasSel?'#1a1000':'#3a5a7a'};font-weight:900;font-size:10px;letter-spacing:1px;
+        border:none;border-radius:5px;padding:6px 12px;cursor:${hasSel?'pointer':'not-allowed'};flex-shrink:0;">
+        + TICKET</button>
+    </div>
+    <!-- Ball grid -->
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:8px;min-height:0;">
+      <div style="background:rgba(0,0,0,.3);border:2px solid rgba(255,255,255,.07);border-radius:12px;padding:10px 14px;">
+        <div style="display:grid;grid-template-columns:repeat(8,44px);gap:6px;">${ballGrid}</div>
+      </div>
+    </div>
+    <!-- Bottom bar -->
+    <div style="background:#080e1c;border-top:1px solid #1e2d4a;padding:6px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+      <span style="font-size:10px;color:${hasTix?'#8aaccc':'#3a5a7a'};">
+        ${hasTix?`${tickets.length} ticket(s) — Appuyez ▶ JOUER`:'Sélectionnez vos boules → créez un ticket'}
+      </span>
+      <div style="display:flex;gap:4px;">
+        ${tickets.map((_,i)=>`<div style="width:20px;height:20px;border-radius:3px;background:linear-gradient(180deg,#ffd700,#c8900a);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#1a1000;">${i+1}</div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── TICKETS SCREEN ────────────────────────────────────────────
+function lxTicketsHTML(){
+  const {tickets,round} = lxState;
+  const ticketCards = tickets.map((t,i)=>{
+    const balls = t.numbers.map(n=>{
+      const ring = getBallRingColor(n);
+      return `<div style="width:32px;height:32px;border-radius:50%;background:radial-gradient(circle at 38% 35%,#1e1e30,#0d0d1a);border:2.5px solid ${ring};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:${ring};">${n}</div>`;
+    }).join('');
+    return `<div style="background:#111a2e;border:2px solid #1e2d4a;border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;">
+      <div style="width:36px;height:36px;border-radius:7px;background:linear-gradient(180deg,#ffd700,#c8900a);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;color:#1a1000;flex-shrink:0;">${i+1}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;flex:1;">${balls}</div>
+      <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0;">
+        <button onclick="lxPrintTicket(${i})" style="background:transparent;border:1px solid #4a9eff;color:#4a9eff;font-weight:700;font-size:9px;padding:4px 8px;border-radius:4px;cursor:pointer;">🖨 IMPRIMER</button>
+        <button onclick="lxDeleteTicket('${t.id}')" style="background:transparent;border:1px solid #e74c3c55;color:#e74c3c;font-weight:700;font-size:9px;padding:4px 8px;border-radius:4px;cursor:pointer;">✕ SUPPR.</button>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div style="min-height:100%;background:linear-gradient(160deg,#1a5bab,#0d3580);display:flex;flex-direction:column;">
+    <div style="background:#080e1c;border-bottom:2px solid #1e2d4a;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+      <button onclick="lxGoTo('selection')" style="background:transparent;border:1px solid #2a3850;color:#8aaccc;font-weight:700;font-size:11px;padding:5px 12px;border-radius:5px;cursor:pointer;">← RETOUR</button>
+      <div style="text-align:center;">
+        <div style="font-size:18px;font-weight:900;color:#4a9eff;letter-spacing:3px;">LUCKY X</div>
+        <div style="font-size:7px;color:#4a6a8a;letter-spacing:2px;">VOS TICKETS — TIRAGE #${round}</div>
+      </div>
+      <div style="min-width:80px;"></div>
+    </div>
+    <div style="flex:1;padding:16px;overflow-y:auto;">
+      ${tickets.length===0
+        ? `<div style="text-align:center;padding:40px 0;color:#3a5a7a;"><div style="font-size:40px;margin-bottom:10px;">🎟</div><div style="font-size:13px;font-weight:700;">Aucun ticket</div></div>`
+        : `<div style="display:flex;flex-direction:column;gap:8px;max-width:600px;margin:0 auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <span style="font-size:11px;font-weight:700;color:#8aaccc;letter-spacing:2px;">${tickets.length} TICKET(S)</span>
+              <button onclick="lxGoTo('selection')" style="background:rgba(74,158,255,.15);border:1px solid #4a9eff55;color:#4a9eff;font-weight:700;font-size:10px;padding:4px 12px;border-radius:5px;cursor:pointer;">+ AJOUTER</button>
+            </div>
+            ${ticketCards}
+          </div>`
+      }
+    </div>
+    ${tickets.length>0?`<div style="background:#080e1c;border-top:2px solid #1e2d4a;padding:12px 20px;display:flex;justify-content:center;">
+      <button onclick="lxStartDraw()" style="background:linear-gradient(180deg,#ffd700,#c8900a);color:#1a1000;font-weight:900;font-size:16px;border:none;border-radius:8px;padding:12px 40px;cursor:pointer;letter-spacing:2px;">▶ JOUER</button>
+    </div>`:''}
+  </div>`;
+}
+
+// ── DRAW SCREEN ───────────────────────────────────────────────
+function lxDrawHTML(){
+  const {drawnBalls,leftSlots,rightSlots,tickets,drawSequence,isSpinning,round,dailyWinnings,phase} = lxState;
+  const allPickedNums = new Set(tickets.flatMap(t=>t.numbers));
+  const drawnNums = new Set(drawnBalls.map(b=>b.number));
+  const bestMatch = tickets.reduce((best,t)=>{
+    const m = t.numbers.filter(n=>drawnNums.has(n)).length;
+    return Math.max(best,m);
+  },0);
+  const isComplete = phase==='complete';
+
+  function slotHTML(slots,colCount){
+    return slots.map(ball=>{
+      if(!ball) return `<div style="width:54px;height:54px;border-radius:50%;background:radial-gradient(circle,#1a4e9e,#0d2f6e);border:2px solid rgba(255,255,255,.1);box-shadow:inset 0 2px 6px rgba(0,0,0,.4);"></div>`;
+      const ring = ball.color;
+      const isMatch = allPickedNums.has(ball.number);
+      return `<div class="lx-ball-drop" style="width:54px;height:54px;border-radius:50%;background:radial-gradient(circle at 38% 35%,#2a2a3e,#0d0d1a);border:3px solid ${ring};box-shadow:${isMatch?'0 0 0 3px #ffd700,0 0 18px rgba(255,215,0,.7)':`0 0 8px ${ring}55`};display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;">
+        <span style="font-size:14px;font-weight:900;color:${ring};text-shadow:0 0 8px ${ring}99;z-index:1;">${ball.number}</span>
+      </div>`;
+    }).join('');
+  }
+
+  const leftGrid = `<div style="display:grid;grid-template-columns:repeat(3,54px);grid-template-rows:repeat(5,54px);gap:8px;">${slotHTML(leftSlots)}</div>`;
+  const rightGrid = `<div style="display:grid;grid-template-columns:repeat(3,54px);grid-template-rows:repeat(5,54px);gap:8px;">${slotHTML(rightSlots)}</div>`;
+
+  // Drum balls HTML
+  const DRUM_CFG = [
+    {top:'40%',left:'28%'},{top:'55%',left:'55%'},{top:'25%',left:'60%'},{top:'60%',left:'35%'},
+    {top:'35%',left:'48%'},{top:'50%',left:'22%'},{top:'28%',left:'38%'},{top:'65%',left:'58%'},
+    {top:'22%',left:'52%'},{top:'55%',left:'44%'},{top:'42%',left:'62%'},{top:'70%',left:'30%'},{top:'30%',left:'24%'},
+  ];
+  const drumBalls = DRUM_CFG.map((cfg,i)=>{
+    const n = lxState.drumNums[i]||1;
+    const ring = getBallRingColor(n);
+    return `<div style="position:absolute;top:${cfg.top};left:${cfg.left};width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#1e1e30,#0d0d18);border:2px solid ${ring};box-shadow:0 0 6px ${ring}66;display:flex;align-items:center;justify-content:center;z-index:3;${isSpinning?'animation:lxBounce '+(1.8+i*0.15)+'s ease-in-out infinite alternate;':''}">
+      <span style="font-size:8px;font-weight:900;color:${ring};">${n}</span>
+    </div>`;
+  }).join('');
+
+  // Ticket match badges
+  const matchBadges = tickets.map((t,i)=>{
+    const matches = t.numbers.filter(n=>drawnNums.has(n)).length;
+    const prize = matches>=10?'10K Gd':matches===9?'5K Gd':matches===8?'1K Gd':matches===7?'500 Gd':matches===6?'250 Gd':matches===5?'150 Gd':matches===4?'50 Gd':matches===3?'10 Gd':null;
+    const balls = t.numbers.map(n=>{
+      const ring = getBallRingColor(n);
+      const hit = drawnNums.has(n);
+      return `<div style="width:20px;height:20px;border-radius:50%;background:${hit?'radial-gradient(circle,#ffd700,#c8900a)':'#0d1a30'};border:${hit?'2px solid #ffd700':`2px solid ${ring}44`};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;color:${hit?'#1a1000':ring+'88'};transition:all .3s;">${n}</div>`;
+    }).join('');
+    return `<div style="display:flex;align-items:center;gap:5px;background:${prize?'rgba(255,215,0,.12)':'rgba(0,0,0,.2)'};border:${prize?'1px solid #ffd70088':'1px solid rgba(255,255,255,.08)'};border-radius:7px;padding:4px 8px;">
+      <div style="width:20px;height:20px;border-radius:5px;background:linear-gradient(180deg,#ffd700,#c8900a);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:#1a1000;">${i+1}</div>
+      <div style="display:flex;gap:3px;flex-wrap:wrap;">${balls}</div>
+      ${prize?`<div style="margin-left:auto;font-size:12px;font-weight:900;color:#ffd700;white-space:nowrap;">${prize}</div>`:`<div style="margin-left:auto;font-size:9px;color:#4a6a8a;">${matches} ✓</div>`}
+    </div>`;
+  }).join('');
+
+  // Prize bar
+  const prizeLabels = {1:'OUT',2:'OUT',3:'10',4:'50',5:'150',6:'250',7:'500',8:'1K',9:'5K',10:'10K'};
+  const prizeBar = [1,2,3,4,5,6,7,8,9,10].map(n=>{
+    const active = bestMatch===n;
+    return `<div style="flex:1;text-align:center;padding:4px 1px;border-right:1px solid #1e2d4a;${active?'background:linear-gradient(180deg,#ffd700,#c8900a);':''}">
+      <div style="font-size:7px;font-weight:700;color:${active?'#1a1a1a':'#7a99bb'};letter-spacing:1px;">${n} BALL${n>1?'S':''}</div>
+      <div style="font-size:12px;font-weight:900;color:${active?'#1a1a1a':n<=2?'#e74c3c':'#ffd700'};">${prizeLabels[n]}</div>
+    </div>`;
+  }).join('');
+
+  return `<div style="display:flex;flex-direction:column;height:100%;overflow:hidden;background:#0d1520;">
+    <style>
+      @keyframes lxBounce{0%{transform:translate(0,0)}100%{transform:translate(3px,-5px)}}
+      .lx-ball-drop{animation:lxBallDrop .4s cubic-bezier(.34,1.56,.64,1) both}
+      @keyframes lxBallDrop{0%{transform:scale(0) translateY(-20px);opacity:0}100%{transform:scale(1);opacity:1}}
+      @keyframes lxSpinDrum{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+    </style>
+    <!-- Header 1 -->
+    <div style="background:linear-gradient(180deg,#0d1520,#111a2e);border-bottom:2px solid #1e2d4a;padding:5px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+      <div style="font-size:7px;color:#4a6a8a;font-weight:700;letter-spacing:1px;">J.A PARYAJ<br>LOTTO</div>
+      <div style="text-align:center;">
+        <div style="font-size:20px;font-weight:900;letter-spacing:3px;color:#4a9eff;text-shadow:0 0 20px rgba(74,158,255,.5);">LUCKY X</div>
+        <div style="font-size:6px;letter-spacing:3px;color:#4a6a8a;font-weight:700;">CHOOSE YOUR WAY</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:6px;color:#4a6a8a;letter-spacing:2px;">ROUND</div>
+        <div style="font-size:18px;font-weight:900;color:#fff;line-height:1;">${round}</div>
+      </div>
+    </div>
+    <!-- Header 2 -->
+    <div style="background:#080e1c;border-bottom:1px solid #1e2d4a;padding:3px 20px;display:flex;align-items:center;justify-content:space-between;font-size:9px;flex-shrink:0;">
+      <span style="color:#7aaccc;">JACKPOT <strong style="color:#ffd700;">${(dailyWinnings*3).toFixed(0)}</strong></span>
+      <span style="font-weight:900;color:#ffd700;letter-spacing:2px;">DAILY: ${dailyWinnings.toFixed(2)}</span>
+      <span style="color:#7aaccc;">BALLS: <strong style="color:#ffd700;">${drawnBalls.length}</strong></span>
+    </div>
+    <!-- Main area -->
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:6px 12px;gap:12px;min-height:0;overflow:hidden;">
+      ${leftGrid}
+      <!-- Center: Drum + badges -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex:0 0 auto;">
+        <!-- BallDrum -->
+        <div id="lx-drum-wrap" style="display:flex;flex-direction:column;align-items:center;">
+          <div style="width:190px;height:190px;border-radius:50%;position:relative;background:radial-gradient(circle at 45% 40%,#2a2a3e,#111118 60%,#050508);box-shadow:0 0 0 3px #4a5270,0 0 0 6px #2a2e48,0 0 0 9px #3a4060,0 8px 32px rgba(0,0,0,.7);overflow:hidden;">
+            <div style="position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,rgba(120,140,180,.2),rgba(60,80,120,.04) 25%,rgba(120,140,180,.18) 50%,rgba(60,80,120,.04) 75%,rgba(120,140,180,.2));${isSpinning?'animation:lxSpinDrum 4s linear infinite;':''}z-index:1;"></div>
+            <div style="position:absolute;top:12%;left:18%;width:35%;height:22%;background:rgba(255,255,255,.10);border-radius:50%;transform:rotate(-20deg);z-index:2;"></div>
+            ${drumBalls}
+            <div style="position:absolute;bottom:8%;left:20%;right:20%;height:12%;background:rgba(0,0,0,.6);border-radius:0 0 50% 50%;z-index:4;"></div>
+          </div>
+          <div style="background:#0d1520;border:2px solid #2a3850;border-top:none;border-radius:0 0 8px 8px;padding:4px 24px 6px;text-align:center;min-width:120px;">
+            <div style="font-size:40px;font-weight:900;letter-spacing:-2px;line-height:1;color:#fff;" id="lx-draw-seq">${drawSequence}</div>
+            <div style="font-size:7px;letter-spacing:2px;color:#8aaccc;font-weight:700;">DRAW SEQUENCE</div>
+          </div>
+        </div>
+        <!-- Match badges -->
+        ${tickets.length>0?`<div style="display:flex;flex-direction:column;gap:4px;max-width:280px;width:100%;">${matchBadges}</div>`:''}
+        <!-- Complete overlay -->
+        ${isComplete?`<div style="background:rgba(0,0,0,.7);border-radius:10px;padding:10px 16px;text-align:center;border:1px solid #ffd70055;">
+          ${bestMatch>=3?`<div style="font-size:16px;font-weight:900;color:#ffd700;text-shadow:0 0 20px rgba(255,215,0,.7);margin-bottom:6px;">🎉 TIRAGE TERMINÉ!</div>`
+            :`<div style="font-size:12px;font-weight:700;color:#8aaccc;margin-bottom:6px;">Tirage terminé — ${bestMatch} correspondance(s)</div>`}
+          <button onclick="lxPlayAgain()" style="background:linear-gradient(180deg,#ffd700,#c8900a);color:#1a1000;font-weight:900;font-size:12px;border:none;border-radius:6px;padding:6px 20px;cursor:pointer;letter-spacing:1px;">REJOUER</button>
+        </div>`:''}
+      </div>
+      ${rightGrid}
+    </div>
+    <!-- Prize bar -->
+    <div style="display:flex;background:#080e1c;border-top:2px solid #1e2d4a;flex-shrink:0;">${prizeBar}</div>
+    <!-- Color legend -->
+    <div style="display:flex;align-items:center;background:#050b18;padding:4px 12px;gap:10px;font-size:8px;font-weight:700;border-top:1px solid #1e2d4a;flex-shrink:0;">
+      ${["RED #e74c3c","BLUE #2196f3","GREEN #4caf50","YELLOW #ffc107","PINK #e91e63"].map(s=>{const[l,c]=s.split(' ');return`<div style="display:flex;align-items:center;gap:2px;"><span style="color:#8aaccc;">${l}</span>${[...Array(4)].map(()=>`<div style="width:11px;height:6px;border-radius:2px;background:${c};"></div>`).join('')}</div>`;}).join('')}
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+        <div style="width:80px;height:6px;border-radius:3px;background:#1e2d4a;overflow:hidden;"><div style="height:100%;border-radius:3px;background:#4a9eff;width:${(drawnBalls.length/30)*100}%;transition:width .4s;"></div></div>
+        <span style="color:#8aaccc;">TOTAL</span><span style="font-size:13px;font-weight:900;color:#fff;">${drawnBalls.length}</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── ACTIONS ──────────────────────────────────────────────────
+window.lxToggleBall = function(n){
+  const {selection} = lxState;
+  if(selection.includes(n)) lxState.selection = selection.filter(x=>x!==n);
+  else if(selection.length < 10) lxState.selection = [...selection, n];
+  lxRender();
+};
+
+window.lxCreateTicket = function(){
+  if(!lxState.selection.length) return;
+  lxState.tickets.push({id:Math.random().toString(36).slice(2),numbers:[...lxState.selection].sort((a,b)=>a-b),createdAt:new Date().toLocaleString('fr-FR')});
+  lxState.selection = [];
+  lxRender();
+};
+
+window.lxDeleteTicket = function(id){
+  lxState.tickets = lxState.tickets.filter(t=>t.id!==id);
+  lxRender();
+};
+
+window.lxGoTo = function(phase){
+  lxState.phase = phase;
+  lxState.selection = [];
+  lxRender();
+};
+
+window.lxHandlePlay = function(){
+  if(!lxState.tickets.length){ showNotif('Créez au moins un ticket avant de jouer!','err'); return; }
+  lxStartDraw();
+};
+
+window.lxPlayAgain = function(){
+  if(lxState.drawTimer) clearTimeout(lxState.drawTimer);
+  if(lxState.drumInterval) clearInterval(lxState.drumInterval);
+  lxState = {...lxState, phase:'selection', selection:[], tickets:[], drawnBalls:[], leftSlots:Array(15).fill(null), rightSlots:Array(15).fill(null), drawSequence:0, isSpinning:false, drawIndex:0, pendingBalls:[], drawTimer:null, drumInterval:null};
+  lxRender();
+};
+
+window.lxPrintTicket = function(i){
+  const t = lxState.tickets[i]; if(!t) return;
+  const pw = window.open('','_blank','width=480,height=340');
+  if(!pw) return;
+  const balls = t.numbers.map(n=>{const ring=getBallRingColor(n);return`<div style="width:44px;height:44px;border-radius:50%;background:#0d0d1a;border:2.5px solid ${ring};display:flex;align-items:center;justify-content:center;"><span style="font-size:13px;font-weight:900;color:${ring};">${n}</span></div>`;}).join('');
+  pw.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Lucky X Ticket #${i+1}</title><style>body{margin:0;background:#0d1520;color:#fff;font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;}.card{background:#111a2e;border:2px solid #1e2d4a;border-radius:16px;padding:24px 32px;width:400px;}.title{font-size:20px;font-weight:900;color:#4a9eff;letter-spacing:3px;}.balls{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:16px 0;}.foot{font-size:9px;color:#3a5a7a;text-align:center;margin-top:12px;border-top:1px solid #1e2d4a;padding-top:10px;}@media print{body{background:#fff;}.card{background:#fff;border-color:#ccc;}}</style></head><body><div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;"><div><div class="title">LUCKY X</div><div style="font-size:8px;color:#4a6a8a;letter-spacing:2px;">J.A PARYAJ LOTTO</div></div><div style="font-size:26px;font-weight:900;color:#ffd700;">#${i+1}</div></div><div class="balls">${balls}</div><div class="foot">Émis le ${t.createdAt}<br><span style="font-family:monospace;letter-spacing:3px;">${t.id.toUpperCase()}</span></div></div><script>window.onload=()=>window.print();<\/script></body></html>`);
+  pw.document.close();
+};
+
+// ── DRAW ENGINE ───────────────────────────────────────────────
+window.lxStartDraw = function(){
+  if(lxState.drawTimer) clearTimeout(lxState.drawTimer);
+  lxState.drawIndex = 0;
+  lxState.pendingBalls = lxGenDraw();
+  lxState.drawnBalls = [];
+  lxState.leftSlots = Array(15).fill(null);
+  lxState.rightSlots = Array(15).fill(null);
+  lxState.drawSequence = 0;
+  lxState.isSpinning = true;
+  lxState.round++;
+  lxState.phase = 'drawing';
+  lxRender();
+  // Drum animation
+  lxState.drumInterval = setInterval(()=>{
+    lxState.drumNums = Array(13).fill(0).map(()=>Math.floor(Math.random()*48)+1);
+    lxUpdateDrumNums();
+  }, 220);
+  lxState.drawTimer = setTimeout(lxDrawNext, 1400);
+};
+
+function lxDrawNext(){
+  const idx = lxState.drawIndex;
+  const ball = lxState.pendingBalls[idx];
+  if(!ball){
+    lxState.phase = 'complete';
+    lxState.isSpinning = false;
+    if(lxState.drumInterval){ clearInterval(lxState.drumInterval); lxState.drumInterval=null; }
+    lxRender();
+    return;
+  }
+  lxState.drawSequence = idx+1;
+  setTimeout(()=>{
+    if(idx < 15) { const s=[...lxState.leftSlots]; s[idx]=ball; lxState.leftSlots=s; }
+    else { const s=[...lxState.rightSlots]; s[idx-15]=ball; lxState.rightSlots=s; }
+    lxState.drawnBalls = [...lxState.drawnBalls, ball];
+    lxState.dailyWinnings = parseFloat((lxState.dailyWinnings + Math.random()*0.5).toFixed(2));
+    lxState.drawIndex++;
+    lxUpdateDrawUI();
+    lxState.drawTimer = setTimeout(lxDrawNext, DRAW_INTERVAL_MS);
+  }, DRAW_INTERVAL_MS*0.5);
+}
+
+function lxUpdateDrumNums(){
+  const c = document.getElementById('luckyx-container');
+  if(!c) return;
+  const drumBalls = c.querySelectorAll('[data-lx-drum]');
+  // Juste re-render si l'element drum existe
+}
+
+function lxUpdateDrawUI(){
+  // Re-render complet mais rapide
+  lxRender();
+}
+
+function lxBindEvents(){ /* Les handlers sont via onclick inline */ }
+
+// ── INITIALISER QUAND L'ONGLET S'OUVRE ───────────────────────
+
+// ═══ FOOTBALL CAISSIER ═══════════════════════════════════════
+async function loadCaisseFootballMatches(){
+  const el = document.getElementById('caisse-football-matches');
+  if(!el) return;
+  el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:10px;font-size:12px;">⏳ Chargement...</div>';
+  try {
+    // Utiliser les matchs déjà chargés dans sports si disponibles
+    let matches = [];
+    const sportsEl = document.getElementById('upcoming-section');
+    if(window.cachedFootballMatches && window.cachedFootballMatches.length){
+      matches = window.cachedFootballMatches;
+    } else {
+      // Charger depuis l'API
+      const data = await apiGet('/api/football');
+      const all = data.upcoming||data.matches||[];
+      matches = all.slice(0,20);
+      window.cachedFootballMatches = matches;
+    }
+    if(!matches.length){
+      el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:10px;font-size:12px;">Aucun match disponible</div>';
+      return;
+    }
+    el.innerHTML = matches.map((m,i)=>{
+      const home = m.homeTeam?.name||m.home||'—';
+      const away = m.awayTeam?.name||m.away||'—';
+      const date = m.utcDate ? new Date(m.utcDate).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+      const comp = m.competition?.name||m.league||'';
+      const cH = (Math.random()*2+1.5).toFixed(2);
+      const cD = (Math.random()*1.5+2.5).toFixed(2);
+      const cA = (Math.random()*2+1.8).toFixed(2);
+      const matchData = JSON.stringify({id:m.id||i,home,away,comp,coteHome:parseFloat(cH),coteDraw:parseFloat(cD),coteAway:parseFloat(cA)}).replace(/'/g,"\'");
+      return `<div onclick="selectCaisseMatch('${matchData}')" style="padding:8px;border-bottom:1px solid var(--border);cursor:pointer;border-radius:6px;transition:background .2s;" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='transparent'">
+        <div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:2px;">${home} vs ${away}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:10px;color:var(--muted);">${comp} · ${date}</span>
+          <div style="display:flex;gap:4px;">
+            <span style="font-size:10px;background:var(--bg3);padding:2px 5px;border-radius:3px;color:var(--green2);">1:${cH}</span>
+            <span style="font-size:10px;background:var(--bg3);padding:2px 5px;border-radius:3px;color:var(--gold);">X:${cD}</span>
+            <span style="font-size:10px;background:var(--bg3);padding:2px 5px;border-radius:3px;color:var(--blue);">2:${cA}</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e){
+    el.innerHTML = `<div style="text-align:center;color:var(--red);padding:10px;font-size:12px;">Erreur: ${e.message}</div>`;
+  }
+}
+
+window.selectCaisseMatch = function(matchDataStr){
+  const match = JSON.parse(matchDataStr);
+  const el = document.getElementById('caisse-football-selected');
+  if(!el) return;
+  el.style.display = '';
+  el.dataset.match = matchDataStr;
+  el.innerHTML = `✅ <b>${match.home} vs ${match.away}</b> sélectionné`;
+};
+
+// ═══ LUCKY X DANS CAISSE/LANCER ══════════════════════════════
+// (Le football utilise la même logique que les sports joueur)
+// ═════════════════════════════════════════════════════════════
+window.initLuckyX = function(){
+  const c = document.getElementById('luckyx-container');
+  if(!c) return;
+  if(lxState.phase==='drawing') return; // ne pas reset si tirage en cours
+  lxRender();
+};
+
+})(); // fin IIFE Lucky X
 
 </script>
 </body>
