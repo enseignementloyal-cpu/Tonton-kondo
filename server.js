@@ -1325,7 +1325,7 @@ app.post('/api/admin/reset-password', requireAdmin, async (req, res) => {
 // GET: récupérer toutes les difficultés (globales + par directeur) en une fois
 app.get('/api/admin/settings/all-game-diffs', requireAdmin, async (req, res) => {
   try {
-    const GAMES = ['keno','lucky6','course','helico','roulette','penalty'];
+    const GAMES = ['keno','lucky6','luckyx','course','helico','roulette','penalty'];
     // Global depuis settings
     const global = {};
     for (const g of GAMES) {
@@ -1960,6 +1960,21 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
         winData = { winningNumbers: winNums, hits, multiplier: mult };
         resultMsg = gain>0 ? `${hits}/${nbJoues} boules ×${mult} → +${gain} Gd` : `${hits}/${nbJoues} boules → Perdu`;
         console.log(`[keno] shouldWin=${shouldWin} difficulte=${difficulte} nbJoues=${nbJoues} nbHits_target=${nbHits} hits_reel=${hits} mult=${mult} gain=${gain}`);
+
+      } else if (jeuType === 'luckyx') {
+        // Lucky X - même logique que Lucky 6
+        const nums = pari.nums || pari.cleanNumber.split(',').map(Number);
+        const pool48 = Array.from({length:48},(_,i)=>i+1);
+        const joues  = pool48.filter(n=>nums.includes(n)).sort(()=>Math.random()-.5);
+        const autres = pool48.filter(n=>!nums.includes(n)).sort(()=>Math.random()-.5);
+        const wantHits = shouldWin ? Math.min(nums.length, 6) : Math.floor(Math.random()*4);
+        const winNums = [...joues.slice(0,wantHits), ...autres.slice(0,35-wantHits)].sort((a,b)=>a-b);
+        const hits = nums.filter(n=>winNums.includes(n)).length;
+        const MULT = {3:1,4:2,5:5,6:10,7:50,8:200,9:1000,10:5000};
+        const mult = MULT[hits] || 0;
+        gain = mult > 0 ? Math.round(mise * mult) : 0;
+        winData = { winningNumbers: winNums, hits, multiplier: mult };
+        resultMsg = gain>0 ? `${hits}/${nums.length} → ×${mult} +${gain} Gd` : `${hits}/${nums.length} → Perdu`;
 
       } else if (jeuType === 'lucky6') {
         const nums = pari.nums || pari.cleanNumber.split(',').map(Number);
