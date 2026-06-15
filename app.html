@@ -1621,35 +1621,28 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
 
         <!-- Formulaire Football Caissier -->
         <div id="caisse-football-form" style="display:none">
-          <!-- Match sélectionné -->
-          <div id="caisse-foot-selected-wrap" style="display:none;margin-bottom:8px;padding:8px;background:var(--bg3);border-radius:8px;border:1px solid var(--blue);">
-            <div style="font-size:11px;color:var(--gold);font-weight:700;" id="caisse-foot-selected-label">—</div>
-            <button onclick="caisseFootDeselect()" style="font-size:10px;color:var(--muted);background:none;border:none;cursor:pointer;margin-top:2px;">✕ Changer de match</button>
-          </div>
-          <!-- Mise + pronostic (visible quand match sélectionné) -->
-          <div id="caisse-foot-bet-wrap" style="display:none">
-            <div class="fg"><label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Pronostic</label>
-              <div id="caisse-foot-odds" style="display:flex;gap:6px;margin-bottom:8px;"></div>
+          <div id="caisse-foot-match-wrap">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600">Matchs disponibles:</div>
+            <div id="caisse-football-list" style="max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:4px;">
+              <div style="text-align:center;color:var(--muted);padding:12px;font-size:12px;">⏳ Chargement...</div>
             </div>
+          </div>
+          <div id="caisse-foot-bet-wrap" style="display:none;margin-top:8px;">
+            <div id="caisse-foot-selected-label" style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:8px;padding:6px;background:var(--bg3);border-radius:6px;">—</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Pronostic:</div>
+            <div id="caisse-foot-odds" style="display:flex;gap:6px;margin-bottom:8px;"></div>
             <div class="fg"><label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Mise (Gd)</label>
-              <input type="number" id="caisse-foot-mise" value="50" min="1" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none">
+              <input type="number" id="caisse-foot-mise" value="50" min="1" style="width:100%;padding:9px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none">
             </div>
-          </div>
-          <!-- Liste matchs (même rendu que joueur) -->
-          <div id="caisse-football-list" style="max-height:260px;overflow-y:auto;">
-            <div style="text-align:center;color:var(--muted);padding:12px;font-size:12px;">⏳ Chargement...</div>
+            <button onclick="caisseFootDeselect()" style="font-size:11px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;margin-top:2px;">← Changer de match</button>
           </div>
         </div>
 
         <!-- Formulaire Lucky X Caissier -->
         <div id="caisse-luckyx-form" style="display:none">
-          <div style="font-size:12px;color:var(--gold);font-weight:700;margin-bottom:4px;">
-            🌟 Lucky X — Sélection: <span id="caisse-lx-count" style="color:#4a9eff;">0/10</span>
-          </div>
-          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">
-            Numéros: <span id="caisse-lx-nums" style="color:var(--text);">—</span>
-          </div>
-          <div id="caisse-lx-grid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:3px;margin-bottom:8px;"></div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600">Sélectionnez 1 à 10 numéros (1-48):</div>
+          <div style="font-size:12px;color:var(--gold);font-weight:700;margin-bottom:6px">Sélectionnés: <span id="caisse-lx-count">0/10</span> — <span id="caisse-lx-nums" style="color:var(--text)">—</span></div>
+          <div id="caisse-lx-grid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:3px;margin-bottom:10px;"></div>
           <div class="fg"><label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Mise (Gd)</label>
             <input type="number" id="caisse-luckyx-mise" value="50" min="1" style="width:100%;padding:9px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none">
           </div>
@@ -6298,36 +6291,32 @@ function ajouterAuPanierCaisse(){
     const ZONES_LABEL={hg:'Haut Gauche',hc:'Haut Centre',hd:'Haut Droite',mg:'Milieu Gauche',mc:'Milieu Centre',md:'Milieu Droite',bg:'Bas Gauche',bc:'Bas Centre',bd:'Bas Droite'};
     caissePanier.push({id:Date.now()+Math.random(),ticketId:genTicketId(),game:'penalty',number:ZONES_LABEL[zone]||zone,cleanNumber:zone,amount:miseFb,cote:COTES_PEN[zone]||2,jeuType:'penalty'});
   } else if(jeuFb==='luckyx'){
-    const lxSel = window.caisseSelLuckyX || [];
-    if(!lxSel.length){ showNotif('Sélectionnez au moins 1 numéro Lucky X','err'); return; }
+    if(!caisseLXSel.length){ showNotif('Sélectionnez au moins 1 numéro Lucky X','err'); return; }
     miseFb = parseFloat(document.getElementById('caisse-luckyx-mise')?.value)||0;
     if(miseFb<=0){ showNotif('Mise invalide','err'); return; }
-    const numLabel = lxSel.sort((a,b)=>a-b).join(', ');
+    const numLabel = [...caisseLXSel].sort((a,b)=>a-b).join(', ');
     caissePanier.push({
       id:Date.now()+Math.random(), ticketId:genTicketId(),
       game:'luckyx', number:numLabel, cleanNumber:numLabel,
-      amount:miseFb, jeuType:'luckyx',
-      nums: [...lxSel]
+      amount:miseFb, jeuType:'luckyx', nums:[...caisseLXSel]
     });
-    // Reset sélection
-    window.caisseSelLuckyX = [];
+    caisseLXSel = [];
     initCaisseLuckyX();
   } else if(jeuFb==='football'){
-    if(!caisseFootMatch){ showNotif('Sélectionnez un match','err'); return; }
-    if(!caisseFootPronostic){ showNotif('Choisissez 1 / X / 2','err'); return; }
-    miseFb = parseFloat(document.getElementById('caisse-foot-mise').value)||0;
+    if(!caisseFootMatch){ showNotif('Sélectionnez un match avant','err'); return; }
+    if(!caisseFootPronostic){ showNotif('Choisissez 1, X ou 2','err'); return; }
+    miseFb = parseFloat(document.getElementById('caisse-foot-mise')?.value)||0;
     if(miseFb<=0){ showNotif('Mise invalide','err'); return; }
     const m = caisseFootMatch;
     const cotes = {'1':m.cH,'X':m.cD,'2':m.cA};
     const labels = {'1':'Victoire '+m.home,'X':'Nul','2':'Victoire '+m.away};
     const cote = cotes[caisseFootPronostic]||2;
-    const numLabel = `${m.home} vs ${m.away} — ${labels[caisseFootPronostic]} (×${cote})`;
+    const numLabel = m.home+' vs '+m.away+' — '+labels[caisseFootPronostic]+' (×'+cote+')';
     caissePanier.push({
       id:Date.now()+Math.random(), ticketId:genTicketId(),
       game:'football', number:numLabel, cleanNumber:caisseFootPronostic,
       amount:miseFb, cote:cote, jeuType:'football', matchInfo:m
     });
-    // Reset
     caisseFootDeselect();
   }
   if(joueurFileActif!==null&&joueurFile[joueurFileActif]) joueurFile[joueurFileActif].panier=caissePanier;
@@ -9114,175 +9103,125 @@ function lxBindEvents(){ /* Les handlers sont via onclick inline */ }
 // ── INITIALISER QUAND L'ONGLET S'OUVRE ───────────────────────
 
 
-// ═══ LUCKY X CAISSIER — Grille de sélection ══════════════════
-window.caisseSelLuckyX = [];
+// ═══ LUCKY X CAISSIER ═══════════════════════════════════════
+let caisseLXSel = [];
 
 function initCaisseLuckyX(){
-  window.caisseSelLuckyX = [];
-  const grid = document.getElementById('caisse-lx-grid');
-  if(!grid) return;
-  const LX_COLORS = [
-    '#e74c3c','#e91e63','#9c27b0','#3f51b5',
-    '#2196f3','#00bcd4','#4caf50','#ff9800'
-  ];
-  const getCol = n => LX_COLORS[Math.floor((n-1)/6)] || '#888';
-  grid.innerHTML = '';
-  for(let n=1; n<=48; n++){
-    const col = getCol(n);
-    const btn = document.createElement('button');
-    btn.id = 'caisse-lx-ball-'+n;
-    btn.textContent = n;
-    btn.style.cssText = `width:100%;aspect-ratio:1;border-radius:50%;font-size:11px;font-weight:900;
-      background:${col}33;color:${col};border:1.5px solid ${col}66;cursor:pointer;
-      display:flex;align-items:center;justify-content:center;transition:all .15s;padding:0;`;
-    btn.onclick = () => caisseToggleLuckyX(n, col);
-    grid.appendChild(btn);
+  const g = document.getElementById('caisse-lx-grid');
+  if(!g) return;
+  caisseLXSel = [];
+  g.innerHTML = '';
+  const COLORS = ['#e74c3c','#e91e63','#9c27b0','#3f51b5','#2196f3','#00bcd4','#4caf50','#ff9800'];
+  const getCol = n => COLORS[Math.floor((n-1)/6)] || '#888';
+  for(let i=1;i<=48;i++){
+    const col = getCol(i);
+    const b = document.createElement('button');
+    b.textContent = i;
+    b.id = 'clx-'+i;
+    b.style.cssText = 'aspect-ratio:1;border-radius:50%;border:2px solid '+col+';background:'+col+'33;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:'+col+';width:100%;transition:all .15s;padding:2px;';
+    b.onclick = () => {
+      if(caisseLXSel.includes(i)){
+        caisseLXSel = caisseLXSel.filter(x=>x!==i);
+        b.style.background = col+'33';
+        b.style.color = col;
+        b.style.transform = 'scale(1)';
+      } else if(caisseLXSel.length < 10){
+        caisseLXSel.push(i);
+        b.style.background = 'radial-gradient(circle at 35% 30%,'+col+'ee,'+col+'99)';
+        b.style.color = '#fff';
+        b.style.transform = 'scale(1.1)';
+      } else { showNotif('Maximum 10 numéros','err'); return; }
+      const cnt = document.getElementById('caisse-lx-count');
+      const nums = document.getElementById('caisse-lx-nums');
+      if(cnt) cnt.textContent = caisseLXSel.length+'/10';
+      if(nums) nums.textContent = [...caisseLXSel].sort((a,b)=>a-b).join(', ')||'—';
+      updateCaisseDisplay();
+    };
+    g.appendChild(b);
   }
-  caisseUpdateLuckyXUI();
+  document.getElementById('caisse-lx-count').textContent = '0/10';
+  document.getElementById('caisse-lx-nums').textContent = '—';
 }
 
-function caisseToggleLuckyX(n, col){
-  const sel = window.caisseSelLuckyX;
-  const idx = sel.indexOf(n);
-  if(idx >= 0){ sel.splice(idx,1); }
-  else if(sel.length < 10){ sel.push(n); }
-  else { showNotif('Maximum 10 numéros','err'); return; }
-  caisseUpdateLuckyXUI();
-}
-
-function caisseUpdateLuckyXUI(){
-  const sel = window.caisseSelLuckyX;
-  const LX_COLORS = [
-    '#e74c3c','#e91e63','#9c27b0','#3f51b5',
-    '#2196f3','#00bcd4','#4caf50','#ff9800'
-  ];
-  const getCol = n => LX_COLORS[Math.floor((n-1)/6)] || '#888';
-  // Mettre à jour les boules
-  for(let n=1; n<=48; n++){
-    const btn = document.getElementById('caisse-lx-ball-'+n);
-    if(!btn) continue;
-    const col = getCol(n);
-    const active = sel.includes(n);
-    btn.style.background = active ? `radial-gradient(circle at 35% 30%,${col}ee,${col}99)` : `${col}33`;
-    btn.style.color = active ? '#fff' : col;
-    btn.style.border = active ? `2px solid ${col}` : `1.5px solid ${col}66`;
-    btn.style.boxShadow = active ? `0 0 8px ${col}88` : 'none';
-    btn.style.transform = active ? 'scale(1.15)' : 'scale(1)';
-  }
-  const cnt = document.getElementById('caisse-lx-count');
-  const nums = document.getElementById('caisse-lx-nums');
-  if(cnt) cnt.textContent = sel.length+'/10';
-  if(nums) nums.textContent = sel.length ? sel.slice().sort((a,b)=>a-b).join(', ') : '—';
-}
 // ═══ FOOTBALL CAISSIER ═══════════════════════════════════════
-let caisseFootMatch = null; // match sélectionné
-let caisseFootPronostic = null; // '1'|'X'|'2'
+// ═══ FOOTBALL CAISSIER ═══════════════════════════════════════
+let caisseFootMatch = null;
+let caisseFootPronostic = null;
 
 async function loadCaisseFootballMatches(){
   const listEl = document.getElementById('caisse-football-list');
   if(!listEl) return;
-  listEl.innerHTML = '<div style="text-align:center;color:var(--muted);padding:12px;font-size:12px;">⏳ Chargement des matchs...</div>';
+  listEl.innerHTML = '<div style="text-align:center;color:var(--muted);padding:12px;font-size:12px;">⏳ Chargement...</div>';
   caisseFootMatch = null;
   caisseFootPronostic = null;
-  document.getElementById('caisse-foot-selected-wrap').style.display='none';
-  document.getElementById('caisse-foot-bet-wrap').style.display='none';
+  document.getElementById('caisse-foot-bet-wrap').style.display = 'none';
+  document.getElementById('caisse-foot-match-wrap').style.display = '';
+  window._caisseFootMatches = [];
 
   try {
-    // Utiliser window.sportsData (déjà chargé pour les joueurs) ou charger
-    let matches = [];
-    if(window.sportsData && window.sportsData.length){
-      matches = window.sportsData;
-    } else {
-      const data = await apiGet('/api/matches');
-      matches = data.matches || data.upcoming || data || [];
-      window.sportsData = matches;
-    }
+    const data = await apiGet('/api/matches');
+    const matches = data.matches || data.upcoming || [];
     if(!matches.length){
-      listEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:12px;font-size:12px;">Aucun match disponible</div>';
+      listEl.innerHTML = '<div style="text-align:center;color:var(--muted);padding:12px;font-size:12px;">Aucun match disponible</div>';
       return;
     }
-    // Render identique au joueur mais avec onclick pour sélectionner
-    // Stocker les matchs dans window pour accès via index
-    window._caisseFootMatches = [];
-    listEl.innerHTML = matches.slice(0,30).map((m,mi)=>{
-      const home = m.homeTeam?.name||m.home||m.t1||'—';
-      const away = m.awayTeam?.name||m.away||m.t2||'—';
+    window._caisseFootMatches = matches.slice(0,30).map((m,i)=>{
+      const home = m.homeTeam?.name||m.home||m.t1||'?';
+      const away = m.awayTeam?.name||m.away||m.t2||'?';
       const comp = m.competition?.name||m.league||m.lg||'Football';
-      const live = m.live||m.status==='IN_PLAY';
       const dateStr = m.utcDate ? new Date(m.utcDate).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : m.time||'';
-      const scoreHome = m.scoreHome??m.score?.fullTime?.home??m.s1??null;
-      const scoreAway = m.scoreAway??m.score?.fullTime?.away??m.s2??null;
       const seed = (home+away).split('').reduce((a,c)=>a+c.charCodeAt(0),0);
-      const cH = parseFloat((1.5+(seed%30)/20).toFixed(2));
-      const cD = parseFloat((2.5+(seed%15)/20).toFixed(2));
-      const cA = parseFloat((1.8+((seed+7)%25)/20).toFixed(2));
-      window._caisseFootMatches.push({id:m.id||mi,home,away,comp,cH,cD,cA});
-      const scoreLine = (scoreHome!==null&&scoreAway!==null)
-        ? `<span style="font-size:15px;font-weight:900;color:var(--gold)">${scoreHome} — ${scoreAway}</span>`
-        : `<span style="font-size:11px;color:var(--muted)">${dateStr}</span>`;
-      return `<div onclick="caisseFootSelectIdx(${mi})" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:6px;cursor:pointer;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--border)'">
-        <div style="font-size:9px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">
-          ⚽ ${comp}${live?' · <span style="color:var(--red);font-weight:700">LIVE</span>':''}
+      return {id:i,home,away,comp,dateStr,
+        cH:parseFloat((1.5+(seed%30)/20).toFixed(2)),
+        cD:parseFloat((2.5+(seed%15)/20).toFixed(2)),
+        cA:parseFloat((1.8+((seed+7)%25)/20).toFixed(2))};
+    });
+    listEl.innerHTML = window._caisseFootMatches.map((m,i)=>`
+      <div onclick="caisseFootSelectIdx(${i})" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:5px;cursor:pointer;" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="font-size:9px;color:var(--muted);margin-bottom:4px;">⚽ ${m.comp} · ${m.dateStr}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:5px;">
+          <span style="flex:1;font-size:12px;font-weight:700;text-align:right">${m.home}</span>
+          <span style="font-size:11px;color:var(--muted);padding:0 6px">vs</span>
+          <span style="flex:1;font-size:12px;font-weight:700;text-align:left">${m.away}</span>
         </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">
-          <div style="flex:1;font-size:12px;font-weight:700;text-align:right">${home}</div>
-          <div style="text-align:center;min-width:65px">${scoreLine}</div>
-          <div style="flex:1;font-size:12px;font-weight:700;text-align:left">${away}</div>
+        <div style="display:flex;gap:4px;">
+          <span style="flex:1;text-align:center;padding:3px;background:var(--bg2);border-radius:4px;font-size:11px;font-weight:700;color:var(--green2)">1 · ${m.cH}</span>
+          <span style="flex:1;text-align:center;padding:3px;background:var(--bg2);border-radius:4px;font-size:11px;font-weight:700;color:var(--gold)">X · ${m.cD}</span>
+          <span style="flex:1;text-align:center;padding:3px;background:var(--bg2);border-radius:4px;font-size:11px;font-weight:700;color:var(--blue)">2 · ${m.cA}</span>
         </div>
-        <div style="display:flex;gap:5px;justify-content:center;">
-          <span style="flex:1;text-align:center;padding:4px;background:var(--bg2);border-radius:5px;font-size:11px;font-weight:700;color:var(--green2)">1 · ${cH}</span>
-          <span style="flex:1;text-align:center;padding:4px;background:var(--bg2);border-radius:5px;font-size:11px;font-weight:700;color:var(--gold)">X · ${cD}</span>
-          <span style="flex:1;text-align:center;padding:4px;background:var(--bg2);border-radius:5px;font-size:11px;font-weight:700;color:var(--blue)">2 · ${cA}</span>
-        </div>
-      </div>`;
-    }).join('');
+      </div>`).join('');
   } catch(e){
     listEl.innerHTML = `<div style="text-align:center;color:var(--red);padding:12px;font-size:12px;">Erreur: ${e.message}</div>`;
   }
 }
 
-function caisseFootSelectIdx(idx){
-  const m = (window._caisseFootMatches||[])[idx];
-  if(m) caisseFootSelect(m);
-}
-function caisseFootSelect(m){
+function caisseFootSelectIdx(i){
+  const m = (window._caisseFootMatches||[])[i];
+  if(!m) return;
   caisseFootMatch = m;
-  // Afficher le match sélectionné
-  document.getElementById('caisse-foot-selected-label').innerHTML = `✅ <b>${m.home} vs ${m.away}</b>`;
-  document.getElementById('caisse-foot-selected-wrap').style.display='';
-  document.getElementById('caisse-foot-bet-wrap').style.display='';
-  // Afficher les cotes sous forme de boutons
-  const oddsEl = document.getElementById('caisse-foot-odds');
-  if(oddsEl){
-    oddsEl.innerHTML = [
-      {key:'1',label:'1 – Domicile',cote:m.cH,color:'var(--green2)'},
-      {key:'X',label:'X – Nul',cote:m.cD,color:'var(--gold)'},
-      {key:'2',label:'2 – Extérieur',cote:m.cA,color:'var(--blue)'}
-    ].map(o=>`<button onclick="caisseFootSetPronostic('${o.key}')" id="caisse-foot-btn-${o.key}" style="
-      flex:1;padding:8px 4px;border-radius:7px;font-size:11px;font-weight:900;cursor:pointer;
-      background:var(--bg2);color:${o.color};border:2px solid transparent;transition:all .2s;text-align:center;">
-      <div>${o.label}</div><div style="font-size:15px;margin-top:2px;">×${o.cote}</div>
-    </button>`).join('');
-  }
   caisseFootPronostic = null;
-  // Masquer la liste
-  document.getElementById('caisse-football-list').style.display='none';
+  document.getElementById('caisse-foot-selected-label').textContent = m.home+' vs '+m.away;
+  document.getElementById('caisse-foot-match-wrap').style.display = 'none';
+  document.getElementById('caisse-foot-bet-wrap').style.display = '';
+  const oddsEl = document.getElementById('caisse-foot-odds');
+  if(oddsEl) oddsEl.innerHTML = [
+    {k:'1',l:'1 – Domicile',c:m.cH,col:'var(--green2)'},
+    {k:'X',l:'X – Nul',c:m.cD,col:'var(--gold)'},
+    {k:'2',l:'2 – Extérieur',c:m.cA,col:'var(--blue)'}
+  ].map(o=>`<button onclick="caisseFootSetP('${o.k}')" id="cfb-${o.k}" style="flex:1;padding:7px 4px;border-radius:7px;font-size:11px;font-weight:900;cursor:pointer;background:var(--bg2);color:${o.col};border:2px solid transparent;text-align:center;transition:all .2s;">
+    <div>${o.l}</div><div style="font-size:14px;margin-top:2px;">×${o.c}</div>
+  </button>`).join('');
 }
 
 function caisseFootDeselect(){
-  caisseFootMatch = null;
-  caisseFootPronostic = null;
-  document.getElementById('caisse-foot-selected-wrap').style.display='none';
-  document.getElementById('caisse-foot-bet-wrap').style.display='none';
-  document.getElementById('caisse-football-list').style.display='';
+  caisseFootMatch = null; caisseFootPronostic = null;
+  document.getElementById('caisse-foot-match-wrap').style.display = '';
+  document.getElementById('caisse-foot-bet-wrap').style.display = 'none';
 }
 
-function caisseFootSetPronostic(key){
-  caisseFootPronostic = key;
-  ['1','X','2'].forEach(k=>{
-    const btn = document.getElementById('caisse-foot-btn-'+k);
-    if(btn) btn.style.borderColor = k===key?'var(--gold)':'transparent';
-  });
+function caisseFootSetP(k){
+  caisseFootPronostic = k;
+  ['1','X','2'].forEach(x=>{ const b=document.getElementById('cfb-'+x); if(b) b.style.borderColor=x===k?'var(--gold)':'transparent'; });
 }
 
 // ═══ LUCKY X DANS CAISSE/LANCER ══════════════════════════════
