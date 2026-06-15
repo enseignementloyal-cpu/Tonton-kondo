@@ -1621,20 +1621,23 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
 
         <!-- Formulaire Football Caissier -->
         <div id="caisse-football-form" style="display:none">
-          <div style="font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600;">⚽ Sélectionner un match</div>
-          <div id="caisse-football-matches" style="max-height:200px;overflow-y:auto;background:var(--bg2);border-radius:8px;border:1px solid var(--border);padding:6px;">
-            <div style="text-align:center;color:var(--muted);padding:10px;font-size:12px;">⏳ Chargement des matchs...</div>
+          <!-- Match sélectionné -->
+          <div id="caisse-foot-selected-wrap" style="display:none;margin-bottom:8px;padding:8px;background:var(--bg3);border-radius:8px;border:1px solid var(--blue);">
+            <div style="font-size:11px;color:var(--gold);font-weight:700;" id="caisse-foot-selected-label">—</div>
+            <button onclick="caisseFootDeselect()" style="font-size:10px;color:var(--muted);background:none;border:none;cursor:pointer;margin-top:2px;">✕ Changer de match</button>
           </div>
-          <div id="caisse-football-selected" style="display:none;margin-top:8px;padding:8px;background:var(--bg3);border-radius:8px;font-size:12px;color:var(--gold);"></div>
-          <div class="fg" style="margin-top:8px;"><label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Pronostic</label>
-            <select id="caisse-foot-pronostic" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none">
-              <option value="home">🏠 Victoire Domicile (1)</option>
-              <option value="draw">🤝 Match Nul (X)</option>
-              <option value="away">✈️ Victoire Extérieur (2)</option>
-            </select>
+          <!-- Mise + pronostic (visible quand match sélectionné) -->
+          <div id="caisse-foot-bet-wrap" style="display:none">
+            <div class="fg"><label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Pronostic</label>
+              <div id="caisse-foot-odds" style="display:flex;gap:6px;margin-bottom:8px;"></div>
+            </div>
+            <div class="fg"><label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Mise (Gd)</label>
+              <input type="number" id="caisse-foot-mise" value="50" min="1" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none">
+            </div>
           </div>
-          <div class="fg"><label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:600">Mise (Gd)</label>
-            <input type="number" id="caisse-foot-mise" value="50" min="1" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none">
+          <!-- Liste matchs (même rendu que joueur) -->
+          <div id="caisse-football-list" style="max-height:260px;overflow-y:auto;">
+            <div style="text-align:center;color:var(--muted);padding:12px;font-size:12px;">⏳ Chargement...</div>
           </div>
         </div>
 
@@ -6310,22 +6313,22 @@ function ajouterAuPanierCaisse(){
     window.caisseSelLuckyX = [];
     initCaisseLuckyX();
   } else if(jeuFb==='football'){
-    const selEl = document.getElementById('caisse-football-selected');
-    const matchInfo = selEl?.dataset?.match;
-    if(!matchInfo){ showNotif('Sélectionnez un match','err'); return; }
-    const pronostic = document.getElementById('caisse-foot-pronostic').value;
+    if(!caisseFootMatch){ showNotif('Sélectionnez un match','err'); return; }
+    if(!caisseFootPronostic){ showNotif('Choisissez 1 / X / 2','err'); return; }
     miseFb = parseFloat(document.getElementById('caisse-foot-mise').value)||0;
     if(miseFb<=0){ showNotif('Mise invalide','err'); return; }
-    const match = JSON.parse(matchInfo);
-    const cotes = {home:match.coteHome||2.5, draw:match.coteDraw||3.0, away:match.coteAway||2.8};
-    const labels = {home:'Victoire '+match.home, draw:'Nul', away:'Victoire '+match.away};
-    const numLabel = `${match.home} vs ${match.away} — ${labels[pronostic]} (×${cotes[pronostic]})`;
+    const m = caisseFootMatch;
+    const cotes = {'1':m.cH,'X':m.cD,'2':m.cA};
+    const labels = {'1':'Victoire '+m.home,'X':'Nul','2':'Victoire '+m.away};
+    const cote = cotes[caisseFootPronostic]||2;
+    const numLabel = `${m.home} vs ${m.away} — ${labels[caisseFootPronostic]} (×${cote})`;
     caissePanier.push({
       id:Date.now()+Math.random(), ticketId:genTicketId(),
-      game:'football', number:numLabel, cleanNumber:pronostic,
-      amount:miseFb, cote:cotes[pronostic],
-      jeuType:'football', matchId:match.id, matchInfo:match
+      game:'football', number:numLabel, cleanNumber:caisseFootPronostic,
+      amount:miseFb, cote:cote, jeuType:'football', matchInfo:m
     });
+    // Reset
+    caisseFootDeselect();
   }
   if(joueurFileActif!==null&&joueurFile[joueurFileActif]) joueurFile[joueurFileActif].panier=caissePanier;
   renderPanierCaisse();renderJoueurFile();updateCaisseDisplay();updateBoutonsCaisse();
@@ -8576,6 +8579,23 @@ function lxGenDraw(){
   return balls;
 }
 
+
+// Config des boules dans le tambour — identique à DrawScreen.tsx original
+const DRUM_BALLS_CFG = [
+  { color:"#e74c3c", top:"40%", left:"28%" },
+  { color:"#2196f3", top:"55%", left:"55%" },
+  { color:"#4caf50", top:"25%", left:"60%" },
+  { color:"#ffc107", top:"60%", left:"35%" },
+  { color:"#e91e63", top:"35%", left:"48%" },
+  { color:"#e74c3c", top:"50%", left:"22%" },
+  { color:"#2196f3", top:"28%", left:"38%" },
+  { color:"#4caf50", top:"65%", left:"58%" },
+  { color:"#ffc107", top:"22%", left:"52%" },
+  { color:"#e91e63", top:"55%", left:"44%" },
+  { color:"#9c27b0", top:"42%", left:"62%" },
+  { color:"#90a4ae", top:"70%", left:"30%" },
+  { color:"#4caf50", top:"30%", left:"24%" },
+];
 function lxRender(){
   const c = document.getElementById('luckyx-container');
   if(!c) return;
@@ -8722,7 +8742,7 @@ function lxDrawHTML(){
 
   function slotHTML(slots,isRight){
     return slots.map((ball,si)=>{
-      const slotId = `lx-slot-${isRight?'R':'L'}-${si}`;
+      const slotId = `lx-s-${isRight?'R':'L'}-${si}`;
       if(!ball) return `<div id="${slotId}" style="width:54px;height:54px;border-radius:50%;background:radial-gradient(circle,#1a4e9e,#0d2f6e);border:2px solid rgba(255,255,255,.1);box-shadow:inset 0 2px 6px rgba(0,0,0,.4);"></div>`;
       const ring = ball.color;
       const isMatch = allPickedNums.has(ball.number);
@@ -8736,16 +8756,12 @@ function lxDrawHTML(){
   const rightGrid = `<div style="display:grid;grid-template-columns:repeat(3,54px);grid-template-rows:repeat(5,54px);gap:8px;">${slotHTML(rightSlots,true)}</div>`;
 
   // Drum balls HTML
-  const DRUM_CFG = [
-    {top:'40%',left:'28%'},{top:'55%',left:'55%'},{top:'25%',left:'60%'},{top:'60%',left:'35%'},
-    {top:'35%',left:'48%'},{top:'50%',left:'22%'},{top:'28%',left:'38%'},{top:'65%',left:'58%'},
-    {top:'22%',left:'52%'},{top:'55%',left:'44%'},{top:'42%',left:'62%'},{top:'70%',left:'30%'},{top:'30%',left:'24%'},
-  ];
-  const drumBalls = DRUM_CFG.map((cfg,i)=>{
+  const drumBalls = DRUM_BALLS_CFG.map((cfg,i)=>{
     const n = lxState.drumNums[i]||1;
     const ring = getBallRingColor(n);
-    return `<div data-lx-drum-ball style="position:absolute;top:${cfg.top};left:${cfg.left};width:28px;height:28px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#1e1e30,#0d0d18);border:2px solid ${ring};box-shadow:0 0 6px ${ring}66;display:flex;align-items:center;justify-content:center;z-index:3;">
-      <span style="font-size:8px;font-weight:900;color:${ring};">${n}</span>
+    const animStyle = isSpinning ? `animation:lxBounce ${1.8+i*0.15}s ease-in-out infinite alternate;` : '';
+    return `<div data-lx-db style="position:absolute;top:${cfg.top};left:${cfg.left};width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#1e1e30,#0d0d18);border:2px solid ${ring};box-shadow:0 0 6px ${ring}66;display:flex;align-items:center;justify-content:center;z-index:3;${animStyle}">
+      <span style="font-size:9px;font-weight:900;color:${ring};line-height:1;">${n}</span>
     </div>`;
   }).join('');
 
@@ -8769,7 +8785,7 @@ function lxDrawHTML(){
   const prizeLabels = {1:'OUT',2:'OUT',3:'10',4:'50',5:'150',6:'250',7:'500',8:'1K',9:'5K',10:'10K'};
   const prizeBar = [1,2,3,4,5,6,7,8,9,10].map(n=>{
     const active = bestMatch===n;
-    return `<div style="flex:1;text-align:center;padding:4px 1px;border-right:1px solid #1e2d4a;${active?'background:linear-gradient(180deg,#ffd700,#c8900a);':''}">
+    return `<div id="lx-prize-${n}" style="flex:1;text-align:center;padding:4px 1px;border-right:1px solid #1e2d4a;${active?'background:linear-gradient(180deg,#ffd700,#c8900a);':''}">
       <div style="font-size:7px;font-weight:700;color:${active?'#1a1a1a':'#7a99bb'};letter-spacing:1px;">${n} BALL${n>1?'S':''}</div>
       <div style="font-size:12px;font-weight:900;color:${active?'#1a1a1a':n<=2?'#e74c3c':'#ffd700'};">${prizeLabels[n]}</div>
     </div>`;
@@ -8797,7 +8813,7 @@ function lxDrawHTML(){
     <!-- Header 2 -->
     <div style="background:#080e1c;border-bottom:1px solid #1e2d4a;padding:3px 20px;display:flex;align-items:center;justify-content:space-between;font-size:9px;flex-shrink:0;">
       <span style="color:#7aaccc;">JACKPOT <strong style="color:#ffd700;">${(dailyWinnings*3).toFixed(0)}</strong></span>
-      <span style="font-weight:900;color:#ffd700;letter-spacing:2px;" data-lx-daily>DAILY: ${dailyWinnings.toFixed(2)}</span>
+      <span style="font-weight:900;color:#ffd700;letter-spacing:2px;">DAILY: <span id="lx-daily-val">${dailyWinnings.toFixed(2).replace(".",",")}</span></span>
       <span style="color:#7aaccc;">BALLS: <strong style="color:#ffd700;">${drawnBalls.length}</strong></span>
     </div>
     <!-- Main area -->
@@ -8835,7 +8851,7 @@ function lxDrawHTML(){
     <div style="display:flex;align-items:center;background:#050b18;padding:4px 12px;gap:10px;font-size:8px;font-weight:700;border-top:1px solid #1e2d4a;flex-shrink:0;">
       ${["RED #e74c3c","BLUE #2196f3","GREEN #4caf50","YELLOW #ffc107","PINK #e91e63"].map(s=>{const[l,c]=s.split(' ');return`<div style="display:flex;align-items:center;gap:2px;"><span style="color:#8aaccc;">${l}</span>${[...Array(4)].map(()=>`<div style="width:11px;height:6px;border-radius:2px;background:${c};"></div>`).join('')}</div>`;}).join('')}
       <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
-        <div style="width:80px;height:6px;border-radius:3px;background:#1e2d4a;overflow:hidden;"><div data-lx-prog style="height:100%;border-radius:3px;background:#4a9eff;width:${(drawnBalls.length/30)*100}%;transition:width .4s;"></div></div>
+        <div style="width:80px;height:6px;border-radius:3px;background:#1e2d4a;overflow:hidden;"><div id="lx-progress" style="height:100%;border-radius:3px;background:#4a9eff;width:${(drawnBalls.length/30)*100}%;transition:width .4s;"></div></div>
         <span style="color:#8aaccc;">TOTAL</span><span style="font-size:13px;font-weight:900;color:#fff;">${drawnBalls.length}</span>
       </div>
     </div>
@@ -8891,57 +8907,138 @@ window.lxPrintTicket = function(i){
 
 // ── DRAW ENGINE ───────────────────────────────────────────────
 window.lxStartDraw = function(){
-  // Nettoyer timers existants
-  if(lxState.drawTimer) clearInterval(lxState.drawTimer);
+  // Exactement comme useGame.ts original
+  if(lxState._timerRef) clearTimeout(lxState._timerRef);
   if(lxState.drumInterval) clearInterval(lxState.drumInterval);
-  // Initialiser état
-  lxState.drawIndex = 0;
-  lxState.pendingBalls = lxGenDraw();
+
+  lxState._pendingBalls = lxGenDraw();
+  lxState._drawIndexRef = 0;
   lxState.drawnBalls = [];
-  lxState.leftSlots = Array(15).fill(null);
+  lxState.leftSlots  = Array(15).fill(null);
   lxState.rightSlots = Array(15).fill(null);
   lxState.drawSequence = 0;
   lxState.isSpinning = true;
   lxState.round++;
   lxState.phase = 'drawing';
-  // Render initial de l'écran de tirage
-  lxRender();
-  // Drum qui tourne — update les numéros toutes les 150ms
+
+  lxRender(); // render initial de l'écran de tirage
+
+  // Drum animation — update les boules dans le tambour
   lxState.drumInterval = setInterval(()=>{
-    lxState.drumNums = Array(13).fill(0).map(()=>Math.floor(Math.random()*48)+1);
-    // Update uniquement les numéros du drum
+    lxState.drumNums = DRUM_BALLS_CFG.map(()=>Math.floor(Math.random()*48)+1);
     const c = document.getElementById('luckyx-container');
-    if(!c) return;
-    c.querySelectorAll('[data-lx-drum-ball]').forEach((el,i)=>{
+    if(!c){ clearInterval(lxState.drumInterval); return; }
+    c.querySelectorAll('[data-lx-db]').forEach((el,i)=>{
       const n = lxState.drumNums[i]||1;
       const ring = getBallRingColor(n);
-      el.innerHTML = `<span style="font-size:8px;font-weight:900;color:${ring};">${n}</span>`;
       el.style.borderColor = ring;
       el.style.boxShadow = `0 0 6px ${ring}66`;
+      const sp = el.querySelector('span');
+      if(sp){ sp.style.color=ring; sp.textContent=n; }
     });
-  }, 150);
-  // Démarrer le tirage avec setInterval (plus fiable que setTimeout récursif)
-  lxState.drawTimer = setInterval(()=>{
-    const idx = lxState.drawIndex;
-    if(idx >= TOTAL_DRAWS || idx >= lxState.pendingBalls.length){
-      clearInterval(lxState.drawTimer);
-      clearInterval(lxState.drumInterval);
-      lxState.isSpinning = false;
-      lxState.phase = 'complete';
-      lxRender(); // Full render seulement à la fin
-      return;
-    }
-    const ball = lxState.pendingBalls[idx];
-    // Ajouter la boule
-    if(idx < 15){ const s=[...lxState.leftSlots]; s[idx]=ball; lxState.leftSlots=s; }
-    else { const s=[...lxState.rightSlots]; s[idx-15]=ball; lxState.rightSlots=s; }
-    lxState.drawnBalls = [...lxState.drawnBalls, ball];
-    lxState.drawSequence = idx+1;
-    lxState.drawIndex++;
-    // Update partiel du DOM
-    lxUpdateDrawPartial(ball, idx);
-  }, DRAW_INTERVAL_MS);
+  }, 220);
+
+  // Démarrer le tirage avec setTimeout récursif (fidèle à l'original)
+  lxState._timerRef = setTimeout(lxDrawNext, 1400);
 };
+
+function lxDrawNext(){
+  const idx = lxState._drawIndexRef;
+  const ball = lxState._pendingBalls[idx];
+  if(!ball){
+    clearInterval(lxState.drumInterval);
+    lxState.isSpinning = false;
+    lxState.phase = 'complete';
+    lxRender();
+    return;
+  }
+
+  // Mettre à jour drawSequence immédiatement
+  lxState.drawSequence = idx + 1;
+  const seqEl = document.getElementById('lx-draw-seq');
+  if(seqEl) seqEl.textContent = lxState.drawSequence;
+
+  // Après DRAW_INTERVAL_MS*0.5 : placer la boule (comme l'original)
+  setTimeout(()=>{
+    if(idx < 15){
+      const s=[...lxState.leftSlots]; s[idx]=ball; lxState.leftSlots=s;
+    } else {
+      const s=[...lxState.rightSlots]; s[idx-15]=ball; lxState.rightSlots=s;
+    }
+    lxState.drawnBalls = [...lxState.drawnBalls, ball];
+    lxState.dailyWinnings = parseFloat((lxState.dailyWinnings+Math.random()*0.5).toFixed(2));
+    lxState._drawIndexRef++;
+
+    // Mettre à jour le slot dans le DOM
+    lxUpdateSlot(ball, idx);
+    // Mettre à jour compteur et daily
+    const totEl = document.getElementById('lx-total-count');
+    if(totEl) totEl.textContent = lxState.drawnBalls.length;
+    const dayEl = document.getElementById('lx-daily-val');
+    if(dayEl) dayEl.textContent = lxState.dailyWinnings.toFixed(2).replace('.',',');
+    const progEl = document.getElementById('lx-progress');
+    if(progEl) progEl.style.width=(lxState.drawnBalls.length/TOTAL_DRAWS*100)+'%';
+    // Mettre à jour les badges ticket
+    lxUpdateBadges();
+
+    lxState._timerRef = setTimeout(lxDrawNext, DRAW_INTERVAL_MS);
+  }, DRAW_INTERVAL_MS * 0.5);
+}
+
+function lxUpdateSlot(ball, idx){
+  const c = document.getElementById('luckyx-container');
+  if(!c) return;
+  const slotEl = document.getElementById('lx-s-'+(idx<15?'L':'R')+'-'+(idx<15?idx:idx-15));
+  if(!slotEl) return;
+  const ring = ball.color;
+  const allPicked = new Set(lxState.tickets.flatMap(t=>t.numbers));
+  const isMatch = allPicked.has(ball.number);
+  slotEl.innerHTML = `<div class="lx-ball-drop" style="
+    width:54px;height:54px;border-radius:50%;
+    background:radial-gradient(circle at 38% 35%,#2a2a3e,#0d0d1a);
+    border:3px solid ${ring};
+    box-shadow:${isMatch?`0 0 0 3px #ffd700,0 0 18px rgba(255,215,0,.7)`:`0 0 8px ${ring}55,inset 0 1px 3px rgba(255,255,255,.1)`};
+    display:flex;align-items:center;justify-content:center;position:relative;">
+    <div style="position:absolute;top:16%;left:20%;width:32%;height:18%;background:rgba(255,255,255,.2);border-radius:50%;transform:rotate(-25deg);"></div>
+    <span style="font-size:15px;font-weight:900;color:${ring};text-shadow:0 0 8px ${ring}99;z-index:1;">${ball.number}</span>
+  </div>`;
+}
+
+function lxUpdateBadges(){
+  const drawnNums = new Set(lxState.drawnBalls.map(b=>b.number));
+  lxState.tickets.forEach((t,ti)=>{
+    const matches = t.numbers.filter(n=>drawnNums.has(n)).length;
+    const badgeEl = document.getElementById('lx-badge-matches-'+ti);
+    if(badgeEl) badgeEl.textContent = matches+' ✓';
+    // Mettre en surbrillance les boules du ticket qui matchent
+    t.numbers.forEach(n=>{
+      const bEl = document.getElementById('lx-tn-'+ti+'-'+n);
+      if(!bEl) return;
+      const ring = getBallRingColor(n);
+      const hit = drawnNums.has(n);
+      bEl.style.background = hit?'radial-gradient(circle,#ffd700,#c8900a)':'#0d1a30';
+      bEl.style.borderColor = hit?'#ffd700':ring+'55';
+      bEl.style.color = hit?'#1a1000':ring+'88';
+    });
+    // Prize
+    const prizeEl = document.getElementById('lx-badge-prize-'+ti);
+    if(prizeEl){
+      const prizes = {3:'10 Gd',4:'50 Gd',5:'150 Gd',6:'250 Gd',7:'500 Gd',8:'1K Gd',9:'5K Gd',10:'10K Gd'};
+      prizeEl.textContent = prizes[matches]||'';
+      prizeEl.style.display = prizes[matches]?'':'none';
+    }
+  });
+  // Prize bar
+  const allPicked = new Set(lxState.tickets.flatMap(t=>t.numbers));
+  const best = lxState.tickets.reduce((b,t)=>Math.max(b,t.numbers.filter(n=>drawnNums.has(n)).length),0);
+  for(let i=1;i<=10;i++){
+    const el=document.getElementById('lx-prize-'+i);
+    if(!el) continue;
+    const active=best===i;
+    el.style.background=active?'linear-gradient(180deg,#ffd700,#c8900a)':'transparent';
+    el.querySelectorAll('div').forEach(d=>{ d.style.color=active?'#1a1a1a':(i<=2?'#e74c3c':'#ffd700'); });
+  }
+}
 
 function lxDrawNext(){
   const idx = lxState.drawIndex;
@@ -9078,61 +9175,115 @@ function caisseUpdateLuckyXUI(){
   if(nums) nums.textContent = sel.length ? sel.slice().sort((a,b)=>a-b).join(', ') : '—';
 }
 // ═══ FOOTBALL CAISSIER ═══════════════════════════════════════
+let caisseFootMatch = null; // match sélectionné
+let caisseFootPronostic = null; // '1'|'X'|'2'
+
 async function loadCaisseFootballMatches(){
-  const el = document.getElementById('caisse-football-matches');
-  if(!el) return;
-  el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:10px;font-size:12px;">⏳ Chargement...</div>';
+  const listEl = document.getElementById('caisse-football-list');
+  if(!listEl) return;
+  listEl.innerHTML = '<div style="text-align:center;color:var(--muted);padding:12px;font-size:12px;">⏳ Chargement des matchs...</div>';
+  caisseFootMatch = null;
+  caisseFootPronostic = null;
+  document.getElementById('caisse-foot-selected-wrap').style.display='none';
+  document.getElementById('caisse-foot-bet-wrap').style.display='none';
+
   try {
-    // Utiliser les matchs déjà chargés dans sports si disponibles
+    // Utiliser window.sportsData (déjà chargé pour les joueurs) ou charger
     let matches = [];
-    const sportsEl = document.getElementById('upcoming-section');
-    if(window.cachedFootballMatches && window.cachedFootballMatches.length){
-      matches = window.cachedFootballMatches;
+    if(window.sportsData && window.sportsData.length){
+      matches = window.sportsData;
     } else {
-      // Charger depuis l'API
       const data = await apiGet('/api/matches');
-      const all = data.upcoming||data.matches||[];
-      matches = all.slice(0,20);
-      window.cachedFootballMatches = matches;
+      matches = data.matches || data.upcoming || data || [];
+      window.sportsData = matches;
     }
     if(!matches.length){
-      el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:10px;font-size:12px;">Aucun match disponible</div>';
+      listEl.innerHTML='<div style="text-align:center;color:var(--muted);padding:12px;font-size:12px;">Aucun match disponible</div>';
       return;
     }
-    el.innerHTML = matches.map((m,i)=>{
-      const home = m.homeTeam?.name||m.home||'—';
-      const away = m.awayTeam?.name||m.away||'—';
-      const date = m.utcDate ? new Date(m.utcDate).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
-      const comp = m.competition?.name||m.league||'';
-      const cH = (Math.random()*2+1.5).toFixed(2);
-      const cD = (Math.random()*1.5+2.5).toFixed(2);
-      const cA = (Math.random()*2+1.8).toFixed(2);
-      const matchData = JSON.stringify({id:m.id||i,home,away,comp,coteHome:parseFloat(cH),coteDraw:parseFloat(cD),coteAway:parseFloat(cA)}).replace(/'/g,"\'");
-      return `<div onclick="selectCaisseMatch('${matchData}')" style="padding:8px;border-bottom:1px solid var(--border);cursor:pointer;border-radius:6px;transition:background .2s;" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='transparent'">
-        <div style="font-size:11px;font-weight:700;color:#fff;margin-bottom:2px;">${home} vs ${away}</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-size:10px;color:var(--muted);">${comp} · ${date}</span>
-          <div style="display:flex;gap:4px;">
-            <span style="font-size:10px;background:var(--bg3);padding:2px 5px;border-radius:3px;color:var(--green2);">1:${cH}</span>
-            <span style="font-size:10px;background:var(--bg3);padding:2px 5px;border-radius:3px;color:var(--gold);">X:${cD}</span>
-            <span style="font-size:10px;background:var(--bg3);padding:2px 5px;border-radius:3px;color:var(--blue);">2:${cA}</span>
-          </div>
+    // Render identique au joueur mais avec onclick pour sélectionner
+    // Stocker les matchs dans window pour accès via index
+    window._caisseFootMatches = [];
+    listEl.innerHTML = matches.slice(0,30).map((m,mi)=>{
+      const home = m.homeTeam?.name||m.home||m.t1||'—';
+      const away = m.awayTeam?.name||m.away||m.t2||'—';
+      const comp = m.competition?.name||m.league||m.lg||'Football';
+      const live = m.live||m.status==='IN_PLAY';
+      const dateStr = m.utcDate ? new Date(m.utcDate).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : m.time||'';
+      const scoreHome = m.scoreHome??m.score?.fullTime?.home??m.s1??null;
+      const scoreAway = m.scoreAway??m.score?.fullTime?.away??m.s2??null;
+      const seed = (home+away).split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+      const cH = parseFloat((1.5+(seed%30)/20).toFixed(2));
+      const cD = parseFloat((2.5+(seed%15)/20).toFixed(2));
+      const cA = parseFloat((1.8+((seed+7)%25)/20).toFixed(2));
+      window._caisseFootMatches.push({id:m.id||mi,home,away,comp,cH,cD,cA});
+      const scoreLine = (scoreHome!==null&&scoreAway!==null)
+        ? `<span style="font-size:15px;font-weight:900;color:var(--gold)">${scoreHome} — ${scoreAway}</span>`
+        : `<span style="font-size:11px;color:var(--muted)">${dateStr}</span>`;
+      return `<div onclick="caisseFootSelectIdx(${mi})" style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:6px;cursor:pointer;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="font-size:9px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">
+          ⚽ ${comp}${live?' · <span style="color:var(--red);font-weight:700">LIVE</span>':''}
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;">
+          <div style="flex:1;font-size:12px;font-weight:700;text-align:right">${home}</div>
+          <div style="text-align:center;min-width:65px">${scoreLine}</div>
+          <div style="flex:1;font-size:12px;font-weight:700;text-align:left">${away}</div>
+        </div>
+        <div style="display:flex;gap:5px;justify-content:center;">
+          <span style="flex:1;text-align:center;padding:4px;background:var(--bg2);border-radius:5px;font-size:11px;font-weight:700;color:var(--green2)">1 · ${cH}</span>
+          <span style="flex:1;text-align:center;padding:4px;background:var(--bg2);border-radius:5px;font-size:11px;font-weight:700;color:var(--gold)">X · ${cD}</span>
+          <span style="flex:1;text-align:center;padding:4px;background:var(--bg2);border-radius:5px;font-size:11px;font-weight:700;color:var(--blue)">2 · ${cA}</span>
         </div>
       </div>`;
     }).join('');
   } catch(e){
-    el.innerHTML = `<div style="text-align:center;color:var(--red);padding:10px;font-size:12px;">Erreur: ${e.message}</div>`;
+    listEl.innerHTML = `<div style="text-align:center;color:var(--red);padding:12px;font-size:12px;">Erreur: ${e.message}</div>`;
   }
 }
 
-window.selectCaisseMatch = function(matchDataStr){
-  const match = JSON.parse(matchDataStr);
-  const el = document.getElementById('caisse-football-selected');
-  if(!el) return;
-  el.style.display = '';
-  el.dataset.match = matchDataStr;
-  el.innerHTML = `✅ <b>${match.home} vs ${match.away}</b> sélectionné`;
-};
+function caisseFootSelectIdx(idx){
+  const m = (window._caisseFootMatches||[])[idx];
+  if(m) caisseFootSelect(m);
+}
+function caisseFootSelect(m){
+  caisseFootMatch = m;
+  // Afficher le match sélectionné
+  document.getElementById('caisse-foot-selected-label').innerHTML = `✅ <b>${m.home} vs ${m.away}</b>`;
+  document.getElementById('caisse-foot-selected-wrap').style.display='';
+  document.getElementById('caisse-foot-bet-wrap').style.display='';
+  // Afficher les cotes sous forme de boutons
+  const oddsEl = document.getElementById('caisse-foot-odds');
+  if(oddsEl){
+    oddsEl.innerHTML = [
+      {key:'1',label:'1 – Domicile',cote:m.cH,color:'var(--green2)'},
+      {key:'X',label:'X – Nul',cote:m.cD,color:'var(--gold)'},
+      {key:'2',label:'2 – Extérieur',cote:m.cA,color:'var(--blue)'}
+    ].map(o=>`<button onclick="caisseFootSetPronostic('${o.key}')" id="caisse-foot-btn-${o.key}" style="
+      flex:1;padding:8px 4px;border-radius:7px;font-size:11px;font-weight:900;cursor:pointer;
+      background:var(--bg2);color:${o.color};border:2px solid transparent;transition:all .2s;text-align:center;">
+      <div>${o.label}</div><div style="font-size:15px;margin-top:2px;">×${o.cote}</div>
+    </button>`).join('');
+  }
+  caisseFootPronostic = null;
+  // Masquer la liste
+  document.getElementById('caisse-football-list').style.display='none';
+}
+
+function caisseFootDeselect(){
+  caisseFootMatch = null;
+  caisseFootPronostic = null;
+  document.getElementById('caisse-foot-selected-wrap').style.display='none';
+  document.getElementById('caisse-foot-bet-wrap').style.display='none';
+  document.getElementById('caisse-football-list').style.display='';
+}
+
+function caisseFootSetPronostic(key){
+  caisseFootPronostic = key;
+  ['1','X','2'].forEach(k=>{
+    const btn = document.getElementById('caisse-foot-btn-'+k);
+    if(btn) btn.style.borderColor = k===key?'var(--gold)':'transparent';
+  });
+}
 
 // ═══ LUCKY X DANS CAISSE/LANCER ══════════════════════════════
 // (Le football utilise la même logique que les sports joueur)
