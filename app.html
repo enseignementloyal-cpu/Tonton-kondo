@@ -2401,31 +2401,58 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
 .anim-ball{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;font-size:15px;font-weight:900;animation:ballPop .35s cubic-bezier(.34,1.56,.64,1) both;box-shadow:0 2px 8px rgba(0,0,0,.6);}
 .anim-status-bar{width:100%;background:rgba(0,0,0,.6);border-radius:8px;padding:6px 12px;margin-top:8px;text-align:center;font-size:12px;color:#fff;font-weight:700;}
 </style>
-  <div id="canim-keno" style="display:none;width:100%;max-width:680px;padding:8px;">
-    <div class="anim-video-wrap" style="height:320px;">
-      <video id="vid-keno" src="1.mp4" autoplay loop muted playsinline></video>
-      <div class="anim-video-overlay">
-        <div id="canim-keno-drawn" class="anim-balls-row"></div>
-        <div class="anim-status-bar">
-          <span id="canim-keno-status">Tirage en cours...</span>
+<style>
+.lx-anim-wrap{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:8px;background:#0a1628;}
+.lx-col{display:flex;flex-direction:column;gap:6px;min-width:58px;}
+.lx-ball-item{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;animation:ballPop .35s cubic-bezier(.34,1.56,.64,1) both;position:relative;flex-shrink:0;}
+.lx-ball-item::before{content:'';position:absolute;top:15%;left:20%;width:30%;height:18%;background:rgba(255,255,255,.25);border-radius:50%;transform:rotate(-25deg);}
+.lx-empty-slot{width:54px;height:54px;border-radius:50%;background:radial-gradient(circle,#1a3a6e,#0d1f3e);border:2px solid rgba(255,255,255,.08);flex-shrink:0;}
+.lx-video-center{position:relative;flex-shrink:0;}
+.lx-video-round{width:220px;height:220px;border-radius:50%;overflow:hidden;border:4px solid #2a3850;box-shadow:0 0 0 3px #1a2540,0 0 0 6px #2a3860,0 0 30px rgba(0,0,0,.8);}
+.lx-video-round video{width:100%;height:100%;object-fit:cover;}
+.lx-seq-box{background:#0d1520;border:2px solid #2a3850;border-top:none;border-radius:0 0 10px 10px;padding:4px 20px 7px;text-align:center;margin-top:-2px;}
+.lx-seq-num{font-size:44px;font-weight:900;color:#fff;line-height:1;letter-spacing:-2px;}
+.lx-seq-lbl{font-size:7px;color:#8aaccc;font-weight:700;letter-spacing:3px;}
+.lx-status-bottom{width:100%;padding:5px 12px;background:rgba(0,0,0,.5);border-radius:8px;font-size:11px;color:#fff;font-weight:700;text-align:center;margin-top:4px;}
+</style>
+  <div id="canim-keno" style="display:none;width:100%;max-width:700px;flex-direction:column;align-items:center;">
+    <div class="lx-anim-wrap">
+      <!-- Colonne gauche 15 boules -->
+      <div class="lx-col" id="canim-keno-left"></div>
+      <!-- Vidéo ronde centre -->
+      <div class="lx-video-center">
+        <div class="lx-video-round">
+          <video id="vid-keno" src="1.mp4" autoplay loop muted playsinline></video>
+        </div>
+        <div class="lx-seq-box">
+          <div class="lx-seq-num" id="canim-keno-seq">0</div>
+          <div class="lx-seq-lbl">DRAW SEQUENCE</div>
         </div>
       </div>
+      <!-- Colonne droite 15 boules -->
+      <div class="lx-col" id="canim-keno-right"></div>
     </div>
-    <div id="canim-keno-result" style="text-align:center;font-size:14px;color:var(--gold);font-weight:900;margin-top:8px;min-height:20px;"></div>
+    <div class="lx-status-bottom" id="canim-keno-status">Tirage en cours...</div>
+    <div id="canim-keno-result" style="text-align:center;font-size:14px;color:var(--gold);font-weight:900;margin-top:6px;min-height:20px;"></div>
   </div>
 
 
-  <div id="canim-lucky6" style="display:none;width:100%;max-width:680px;padding:8px;">
-    <div class="anim-video-wrap" style="height:320px;">
-      <video id="vid-lucky6" src="2.mp4" autoplay loop muted playsinline></video>
-      <div class="anim-video-overlay">
-        <div id="canim-l6-drawn" class="anim-balls-row"></div>
-        <div class="anim-status-bar">
-          <span id="canim-l6-status">Tirage Lucky 6...</span>
+  <div id="canim-lucky6" style="display:none;width:100%;max-width:700px;flex-direction:column;align-items:center;">
+    <div class="lx-anim-wrap">
+      <div class="lx-col" id="canim-l6-left"></div>
+      <div class="lx-video-center">
+        <div class="lx-video-round">
+          <video id="vid-lucky6" src="2.mp4" autoplay loop muted playsinline></video>
+        </div>
+        <div class="lx-seq-box">
+          <div class="lx-seq-num" id="canim-l6-seq">0</div>
+          <div class="lx-seq-lbl">DRAW SEQUENCE</div>
         </div>
       </div>
+      <div class="lx-col" id="canim-l6-right"></div>
     </div>
-    <div id="canim-l6-result" style="text-align:center;font-size:14px;color:var(--gold);font-weight:900;margin-top:8px;min-height:20px;"></div>
+    <div class="lx-status-bottom" id="canim-l6-status">Tirage Lucky 6...</div>
+    <div id="canim-l6-result" style="text-align:center;font-size:14px;color:var(--gold);font-weight:900;margin-top:6px;min-height:20px;"></div>
   </div>
 
   <!-- Course -->
@@ -2450,18 +2477,23 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
   </div>
 
   <!-- Lucky X tirage caisse -->
-  <div id="canim-luckyx" style="display:none;width:100%;max-width:680px;padding:8px;">
-    <div class="anim-video-wrap" style="height:320px;">
-      <video id="vid-luckyx" src="3.mp4" autoplay loop muted playsinline></video>
-      <div class="anim-video-overlay">
-        <div id="lxc-drawn" class="anim-balls-row"></div>
-        <div class="anim-status-bar">
-          <span id="lxc-status">Tirage Lucky X...</span>
-          <div id="lxc-badges" style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center;"></div>
+  <div id="canim-luckyx" style="display:none;width:100%;max-width:700px;flex-direction:column;align-items:center;">
+    <div class="lx-anim-wrap">
+      <div class="lx-col" id="lxc-left"></div>
+      <div class="lx-video-center">
+        <div class="lx-video-round">
+          <video id="vid-luckyx" src="3.mp4" autoplay loop muted playsinline></video>
+        </div>
+        <div class="lx-seq-box">
+          <div class="lx-seq-num" id="lxc-seq">0</div>
+          <div class="lx-seq-lbl">DRAW SEQUENCE</div>
         </div>
       </div>
+      <div class="lx-col" id="lxc-right"></div>
     </div>
-    <div id="lxc-result" style="text-align:center;font-size:14px;color:var(--gold);font-weight:900;margin-top:8px;min-height:20px;"></div>
+    <div class="lx-status-bottom" id="lxc-status">Tirage Lucky X...</div>
+    <div id="lxc-badges" style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;padding:4px 8px;"></div>
+    <div id="lxc-result" style="text-align:center;font-size:14px;color:var(--gold);font-weight:900;margin-top:6px;min-height:20px;"></div>
   </div>
 
   <!-- Borlette -->
@@ -5354,65 +5386,52 @@ async function jouerAnimationCaisse(jeuType, resultats){
 
 async function animCaisseLuckyX(resultats){
   if(!resultats.length) return;
-  const allTickets = resultats.map(rt=>({
-    numbers: rt.pari?.nums || (rt.pari?.cleanNumber||'').split(',').map(n=>parseInt(n.trim())).filter(Boolean),
-    gain: rt.gain
-  }));
-  const winNums = resultats[0]?.winData?.winningNumbers || (()=>{
-    const p=Array.from({length:48},(_,i)=>i+1).sort(()=>Math.random()-.5);
-    return p.slice(0,30);
-  })();
-  const allPickedNums = new Set(allTickets.flatMap(t=>t.numbers));
-
-  document.getElementById('canim-luckyx').style.display = '';
-  document.getElementById('canim-title').textContent = '🌟 LUCKY X — TIRAGE';
-
-  const drawnEl  = document.getElementById('lxc-drawn');
-  const statusEl = document.getElementById('lxc-status');
-  const badgesEl = document.getElementById('lxc-badges');
-  const resultEl = document.getElementById('lxc-result');
-  drawnEl.innerHTML = '';
-  resultEl.textContent = '';
-
-  const vid = document.getElementById('vid-luckyx');
-  if(vid){ vid.currentTime=0; vid.play().catch(()=>{}); }
-
-  const RING = ["#e74c3c","#ff7043","#ffd700","#4caf50","#2196f3","#e91e63","#9c27b0","#90a4ae"];
-  const getRing = n => RING[(n-1)%RING.length];
-  const delay = Math.floor(90000 / Math.max(winNums.length, 1));
-  const drawnSet = new Set();
-
-  for(let i=0; i<winNums.length; i++){
-    await new Promise(res=>setTimeout(res, delay));
-    const num = winNums[i];
-    const ring = getRing(num);
-    const isMatch = allPickedNums.has(num);
-    drawnSet.add(num);
-
-    const ball = document.createElement('div');
-    ball.className = 'anim-ball';
-    ball.textContent = num;
-    ball.style.background = `radial-gradient(circle at 35% 30%,${ring}dd,${ring}88)`;
-    ball.style.color = '#fff';
-    ball.style.border = isMatch ? '3px solid #ffd700' : `2px solid ${ring}`;
-    ball.style.boxShadow = isMatch ? '0 0 16px rgba(255,215,0,.9)' : '0 2px 8px rgba(0,0,0,.5)';
-    drawnEl.appendChild(ball);
-
-    // Badges tickets en temps réel
-    if(badgesEl) badgesEl.innerHTML = allTickets.map((t,ti)=>{
-      const m = t.numbers.filter(n=>drawnSet.has(n)).length;
-      const PRIZES={3:'10',4:'50',5:'150',6:'250',7:'500',8:'1K',9:'5K',10:'10K'};
-      return `<div style="background:${PRIZES[m]?'rgba(255,215,0,.2)':'rgba(0,0,0,.4)'};border:1px solid ${PRIZES[m]?'#ffd70066':'rgba(255,255,255,.1)'};border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;color:${PRIZES[m]?'#ffd700':'#8aaccc'};">T${ti+1}: ${m}✓${PRIZES[m]?' +'+PRIZES[m]:''}Gd</div>`;
-    }).join('');
-
-    const rem = Math.round((winNums.length-i-1)*delay/1000);
-    statusEl.textContent = `Boule ${i+1}/${winNums.length} — ${rem}s`;
+  const allTickets=resultats.map(rt=>({numbers:rt.pari?.nums||(rt.pari?.cleanNumber||'').split(',').map(n=>parseInt(n.trim())).filter(Boolean),gain:rt.gain}));
+  const winNums=resultats[0]?.winData?.winningNumbers||(()=>{const p=Array.from({length:48},(_,i)=>i+1).sort(()=>Math.random()-.5);return p.slice(0,30);})();
+  const allPickedNums=new Set(allTickets.flatMap(t=>t.numbers));
+  document.getElementById('canim-luckyx').style.display='flex';
+  document.getElementById('canim-title').textContent='🌟 LUCKY X — TIRAGE';
+  const leftEl=document.getElementById('lxc-left');
+  const rightEl=document.getElementById('lxc-right');
+  const seqEl=document.getElementById('lxc-seq');
+  const statusEl=document.getElementById('lxc-status');
+  const badgesEl=document.getElementById('lxc-badges');
+  const resultEl=document.getElementById('lxc-result');
+  leftEl.innerHTML='';rightEl.innerHTML='';resultEl.textContent='';
+  if(badgesEl)badgesEl.innerHTML='';
+  for(let i=0;i<15;i++){
+    const el=document.createElement('div');el.className='lx-empty-slot';leftEl.appendChild(el);
+    const er=document.createElement('div');er.className='lx-empty-slot';rightEl.appendChild(er);
   }
-
-  const totalGain = resultats.reduce((s,r)=>s+r.gain,0);
-  resultEl.textContent = totalGain>0 ? `🏆 GAGNÉ → +${totalGain} Gd` : `❌ Perdu`;
-  resultEl.style.color = totalGain>0 ? 'var(--green2)' : 'var(--red)';
-  await new Promise(res=>setTimeout(res, 3000));
+  const vid=document.getElementById('vid-luckyx');
+  if(vid){vid.currentTime=0;vid.play().catch(()=>{});}
+  const RING=["#e74c3c","#ff7043","#ffd700","#4caf50","#2196f3","#e91e63","#9c27b0","#90a4ae"];
+  const getRing=n=>RING[(n-1)%RING.length];
+  const delay=Math.floor(90000/Math.max(winNums.length,1));
+  const drawnSet=new Set();
+  for(let i=0;i<winNums.length;i++){
+    await new Promise(res=>setTimeout(res,delay));
+    const num=winNums[i];const ring=getRing(num);const isMatch=allPickedNums.has(num);
+    drawnSet.add(num);if(seqEl)seqEl.textContent=i+1;
+    const ball=document.createElement('div');ball.className='lx-ball-item';ball.textContent=num;
+    ball.style.background=`radial-gradient(circle at 35% 30%,${ring}dd,${ring}88)`;
+    ball.style.color='#fff';
+    ball.style.border=isMatch?'3px solid #ffd700':`2px solid ${ring}`;
+    ball.style.boxShadow=isMatch?'0 0 16px rgba(255,215,0,.9)':'0 2px 8px rgba(0,0,0,.5)';
+    const colEl=i<15?leftEl:rightEl;const localIdx=i<15?i:i-15;
+    const slots=colEl.children;
+    if(slots[localIdx])colEl.replaceChild(ball,slots[localIdx]);else colEl.appendChild(ball);
+    if(badgesEl)badgesEl.innerHTML=allTickets.map((t,ti)=>{
+      const m=t.numbers.filter(n=>drawnSet.has(n)).length;
+      const P={3:'10',4:'50',5:'150',6:'250',7:'500',8:'1K',9:'5K',10:'10K'};
+      return `<div style="background:${P[m]?'rgba(255,215,0,.2)':'rgba(0,0,0,.4)'};border:1px solid ${P[m]?'#ffd70066':'rgba(255,255,255,.1)'};border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;color:${P[m]?'#ffd700':'#8aaccc'};">T${ti+1}: ${m}✓${P[m]?' +'+P[m]+'Gd':''}</div>`;
+    }).join('');
+    statusEl.textContent=`Boule ${i+1}/${winNums.length} — ${Math.round((winNums.length-i-1)*delay/1000)}s`;
+  }
+  const totalGain=resultats.reduce((s,r)=>s+r.gain,0);
+  resultEl.textContent=totalGain>0?`🏆 GAGNÉ → +${totalGain} Gd`:`❌ Perdu`;
+  resultEl.style.color=totalGain>0?'var(--green2)':'var(--red)';
+  await new Promise(res=>setTimeout(res,3000));
 }
 
 window.animLXRejouer = function(){
@@ -5475,48 +5494,44 @@ async function animCaisseLucky6(resultats){
   const r = resultats[0];
   const winNums   = r.winData?.winningNumbers || [];
   const jouedNums = r.pari?.nums || (r.pari?.cleanNumber||'').split(',').map(n=>parseInt(n.trim())).filter(Boolean);
-
-  document.getElementById('canim-lucky6').style.display = '';
-  document.getElementById('canim-title').textContent    = '🍀 LUCKY 6 — TIRAGE';
-
-  const drawnEl  = document.getElementById('canim-l6-drawn');
-  const statusEl = document.getElementById('canim-l6-status');
-  const resultEl = document.getElementById('canim-l6-result');
-  drawnEl.innerHTML = '';
-  resultEl.textContent = '';
-
-  const vid = document.getElementById('vid-lucky6');
-  if(vid){ vid.currentTime=0; vid.play().catch(()=>{}); }
-
-  const L6C = ['#e53935','#e91e63','#9c27b0','#3f51b5','#2196f3','#00bcd4','#4caf50','#ff9800'];
-  const getCol = n => L6C[Math.floor((n-1)/6)] || '#888';
-  const delay = Math.floor(90000 / Math.max(winNums.length, 1));
-  let hits = 0;
-
-  for(let i=0; i<winNums.length; i++){
-    await new Promise(res=>setTimeout(res, delay));
-    const num = winNums[i];
-    const col = getCol(num);
-    const isHit = jouedNums.includes(num);
-    if(isHit) hits++;
-
-    const ball = document.createElement('div');
-    ball.className = 'anim-ball';
-    ball.textContent = num;
-    ball.style.background = `radial-gradient(circle at 35% 30%,${col}dd,${col})`;
-    ball.style.color = '#fff';
-    ball.style.border = isHit ? '3px solid #ffd700' : `2px solid ${col}88`;
-    ball.style.boxShadow = isHit ? '0 0 14px rgba(255,215,0,.8)' : '0 2px 8px rgba(0,0,0,.5)';
-    drawnEl.appendChild(ball);
-
-    const rem = Math.round((winNums.length-i-1)*delay/1000);
-    statusEl.textContent = `Boule ${i+1}/${winNums.length} — ${hits}/6 trouvés — ${rem}s`;
+  document.getElementById('canim-lucky6').style.display = 'flex';
+  document.getElementById('canim-title').textContent = '🍀 LUCKY 6 — TIRAGE';
+  const leftEl  = document.getElementById('canim-l6-left');
+  const rightEl = document.getElementById('canim-l6-right');
+  const seqEl   = document.getElementById('canim-l6-seq');
+  const statusEl= document.getElementById('canim-l6-status');
+  const resultEl= document.getElementById('canim-l6-result');
+  leftEl.innerHTML=''; rightEl.innerHTML=''; resultEl.textContent='';
+  for(let i=0;i<15;i++){
+    const el=document.createElement('div');el.className='lx-empty-slot';leftEl.appendChild(el);
+    const er=document.createElement('div');er.className='lx-empty-slot';rightEl.appendChild(er);
   }
-
-  resultEl.textContent = r.gain>0 ? `🏆 ${hits}/6 trouvés → +${r.gain} Gd` : `❌ ${hits}/6 trouvés — Perdu`;
-  resultEl.style.color = r.gain>0 ? 'var(--green2)' : 'var(--red)';
-  await new Promise(res=>setTimeout(res, 3000));
+  const vid=document.getElementById('vid-lucky6');
+  if(vid){vid.currentTime=0;vid.play().catch(()=>{});}
+  const L6C=['#e53935','#e91e63','#9c27b0','#3f51b5','#2196f3','#00bcd4','#4caf50','#ff9800'];
+  const getCol=n=>L6C[Math.floor((n-1)/6)]||'#888';
+  const delay=Math.floor(90000/Math.max(winNums.length,1));
+  let hits=0;
+  for(let i=0;i<winNums.length;i++){
+    await new Promise(res=>setTimeout(res,delay));
+    const num=winNums[i];const col=getCol(num);const isHit=jouedNums.includes(num);
+    if(isHit)hits++;if(seqEl)seqEl.textContent=i+1;
+    const ball=document.createElement('div');ball.className='lx-ball-item';ball.textContent=num;
+    ball.style.background=`radial-gradient(circle at 35% 30%,${col}dd,${col})`;
+    ball.style.color='#fff';
+    ball.style.border=isHit?'3px solid #ffd700':`2px solid ${col}88`;
+    ball.style.boxShadow=isHit?'0 0 14px rgba(255,215,0,.8)':'0 2px 8px rgba(0,0,0,.5)';
+    const colEl=i<15?leftEl:rightEl;const localIdx=i<15?i:i-15;
+    const slots=colEl.children;
+    if(slots[localIdx])colEl.replaceChild(ball,slots[localIdx]);else colEl.appendChild(ball);
+    const rem=Math.round((winNums.length-i-1)*delay/1000);
+    statusEl.textContent=`Boule ${i+1}/${winNums.length} — ${hits}/6 trouvés — ${rem}s`;
+  }
+  resultEl.textContent=r.gain>0?`🏆 ${hits}/6 → +${r.gain} Gd`:`❌ ${hits}/6 — Perdu`;
+  resultEl.style.color=r.gain>0?'var(--green2)':'var(--red)';
+  await new Promise(res=>setTimeout(res,3000));
 }
+
 
 async function animCaisseCourse(resultats){
   if(!resultats.length) return;
