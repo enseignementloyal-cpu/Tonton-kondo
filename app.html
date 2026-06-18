@@ -2402,8 +2402,9 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
 .anim-status-bar{width:100%;background:rgba(0,0,0,.6);border-radius:8px;padding:6px 12px;margin-top:8px;text-align:center;font-size:12px;color:#fff;font-weight:700;}
 </style>
 <style>
-.lx-anim-wrap{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:8px;background:#0a1628;}
-.lx-col{display:flex;flex-direction:column;gap:6px;min-width:58px;}
+.lx-anim-wrap{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:8px;background:#0a1628;}
+.lx-cols{display:flex;gap:6px;}
+.lx-col{display:flex;flex-direction:column;gap:6px;}
 .lx-ball-item{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;animation:ballPop .35s cubic-bezier(.34,1.56,.64,1) both;position:relative;flex-shrink:0;}
 .lx-ball-item::before{content:'';position:absolute;top:15%;left:20%;width:30%;height:18%;background:rgba(255,255,255,.25);border-radius:50%;transform:rotate(-25deg);}
 .lx-empty-slot{width:54px;height:54px;border-radius:50%;background:radial-gradient(circle,#1a3a6e,#0d1f3e);border:2px solid rgba(255,255,255,.08);flex-shrink:0;}
@@ -2417,8 +2418,11 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
 </style>
   <div id="canim-keno" style="display:none;width:100%;max-width:700px;flex-direction:column;align-items:center;">
     <div class="lx-anim-wrap">
-      <!-- Colonne gauche 15 boules -->
-      <div class="lx-col" id="canim-keno-left"></div>
+      <!-- 2 colonnes gauche -->
+      <div class="lx-cols">
+        <div class="lx-col" id="canim-keno-left1"></div>
+        <div class="lx-col" id="canim-keno-left2"></div>
+      </div>
       <!-- Vidéo ronde centre -->
       <div class="lx-video-center">
         <div class="lx-video-round">
@@ -2429,8 +2433,11 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
           <div class="lx-seq-lbl">DRAW SEQUENCE</div>
         </div>
       </div>
-      <!-- Colonne droite 15 boules -->
-      <div class="lx-col" id="canim-keno-right"></div>
+      <!-- 2 colonnes droite -->
+      <div class="lx-cols">
+        <div class="lx-col" id="canim-keno-right1"></div>
+        <div class="lx-col" id="canim-keno-right2"></div>
+      </div>
     </div>
     <div class="lx-status-bottom" id="canim-keno-status">Tirage en cours...</div>
     <div id="canim-keno-result" style="text-align:center;font-size:14px;color:var(--gold);font-weight:900;margin-top:6px;min-height:20px;"></div>
@@ -2439,7 +2446,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
 
   <div id="canim-lucky6" style="display:none;width:100%;max-width:700px;flex-direction:column;align-items:center;">
     <div class="lx-anim-wrap">
-      <div class="lx-col" id="canim-l6-left"></div>
+      <div class="lx-cols"><div class="lx-col" id="canim-l6-left1"></div><div class="lx-col" id="canim-l6-left2"></div></div>
       <div class="lx-video-center">
         <div class="lx-video-round">
           <video id="vid-lucky6" src="2.mp4" autoplay loop muted playsinline></video>
@@ -2449,7 +2456,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
           <div class="lx-seq-lbl">DRAW SEQUENCE</div>
         </div>
       </div>
-      <div class="lx-col" id="canim-l6-right"></div>
+      <div class="lx-cols"><div class="lx-col" id="canim-l6-right1"></div><div class="lx-col" id="canim-l6-right2"></div></div>
     </div>
     <div class="lx-status-bottom" id="canim-l6-status">Tirage Lucky 6...</div>
     <div id="canim-l6-result" style="text-align:center;font-size:14px;color:var(--gold);font-weight:900;margin-top:6px;min-height:20px;"></div>
@@ -2479,7 +2486,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
   <!-- Lucky X tirage caisse -->
   <div id="canim-luckyx" style="display:none;width:100%;max-width:700px;flex-direction:column;align-items:center;">
     <div class="lx-anim-wrap">
-      <div class="lx-col" id="lxc-left"></div>
+      <div class="lx-cols"><div class="lx-col" id="lxc-left1"></div><div class="lx-col" id="lxc-left2"></div></div>
       <div class="lx-video-center">
         <div class="lx-video-round">
           <video id="vid-luckyx" src="3.mp4" autoplay loop muted playsinline></video>
@@ -2489,7 +2496,7 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
           <div class="lx-seq-lbl">DRAW SEQUENCE</div>
         </div>
       </div>
-      <div class="lx-col" id="lxc-right"></div>
+      <div class="lx-cols"><div class="lx-col" id="lxc-right1"></div><div class="lx-col" id="lxc-right2"></div></div>
     </div>
     <div class="lx-status-bottom" id="lxc-status">Tirage Lucky X...</div>
     <div id="lxc-badges" style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;padding:4px 8px;"></div>
@@ -5391,18 +5398,13 @@ async function animCaisseLuckyX(resultats){
   const allPickedNums=new Set(allTickets.flatMap(t=>t.numbers));
   document.getElementById('canim-luckyx').style.display='flex';
   document.getElementById('canim-title').textContent='🌟 LUCKY X — TIRAGE';
-  const leftEl=document.getElementById('lxc-left');
-  const rightEl=document.getElementById('lxc-right');
   const seqEl=document.getElementById('lxc-seq');
   const statusEl=document.getElementById('lxc-status');
   const badgesEl=document.getElementById('lxc-badges');
   const resultEl=document.getElementById('lxc-result');
-  leftEl.innerHTML='';rightEl.innerHTML='';resultEl.textContent='';
-  if(badgesEl)badgesEl.innerHTML='';
-  for(let i=0;i<15;i++){
-    const el=document.createElement('div');el.className='lx-empty-slot';leftEl.appendChild(el);
-    const er=document.createElement('div');er.className='lx-empty-slot';rightEl.appendChild(er);
-  }
+  resultEl.textContent='';if(badgesEl)badgesEl.innerHTML='';
+  initSlots2Col('lxc-left1','lxc-left2',15);
+  initSlots2Col('lxc-right1','lxc-right2',15);
   const vid=document.getElementById('vid-luckyx');
   if(vid){vid.currentTime=0;vid.play().catch(()=>{});}
   const RING=["#e74c3c","#ff7043","#ffd700","#4caf50","#2196f3","#e91e63","#9c27b0","#90a4ae"];
@@ -5411,25 +5413,18 @@ async function animCaisseLuckyX(resultats){
   const drawnSet=new Set();
   for(let i=0;i<winNums.length;i++){
     await new Promise(res=>setTimeout(res,delay));
-    const num=winNums[i];const ring=getRing(num);const isMatch=allPickedNums.has(num);
+    const num=winNums[i];const isMatch=allPickedNums.has(num);
     drawnSet.add(num);if(seqEl)seqEl.textContent=i+1;
-    const ball=document.createElement('div');ball.className='lx-ball-item';ball.textContent=num;
-    ball.style.background=`radial-gradient(circle at 35% 30%,${ring}dd,${ring}88)`;
-    ball.style.color='#fff';
-    ball.style.border=isMatch?'3px solid #ffd700':`2px solid ${ring}`;
-    ball.style.boxShadow=isMatch?'0 0 16px rgba(255,215,0,.9)':'0 2px 8px rgba(0,0,0,.5)';
-    const colEl=i<15?leftEl:rightEl;const localIdx=i<15?i:i-15;
-    const slots=colEl.children;
-    if(slots[localIdx])colEl.replaceChild(ball,slots[localIdx]);else colEl.appendChild(ball);
+    placeBallInGrid({number:num,color:getRing(num),isMatch},i,'lxc-left1','lxc-left2','lxc-right1','lxc-right2');
     if(badgesEl)badgesEl.innerHTML=allTickets.map((t,ti)=>{
       const m=t.numbers.filter(n=>drawnSet.has(n)).length;
       const P={3:'10',4:'50',5:'150',6:'250',7:'500',8:'1K',9:'5K',10:'10K'};
-      return `<div style="background:${P[m]?'rgba(255,215,0,.2)':'rgba(0,0,0,.4)'};border:1px solid ${P[m]?'#ffd70066':'rgba(255,255,255,.1)'};border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;color:${P[m]?'#ffd700':'#8aaccc'};">T${ti+1}: ${m}✓${P[m]?' +'+P[m]+'Gd':''}</div>`;
+      return '<div style="background:'+(P[m]?'rgba(255,215,0,.2)':'rgba(0,0,0,.4)')+';border:1px solid '+(P[m]?'#ffd70066':'rgba(255,255,255,.1)')+';border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;color:'+(P[m]?'#ffd700':'#8aaccc')+';"> T'+(ti+1)+':'+m+'✓'+(P[m]?' +'+P[m]+'Gd':'')+'</div>';
     }).join('');
-    statusEl.textContent=`Boule ${i+1}/${winNums.length} — ${Math.round((winNums.length-i-1)*delay/1000)}s`;
+    statusEl.textContent='Boule '+(i+1)+'/'+winNums.length+' — '+Math.round((winNums.length-i-1)*delay/1000)+'s';
   }
-  const totalGain=resultats.reduce((s,r)=>s+r.gain,0);
-  resultEl.textContent=totalGain>0?`🏆 GAGNÉ → +${totalGain} Gd`:`❌ Perdu`;
+  const totalGain=resultats.reduce((s,r2)=>s+r2.gain,0);
+  resultEl.textContent=totalGain>0?'🏆 GAGNÉ → +'+totalGain+' Gd':'❌ Perdu';
   resultEl.style.color=totalGain>0?'var(--green2)':'var(--red)';
   await new Promise(res=>setTimeout(res,3000));
 }
@@ -5438,74 +5433,97 @@ window.animLXRejouer = function(){
   document.getElementById('canim-luckyx').style.display='none';
 };
 
-async function animCaisseKeno(resultats){
-  if(!resultats.length) return;
-  const r = resultats[0];
-  const winNums   = r.winData?.winningNumbers || [];
-  const jouedNums = r.pari?.nums || (r.pari?.cleanNumber||'').split(',').map(n=>parseInt(n.trim())).filter(Boolean);
 
-  document.getElementById('canim-keno').style.display = '';
-  document.getElementById('canim-title').textContent  = '🎱 KENO — TIRAGE';
-
-  const drawnEl  = document.getElementById('canim-keno-drawn');
-  const statusEl = document.getElementById('canim-keno-status');
-  const resultEl = document.getElementById('canim-keno-result');
-  drawnEl.innerHTML = '';
-  resultEl.textContent = '';
-
-  // Démarrer la vidéo
-  const vid = document.getElementById('vid-keno');
-  if(vid){ vid.currentTime=0; vid.play().catch(()=>{}); }
-
-  const KCOL = ['#c0152a','#e87722','#d4a800','#1b5e20','#1565c0','#6a1b9a','#880e4f','#004d40','#1a237e','#37474f'];
-  const getCol = n => KCOL[Math.floor((n-1)/10)] || '#888';
-  const delay = Math.floor(90000 / Math.max(winNums.length, 1));
-  let hits = 0;
-
-  for(let i=0; i<winNums.length; i++){
-    await new Promise(res=>setTimeout(res, delay));
-    const num = winNums[i];
-    const col = getCol(num);
-    const isHit = jouedNums.includes(num);
-    if(isHit) hits++;
-
-    const ball = document.createElement('div');
-    ball.className = 'anim-ball';
-    ball.textContent = num;
-    ball.style.background = `radial-gradient(circle at 35% 30%,${col}dd,${col})`;
-    ball.style.color = '#fff';
-    ball.style.border = isHit ? '3px solid #ffd700' : `2px solid ${col}`;
-    ball.style.boxShadow = isHit ? '0 0 14px rgba(255,215,0,.8)' : `0 2px 8px rgba(0,0,0,.5)`;
-    drawnEl.appendChild(ball);
-
-    const rem = Math.round((winNums.length-i-1)*delay/1000);
-    statusEl.textContent = `Boule ${i+1}/${winNums.length} — ${hits}/${jouedNums.length} trouvés — ${rem}s`;
-  }
-
-  const mult = r.winData?.multiplier || 0;
-  resultEl.textContent = r.gain>0 ? `🏆 ${hits}/${jouedNums.length} trouvés ×${mult} → +${r.gain} Gd` : `❌ ${hits}/${jouedNums.length} trouvés — Perdu`;
-  resultEl.style.color = r.gain>0 ? 'var(--green2)' : 'var(--red)';
-  await new Promise(res=>setTimeout(res, 3000));
+// Placer une boule dans la grille 2 colonnes
+function placeBallInGrid(ball, idx, col1IdLeft, col2IdLeft, col1IdRight, col2IdRight){
+  const RING = getRingColor(ball.number, ball.color);
+  const totalLeft = 15;
+  const isLeft = idx < totalLeft;
+  const localIdx = isLeft ? idx : idx - totalLeft;
+  // Colonnes paires dans col1, impaires dans col2
+  const isCol1 = localIdx % 2 === 0;
+  const rowIdx = Math.floor(localIdx / 2);
+  const colId = isLeft
+    ? (isCol1 ? col1IdLeft  : col2IdLeft)
+    : (isCol1 ? col1IdRight : col2IdRight);
+  const col = document.getElementById(colId);
+  if(!col) return;
+  const slots = col.children;
+  const slot = slots[rowIdx];
+  const ring = RING;
+  const isMatch = ball.isMatch;
+  const ballEl = document.createElement('div');
+  ballEl.className = 'lx-ball-item';
+  ballEl.textContent = ball.number;
+  ballEl.style.background = `radial-gradient(circle at 35% 30%,${ring}dd,${ring})`;
+  ballEl.style.color = '#fff';
+  ballEl.style.border = isMatch ? '3px solid #ffd700' : `2px solid ${ring}88`;
+  ballEl.style.boxShadow = isMatch ? '0 0 14px rgba(255,215,0,.8)' : '0 2px 8px rgba(0,0,0,.5)';
+  if(slot) col.replaceChild(ballEl, slot);
+  else col.appendChild(ballEl);
 }
 
+function getRingColor(n, fallback){
+  return fallback || ['#c0152a','#e87722','#d4a800','#1b5e20','#1565c0','#6a1b9a','#880e4f','#004d40','#1a237e','#37474f'][Math.floor((n-1)/10)] || '#888';
+}
+
+// Init slots vides pour 2 colonnes (15 boules par côté = 8+7 par col)
+function initSlots2Col(col1Id, col2Id, count){
+  const c1 = document.getElementById(col1Id);
+  const c2 = document.getElementById(col2Id);
+  if(!c1||!c2) return;
+  c1.innerHTML=''; c2.innerHTML='';
+  const nb = Math.ceil(count/2);
+  for(let i=0;i<nb;i++){
+    const e1=document.createElement('div');e1.className='lx-empty-slot';c1.appendChild(e1);
+    const e2=document.createElement('div');e2.className='lx-empty-slot';c2.appendChild(e2);
+  }
+}
+async function animCaisseKeno(resultats){
+  if(!resultats.length) return;
+  const r=resultats[0];
+  const winNums=r.winData?.winningNumbers||[];
+  const jouedNums=r.pari?.nums||(r.pari?.cleanNumber||'').split(',').map(n=>parseInt(n.trim())).filter(Boolean);
+  document.getElementById('canim-keno').style.display='flex';
+  document.getElementById('canim-title').textContent='🎱 KENO — TIRAGE';
+  const seqEl=document.getElementById('canim-keno-seq');
+  const statusEl=document.getElementById('canim-keno-status');
+  const resultEl=document.getElementById('canim-keno-result');
+  resultEl.textContent='';
+  initSlots2Col('canim-keno-left1','canim-keno-left2',15);
+  initSlots2Col('canim-keno-right1','canim-keno-right2',15);
+  const vid=document.getElementById('vid-keno');
+  if(vid){vid.currentTime=0;vid.play().catch(()=>{});}
+  const KCOL=['#c0152a','#e87722','#d4a800','#1b5e20','#1565c0','#6a1b9a','#880e4f','#004d40','#1a237e','#37474f'];
+  const getCol=n=>KCOL[Math.floor((n-1)/10)]||'#888';
+  const delay=Math.floor(90000/Math.max(winNums.length,1));
+  let hits=0;
+  for(let i=0;i<winNums.length;i++){
+    await new Promise(res=>setTimeout(res,delay));
+    const num=winNums[i];const isHit=jouedNums.includes(num);
+    if(isHit)hits++;if(seqEl)seqEl.textContent=i+1;
+    placeBallInGrid({number:num,color:getCol(num),isMatch:isHit},i,'canim-keno-left1','canim-keno-left2','canim-keno-right1','canim-keno-right2');
+    statusEl.textContent='Boule '+(i+1)+'/'+winNums.length+' — '+hits+'/'+jouedNums.length+' trouvés — '+Math.round((winNums.length-i-1)*delay/1000)+'s';
+  }
+  const mult=r.winData?.multiplier||0;
+  resultEl.textContent=r.gain>0?'🏆 '+hits+'/'+jouedNums.length+' ×'+mult+' → +'+r.gain+' Gd':'❌ '+hits+'/'+jouedNums.length+' — Perdu';
+  resultEl.style.color=r.gain>0?'var(--green2)':'var(--red)';
+  await new Promise(res=>setTimeout(res,3000));
+}
 
 async function animCaisseLucky6(resultats){
   if(!resultats.length) return;
-  const r = resultats[0];
-  const winNums   = r.winData?.winningNumbers || [];
-  const jouedNums = r.pari?.nums || (r.pari?.cleanNumber||'').split(',').map(n=>parseInt(n.trim())).filter(Boolean);
-  document.getElementById('canim-lucky6').style.display = 'flex';
-  document.getElementById('canim-title').textContent = '🍀 LUCKY 6 — TIRAGE';
-  const leftEl  = document.getElementById('canim-l6-left');
-  const rightEl = document.getElementById('canim-l6-right');
-  const seqEl   = document.getElementById('canim-l6-seq');
-  const statusEl= document.getElementById('canim-l6-status');
-  const resultEl= document.getElementById('canim-l6-result');
-  leftEl.innerHTML=''; rightEl.innerHTML=''; resultEl.textContent='';
-  for(let i=0;i<15;i++){
-    const el=document.createElement('div');el.className='lx-empty-slot';leftEl.appendChild(el);
-    const er=document.createElement('div');er.className='lx-empty-slot';rightEl.appendChild(er);
-  }
+  const r=resultats[0];
+  const winNums=r.winData?.winningNumbers||[];
+  const jouedNums=r.pari?.nums||(r.pari?.cleanNumber||'').split(',').map(n=>parseInt(n.trim())).filter(Boolean);
+  document.getElementById('canim-lucky6').style.display='flex';
+  document.getElementById('canim-title').textContent='🍀 LUCKY 6 — TIRAGE';
+  const seqEl=document.getElementById('canim-l6-seq');
+  const statusEl=document.getElementById('canim-l6-status');
+  const resultEl=document.getElementById('canim-l6-result');
+  resultEl.textContent='';
+  initSlots2Col('canim-l6-left1','canim-l6-left2',15);
+  initSlots2Col('canim-l6-right1','canim-l6-right2',15);
   const vid=document.getElementById('vid-lucky6');
   if(vid){vid.currentTime=0;vid.play().catch(()=>{});}
   const L6C=['#e53935','#e91e63','#9c27b0','#3f51b5','#2196f3','#00bcd4','#4caf50','#ff9800'];
@@ -5514,24 +5532,15 @@ async function animCaisseLucky6(resultats){
   let hits=0;
   for(let i=0;i<winNums.length;i++){
     await new Promise(res=>setTimeout(res,delay));
-    const num=winNums[i];const col=getCol(num);const isHit=jouedNums.includes(num);
+    const num=winNums[i];const isHit=jouedNums.includes(num);
     if(isHit)hits++;if(seqEl)seqEl.textContent=i+1;
-    const ball=document.createElement('div');ball.className='lx-ball-item';ball.textContent=num;
-    ball.style.background=`radial-gradient(circle at 35% 30%,${col}dd,${col})`;
-    ball.style.color='#fff';
-    ball.style.border=isHit?'3px solid #ffd700':`2px solid ${col}88`;
-    ball.style.boxShadow=isHit?'0 0 14px rgba(255,215,0,.8)':'0 2px 8px rgba(0,0,0,.5)';
-    const colEl=i<15?leftEl:rightEl;const localIdx=i<15?i:i-15;
-    const slots=colEl.children;
-    if(slots[localIdx])colEl.replaceChild(ball,slots[localIdx]);else colEl.appendChild(ball);
-    const rem=Math.round((winNums.length-i-1)*delay/1000);
-    statusEl.textContent=`Boule ${i+1}/${winNums.length} — ${hits}/6 trouvés — ${rem}s`;
+    placeBallInGrid({number:num,color:getCol(num),isMatch:isHit},i,'canim-l6-left1','canim-l6-left2','canim-l6-right1','canim-l6-right2');
+    statusEl.textContent='Boule '+(i+1)+'/'+winNums.length+' — '+hits+'/6 trouvés — '+Math.round((winNums.length-i-1)*delay/1000)+'s';
   }
-  resultEl.textContent=r.gain>0?`🏆 ${hits}/6 → +${r.gain} Gd`:`❌ ${hits}/6 — Perdu`;
+  resultEl.textContent=r.gain>0?'🏆 '+hits+'/6 → +'+r.gain+' Gd':'❌ '+hits+'/6 — Perdu';
   resultEl.style.color=r.gain>0?'var(--green2)':'var(--red)';
   await new Promise(res=>setTimeout(res,3000));
 }
-
 
 async function animCaisseCourse(resultats){
   if(!resultats.length) return;
