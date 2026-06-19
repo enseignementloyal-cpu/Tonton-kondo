@@ -1659,6 +1659,13 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
           </div>
         </div>
 
+        <!-- Bouton Mode Démo -->
+        <div style="margin-bottom:10px;">
+          <button onclick="lancerModeDemo()" style="width:100%;padding:10px;background:linear-gradient(135deg,#1a1a3e,#2a1a5e);color:#c084fc;border:2px solid #7c3aed;border-radius:8px;font-weight:900;font-size:14px;cursor:pointer;letter-spacing:1px;display:flex;align-items:center;justify-content:center;gap:8px;">
+            📺 MODE DÉMO — Attirer l'attention
+          </button>
+        </div>
+
         <!-- Boutons action -->
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
           <button onclick="ajouterAuPanierCaisse()" style="flex:1;padding:11px 16px;background:linear-gradient(135deg,var(--blue),#0a2070);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;min-width:140px"><i class="fas fa-plus"></i> Ajouter Paris</button>
@@ -2393,6 +2400,29 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
 </div><!-- fin sc-admin -->
 
 <!-- OVERLAY TICKETS GAGNANTS -->
+<!-- MODE DÉMO — Vidéos en boucle plein écran -->
+<div id="demo-overlay" style="display:none;position:fixed;inset:0;background:#000;z-index:9100;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;" onclick="arreterModeDemo()">
+  <!-- Bouton fermer -->
+  <button onclick="arreterModeDemo();event.stopPropagation();" style="position:absolute;top:20px;right:24px;background:rgba(0,0,0,.6);border:2px solid rgba(255,255,255,.3);color:#fff;font-size:16px;font-weight:700;border-radius:8px;padding:8px 18px;cursor:pointer;z-index:2;letter-spacing:1px;">✕ FERMER</button>
+  <!-- Label -->
+  <div style="position:absolute;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:6px 20px;text-align:center;z-index:2;">
+    <div style="font-size:11px;color:rgba(255,255,255,.5);letter-spacing:2px;">J.A PARYAJ LOTTO</div>
+    <div id="demo-label" style="font-size:18px;font-weight:900;color:#ffd700;letter-spacing:3px;">🎱 KENO LUCKY</div>
+  </div>
+  <!-- Vidéos -->
+  <video id="demo-vid-1" src="1.mp4" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;" muted playsinline loop></video>
+  <video id="demo-vid-2" src="2.mp4" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;" muted playsinline loop></video>
+  <video id="demo-vid-3" src="3.mp4" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;" muted playsinline loop></video>
+  <!-- Sélecteur de vidéo -->
+  <div style="position:absolute;bottom:30px;left:50%;transform:translateX(-50%);display:flex;gap:12px;z-index:2;">
+    <button onclick="demoSwitchVid(0);event.stopPropagation();" id="demo-btn-0" style="padding:8px 20px;border-radius:8px;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.4);color:#fff;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s;">🎱 Keno</button>
+    <button onclick="demoSwitchVid(1);event.stopPropagation();" id="demo-btn-1" style="padding:8px 20px;border-radius:8px;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.4);color:#fff;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s;">🍀 Lucky 6</button>
+    <button onclick="demoSwitchVid(2);event.stopPropagation();" id="demo-btn-2" style="padding:8px 20px;border-radius:8px;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.4);color:#fff;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s;">🌟 Lucky X</button>
+  </div>
+  <!-- Texte "Cliquez pour fermer" -->
+  <div style="position:absolute;bottom:90px;left:50%;transform:translateX(-50%);font-size:11px;color:rgba(255,255,255,.3);letter-spacing:2px;">Cliquez n'importe où pour fermer</div>
+</div>
+
 <!-- MODALE ANIMATION CAISSIER -->
 <div id="caisse-anim-overlay" style="display:none;position:fixed;inset:0;background:#060d1f;z-index:9000;flex-direction:column;align-items:center;justify-content:center;padding:0;overflow:hidden;width:100vw;height:100vh;">
 
@@ -9282,6 +9312,48 @@ window.initLuckyX = function(){
 
 
 
+
+// ═══ MODE DÉMO ═══════════════════════════════════════════════
+const DEMO_LABELS = ['🎱 KENO LUCKY', '🍀 LUCKY 6', '🌟 LUCKY X'];
+let demoCurrentVid = 0;
+let demoRotateTimer = null;
+
+function lancerModeDemo(){
+  const overlay = document.getElementById('demo-overlay');
+  if(!overlay) return;
+  overlay.style.display = 'flex';
+  demoSwitchVid(0);
+  // Rotation automatique toutes les 30 secondes
+  demoRotateTimer = setInterval(()=>{
+    demoSwitchVid((demoCurrentVid + 1) % 3);
+  }, 30000);
+}
+
+window.demoSwitchVid = function(idx){
+  demoCurrentVid = idx;
+  // Masquer toutes les vidéos
+  [0,1,2].forEach(i=>{
+    const v = document.getElementById('demo-vid-'+(i+1));
+    const b = document.getElementById('demo-btn-'+i);
+    if(v){ v.style.display='none'; v.pause(); }
+    if(b){ b.style.background='rgba(255,255,255,.15)'; b.style.borderColor='rgba(255,255,255,.4)'; b.style.color='#fff'; }
+  });
+  // Afficher la vidéo sélectionnée
+  const vid = document.getElementById('demo-vid-'+(idx+1));
+  const btn = document.getElementById('demo-btn-'+idx);
+  const lbl = document.getElementById('demo-label');
+  if(vid){ vid.style.display='block'; vid.currentTime=0; vid.play().catch(()=>{}); }
+  if(btn){ btn.style.background='rgba(255,215,0,.25)'; btn.style.borderColor='#ffd700'; btn.style.color='#ffd700'; }
+  if(lbl) lbl.textContent = DEMO_LABELS[idx];
+};
+
+function arreterModeDemo(){
+  const overlay = document.getElementById('demo-overlay');
+  if(overlay) overlay.style.display='none';
+  if(demoRotateTimer){ clearInterval(demoRotateTimer); demoRotateTimer=null; }
+  [1,2,3].forEach(i=>{ const v=document.getElementById('demo-vid-'+i); if(v){v.pause();v.style.display='none';} });
+}
+// ═════════════════════════════════════════════════════════════
 </script>
 </body>
 </html>
