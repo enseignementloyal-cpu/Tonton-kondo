@@ -1621,31 +1621,32 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
 
         <!-- Formulaire Football Caissier -->
         <div id="caisse-football-form" style="display:none">
-          <!-- Ticket parlay en cours de construction -->
-          <div id="caisse-foot-parlay" style="background:var(--bg3);border-radius:8px;padding:8px;margin-bottom:8px;display:none;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
-              <span style="font-size:12px;font-weight:700;color:var(--gold);">🎯 Ticket combiné</span>
-              <span id="caisse-foot-total-cote" style="font-size:13px;font-weight:900;color:var(--green2);">Cote: ×1.00</span>
-            </div>
-            <div id="caisse-foot-selections" style="display:flex;flex-direction:column;gap:4px;"></div>
+          <!-- Boutons toujours visibles en haut -->
+          <div style="display:flex;gap:6px;margin-bottom:8px;">
+            <button onclick="ajouterAuPanierCaisse()" style="flex:1;padding:10px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">➕ Ajouter au panier</button>
+            <button onclick="imprimerTicketFootballDirect()" style="flex:1;padding:10px;background:var(--gold);color:#000;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">🖨 Imprimer</button>
           </div>
-          <!-- Liste matchs -->
-          <div id="caisse-foot-match-wrap">
-            <div style="font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:600">Cliquez sur une cote pour ajouter au ticket:</div>
-            <div id="caisse-football-list" style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:4px;">
-              <div style="text-align:center;color:var(--muted);padding:12px;font-size:12px;">⏳ Chargement...</div>
-            </div>
-          </div>
-          <!-- Mise + confirmer -->
-          <div style="margin-top:8px;display:flex;gap:8px;align-items:flex-end;">
+          <!-- Mise + cote + gain -->
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
             <div style="flex:1">
               <label style="display:block;font-size:11px;color:var(--muted);margin-bottom:3px;font-weight:600">Mise (Gd)</label>
               <input type="number" id="caisse-foot-mise" value="50" min="1" oninput="caisseFootUpdateParlayUI()" style="width:100%;padding:8px;background:var(--bg2);color:#fff;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none">
             </div>
-            <div style="font-size:11px;color:var(--muted);text-align:center;">
-              <div style="color:var(--gold);font-weight:900;font-size:13px;" id="caisse-foot-gain-pot">Gain: —</div>
-              <div style="font-size:9px;">potentiel</div>
+            <div style="text-align:center;min-width:90px;">
+              <div id="caisse-foot-total-cote" style="font-size:13px;font-weight:900;color:var(--green2);">Cote: ×1.00</div>
+              <div id="caisse-foot-gain-pot" style="font-size:12px;font-weight:700;color:var(--gold);">Gain: —</div>
             </div>
+            <button onclick="caisseFootDeselect()" style="padding:8px 10px;background:var(--bg2);color:var(--red);border:1px solid var(--border);border-radius:8px;font-size:13px;cursor:pointer;">🗑</button>
+          </div>
+          <!-- Ticket parlay -->
+          <div id="caisse-foot-parlay" style="background:var(--bg3);border-radius:8px;padding:8px;margin-bottom:8px;display:none;">
+            <div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:5px;">🎯 Sélections combinées:</div>
+            <div id="caisse-foot-selections" style="display:flex;flex-direction:column;gap:4px;"></div>
+          </div>
+          <!-- Liste matchs -->
+          <div style="font-size:11px;color:var(--muted);margin-bottom:5px;font-weight:600">Cliquez sur une cote pour ajouter:</div>
+          <div id="caisse-football-list" style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:4px;">
+            <div style="text-align:center;color:var(--muted);padding:12px;font-size:12px;">⏳ Chargement...</div>
           </div>
         </div>
 
@@ -9354,6 +9355,70 @@ function arreterModeDemo(){
   [1,2,3].forEach(i=>{ const v=document.getElementById('demo-vid-'+i); if(v){v.pause();v.style.display='none';} });
 }
 // ═════════════════════════════════════════════════════════════
+
+// Imprimer ticket football directement sans passer par le panier
+function imprimerTicketFootballDirect(){
+  if(!caisseFootParlaySelections||!caisseFootParlaySelections.length){
+    showNotif('Ajoutez au moins une sélection','err'); return;
+  }
+  const mise = parseFloat(document.getElementById('caisse-foot-mise')?.value)||0;
+  if(mise<=0){ showNotif('Entrez une mise','err'); return; }
+  const coteTotale = caisseFootTotalCote();
+  const gainPot = Math.round(mise * coteTotale * 100)/100;
+  const ticketId = genTicketId();
+  const date = new Date().toLocaleString('fr-FR',{timeZone:'America/Port-au-Prince'});
+
+  const pw = window.open('','_blank','width=420,height=600');
+  if(!pw){ showNotif('Autorisez les pop-ups','err'); return; }
+
+  const selections = caisseFootParlaySelections.map(s=>
+    `<tr><td style="padding:5px 8px;border-bottom:1px solid #eee;font-size:12px;">${s.matchLabel}</td>
+     <td style="padding:5px 8px;border-bottom:1px solid #eee;font-size:12px;font-weight:700;color:#1565c0;">${s.label}</td>
+     <td style="padding:5px 8px;border-bottom:1px solid #eee;font-size:12px;font-weight:900;color:#c8900a;">×${s.cote}</td></tr>`
+  ).join('');
+
+  pw.document.write(`<!DOCTYPE html><html><head><title>Ticket Football ${ticketId}</title>
+<style>
+  @page{size:80mm auto;margin:1mm;}
+  body{font-family:'Courier New',monospace;width:76mm;margin:0 auto;padding:3mm 4mm;background:#fff;color:#000;}
+  .center{text-align:center;} .sep{border:none;border-top:2px dashed #000;margin:6px 0;}
+  table{width:100%;border-collapse:collapse;}
+  @media print{body{width:76mm;}}
+</style></head><body>
+<div class="center">
+  <img src="logo.png" onerror="this.src='logo.jpeg';this.onerror=null" style="width:44px;height:44px;border-radius:50%;border:2px solid #000;display:block;margin:0 auto 4px;">
+  <div style="font-size:18px;font-weight:900;">J.A PARYAJ LOTTO</div>
+  <div style="font-size:11px;font-weight:900;">PEYE TAW TAW</div>
+  <div style="font-size:9px;color:#555;">Trou du Nord, No — Ayiti</div>
+</div>
+<hr class="sep">
+<div style="font-size:9px;text-align:center;color:#555;font-family:monospace;letter-spacing:1px;">TIKE #${ticketId}</div>
+<div style="display:flex;justify-content:space-between;font-size:11px;margin:3px 0;"><span>Dat:</span><span>${date}</span></div>
+<div style="display:flex;justify-content:space-between;font-size:11px;margin:3px 0;"><span>Caissier:</span><span>${CCaiss?.name||'—'}</span></div>
+<hr class="sep">
+<div style="font-size:11px;font-weight:900;text-align:center;background:#000;color:#fff;padding:4px;margin-bottom:6px;">⚽ PARIS SPORTIFS COMBINÉ</div>
+<table>
+  <thead><tr>
+    <th style="font-size:10px;text-align:left;padding:4px 8px;border-bottom:2px solid #000;">Match</th>
+    <th style="font-size:10px;padding:4px 8px;border-bottom:2px solid #000;">Pari</th>
+    <th style="font-size:10px;padding:4px 8px;border-bottom:2px solid #000;">Cote</th>
+  </tr></thead>
+  <tbody>${selections}</tbody>
+</table>
+<hr class="sep">
+<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin:4px 0;"><span>Mise:</span><span>${mise} Gdes</span></div>
+<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin:4px 0;"><span>Cote totale:</span><span>×${coteTotale.toFixed(2)}</span></div>
+<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:900;margin:6px 0;border-top:2px solid #000;padding-top:5px;"><span>Gain potentiel:</span><span>${gainPot} Gdes</span></div>
+<div style="font-family:monospace;font-size:10px;text-align:center;letter-spacing:2px;margin:6px 0;">||| ${ticketId} |||</div>
+<div style="text-align:center;font-size:9px;color:#555;margin-top:8px;border-top:1px dashed #000;padding-top:6px;">
+  Tike valid pou 7 jou apre match la<br>
+  Jwe responsab · 18+ selman<br>
+  <strong>J.A PARYAJ LOTTO — PEYE TAW TAW</strong>
+</div>
+</body></html>`);
+  pw.document.close();
+  pw.onload = ()=>{ pw.focus(); pw.print(); };
+}
 </script>
 </body>
 </html>
