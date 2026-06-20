@@ -1892,15 +1892,17 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
     // difficulte=0 → joueur gagne facilement; difficulte=100 → joueur perd souvent
     const nbParis = paris.length;
     const diffGlobal = await getWinProbability(dir_code, paris[0]?.jeuType || paris[0]?.game || 'keno');
-    // Probabilité de gagner: 80% si diff=0, 5% si diff=100
-    const probGain = Math.max(0.05, Math.min(0.80, 1 - diffGlobal/100));
+    // Probabilité de gagner: 80% si diff=0, 0% si diff=100
+    const probGain = diffGlobal >= 100 ? 0 : Math.max(0.05, Math.min(0.80, 1 - diffGlobal/100));
 
     let nbGagnants;
-    if (nbParis <= 1) {
+    if (diffGlobal >= 100) {
+      // 100% difficulté = personne ne gagne, jamais
+      nbGagnants = 0;
+    } else if (nbParis <= 1) {
       nbGagnants = Math.random() < probGain ? 1 : 0;
     } else if (diffGlobal >= 70 && nbParis >= 6) {
-      // Jeu difficile + beaucoup de tickets (6-10+) :
-      // garantir au moins 1 ticket gagnant (anti-découragement)
+      // Jeu difficile + beaucoup de tickets : 1 gagnant minimum (anti-découragement)
       nbGagnants = 1;
     } else {
       const maxGagnants = Math.max(0, Math.floor(nbParis * probGain));
