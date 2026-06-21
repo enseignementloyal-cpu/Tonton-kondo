@@ -3493,24 +3493,34 @@ async function refreshCaisseBets(){
       el.innerHTML = '<div style="color:var(--muted);padding:8px;">Aucun pari enregistré.</div>';
       return;
     }
-    const jeuIcon = {borlette:'🎯',lotto3:'🎯',lotto4:'🎯',lotto5:'🎯',mariage:'💍',keno:'🎱',lucky6:'🍀',course:'🏎️',roulette:'🎡',penalty:'⚽'};
+    const jeuIcon = {borlette:'🎯',lotto3:'🎯',lotto4:'🎯',lotto5:'🎯',mariage:'💍',keno:'🎱',lucky6:'🍀',luckyx:'🌟',course:'🏎️',roulette:'🎡',penalty:'⚽'};
     el.innerHTML = bets.map(b=>{
-      const date = new Date(b.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-      const gain = parseFloat(b.gain_potentiel||0);
-      const mise = parseFloat(b.mise||0);
-      const jeu  = b.type || b.game_type || '?';
-      const icon = jeuIcon[jeu] || '🎰';
-      const joueur = b.player_name || 'Anonyme';
-      const num = b.selection || '—';
-      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;">
-        <div style="flex:1;min-width:0;">
-          <div style="font-weight:700;">${icon} ${jeu.toUpperCase()} <span style="color:var(--muted);font-weight:400">— ${joueur}</span></div>
-          <div style="color:var(--muted);font-size:11px;">${date} · ${num}</div>
+      const date  = new Date(b.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+      const gain  = parseFloat(b.gain_potentiel||0);
+      const mise  = parseFloat(b.mise||0);
+      const jeu   = b.type || b.game_type || '?';
+      const icon  = jeuIcon[jeu] || '🎰';
+      const joueur= b.player_name || 'Anonyme';
+      const num   = b.selection || '—';
+      const perdu = gain === 0;
+      // Bouton rejouer uniquement pour tickets perdus avec numéros disponibles
+      const canReplay = perdu && num && num!=='—' && ['keno','lucky6','luckyx','borlette','lotto3','lotto4','lotto5'].includes(jeu);
+      const numsClean = num.replace(/'/g,'\\x27');
+      return `<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;">${icon} ${jeu.toUpperCase()} <span style="color:var(--muted);font-weight:400">— ${joueur}</span></div>
+            <div style="color:var(--muted);font-size:11px;">${date} · ${num}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;margin-left:8px;">
+            <div style="color:var(--muted);font-size:11px;">Mise: ${mise} Gd</div>
+            <div style="font-weight:800;color:${gain>0?'var(--green2)':'var(--red)'};">${gain>0?'+'+gain+' Gd':'Perdu'}</div>
+          </div>
         </div>
-        <div style="text-align:right;flex-shrink:0;margin-left:8px;">
-          <div style="color:var(--muted);font-size:11px;">Mise: ${mise} Gd</div>
-          <div style="font-weight:800;color:${gain>0?'var(--green2)':'var(--red)'};">${gain>0?'+'+gain+' Gd':'Perdu'}</div>
-        </div>
+        ${canReplay ? `<button onclick="caisseRejouterTicket('${jeu}','${numsClean}',${mise})"
+          style="margin-top:5px;width:100%;padding:6px;background:linear-gradient(135deg,#1a237e,#0d47a1);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.5px;">
+          🔄 Rejouer ce ticket (${mise} Gd)
+        </button>` : ''}
       </div>`;
     }).join('');
   } catch(e) {
@@ -9517,6 +9527,74 @@ function imprimerTicketFootballDirect(){
 </body></html>`);
   pw.document.close();
   pw.onload = ()=>{ pw.focus(); pw.print(); };
+}
+
+// Rejouer un ticket perdu depuis l'historique caissier
+function caisseRejouterTicket(jeu, numsStr, mise){
+  const nums = numsStr.split(',').map(n=>parseInt(n.trim())).filter(n=>!isNaN(n)&&n>0);
+  if(!nums.length){ showNotif('Numéros invalides','err'); return; }
+
+  // Changer le select sur le bon jeu
+  const sel = document.getElementById('caisse-jeu-type');
+  if(sel){ sel.value = jeu; updateCaisseForm(); }
+
+  if(jeu==='keno'){
+    // Présélectionner dans la grille keno caissier
+    setTimeout(()=>{
+      // Reset sélection actuelle
+      document.querySelectorAll('.caisse-keno-ball.selected').forEach(b=>b.click());
+      nums.forEach(n=>{
+        const btn = document.querySelector('#caisse-keno-grid [data-num="'+n+'"]');
+        if(btn && !btn.classList.contains('selected')) btn.click();
+      });
+      // Mettre la mise
+      const miseEl = document.getElementById('caisse-keno-mise');
+      if(miseEl) miseEl.value = mise;
+      showNotif('🔄 '+nums.length+' numéros Keno chargés','ok');
+    }, 300);
+
+  } else if(jeu==='lucky6'){
+    setTimeout(()=>{
+      document.querySelectorAll('.caisse-l6-ball.selected').forEach(b=>b.click());
+      nums.forEach(n=>{
+        const btn = document.querySelector('#caisse-l6-grid [data-num="'+n+'"]');
+        if(btn && !btn.classList.contains('selected')) btn.click();
+      });
+      const miseEl = document.getElementById('caisse-l6-mise');
+      if(miseEl) miseEl.value = mise;
+      showNotif('🔄 '+nums.length+' numéros Lucky 6 chargés','ok');
+    }, 300);
+
+  } else if(jeu==='luckyx'){
+    setTimeout(()=>{
+      // Reset Lucky X caissier
+      caisseLXSel = [];
+      initCaisseLuckyX();
+      setTimeout(()=>{
+        nums.forEach(n=>{
+          const btn = document.getElementById('clx-'+n);
+          if(btn) btn.onclick();
+        });
+        const miseEl = document.getElementById('caisse-luckyx-mise');
+        if(miseEl) miseEl.value = mise;
+        showNotif('🔄 '+nums.length+' numéros Lucky X chargés','ok');
+      }, 200);
+    }, 300);
+
+  } else {
+    // Borlette/lotto — mettre le numéro dans le champ
+    setTimeout(()=>{
+      const numEl = document.getElementById('caisse-bor-num');
+      if(numEl) numEl.value = nums[0];
+      const miseEl = document.getElementById('caisse-bor-mise');
+      if(miseEl) miseEl.value = mise;
+      showNotif('🔄 Numéro '+nums[0]+' chargé','ok');
+    }, 300);
+  }
+
+  // Scroller vers le formulaire
+  const form = document.getElementById('caisse-'+jeu+'-form') || document.getElementById('caisse-borlette-form');
+  if(form) form.scrollIntoView({behavior:'smooth', block:'start'});
 }
 </script>
 </body>
