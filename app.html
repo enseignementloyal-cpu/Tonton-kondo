@@ -1368,10 +1368,12 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
       <button class="chip" id="htab-luckyx" onclick="selHistTab('luckyx',this)">🌟 Lucky X</button>
       <button class="chip" id="htab-sports"  onclick="selHistTab('sports',this)">⚽ Paris Sportifs</button>
       <button class="chip" id="htab-all"     onclick="selHistTab('all',this)">📋 Tout</button>
+      <button class="chip" id="htab-bets"    onclick="selHistTab('bets',this)">🔄 Mes Paris</button>
     </div>
     <div class="card" id="hsec-depot"  style="overflow:visible;height:auto"><div id="jhist-depot" class="hist"></div></div>
     <div class="card" id="hsec-lotto"  style="display:none;overflow:visible;height:auto"><div id="jhist-lotto" class="hist"></div></div>
     <div class="card" id="hsec-casino" style="display:none;overflow:visible;height:auto"><div id="jhist-casino" class="hist"></div></div>
+    <div class="card" id="hsec-bets" style="display:none;overflow:visible;height:auto"><div id="jhist-bets" class="hist"></div></div>
     <div class="card" id="hsec-sports" style="display:none;overflow:visible;height:auto"><div id="jbets"></div></div>
     <div class="card" id="hsec-all"    style="display:none;overflow:visible;height:auto"><div id="jhist-all" class="hist"></div></div>
   </div>
@@ -5958,14 +5960,111 @@ function enregistrerPariCaisse(){
 }
 
 // ==================== HISTORIQUE PAR CATÉGORIE ====================
+
+async function renderJMesParis(){
+  if(!CJ) return;
+  const el = document.getElementById('jhist-bets');
+  if(!el) return;
+  el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:8px;text-align:center">⏳ Chargement...</div>';
+  try {
+    const data = await apiGet('/api/bets?phone='+encodeURIComponent(CJ.phone)+'&limit=50');
+    const bets = data.bets || [];
+    if(!bets.length){
+      el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:12px;text-align:center">Aucun pari trouvé.</div>';
+      return;
+    }
+    const JEU_ICON = {keno:'🎱',lucky6:'🍀',luckyx:'🌟',borlette:'🎯',lotto3:'🎯',lotto4:'🎯',lotto5:'🎯',course:'🏎️',roulette:'🎡',penalty:'⚽',football:'⚽'};
+    el.innerHTML = bets.map((b,i)=>{
+      const gain = parseFloat(b.gain_potentiel||0);
+      const mise = parseFloat(b.mise||0);
+      const perdu = b.statut==='perdu';
+      const gagne = b.statut==='gagne';
+      const jeu   = b.game_type||b.type||'?';
+      const icon  = JEU_ICON[jeu]||'🎰';
+      const date  = new Date(b.created_at).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+      const nums  = b.selection||b.numeros_joues||'?';
+      return `<div style="padding:8px;border-bottom:1px solid var(--border);border-radius:8px;margin-bottom:4px;background:${perdu?'rgba(200,0,0,.06)':gagne?'rgba(0,200,0,.06)':'var(--bg2)'};">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-size:13px;font-weight:700;">${icon} ${(JEU_LABELS[jeu]||jeu).toUpperCase()}</span>
+          <span style="font-size:11px;color:var(--muted);">${date}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:5px;">
+          Numéros: <span style="color:var(--text);font-weight:700;">${nums}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <span style="font-size:11px;color:var(--muted);">Mise: ${mise} Gd · </span>
+            <span style="font-size:13px;font-weight:900;color:${gagne?'var(--green2)':'var(--red)'};">
+              ${gagne?'🏆 +'+gain+' Gd':'❌ Perdu'}
+            </span>
+          </div>
+          ${perdu && nums && nums!=='?' && ['keno','lucky6','luckyx'].includes(jeu) ?
+            `<button onclick="rejouterTicket('${jeu}','${nums.replace(/'/g,'')}')"
+               style="padding:5px 12px;background:linear-gradient(135deg,var(--blue),#0a2070);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">
+               🔄 Rejouer
+             </button>` : ''
+          }
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e){
+    el.innerHTML = '<div style="color:var(--red);font-size:13px;padding:8px">Erreur: '+e.message+'</div>';
+  }
+}
+
+// Rejouer un ticket perdu — resélectionner les numéros automatiquement
+function rejouterTicket(jeu, numsStr){
+  const nums = numsStr.split(',').map(n=>parseInt(n.trim())).filter(n=>!isNaN(n)&&n>0);
+  if(!nums.length){ showNotif('Numéros invalides','err'); return; }
+
+  if(jeu==='keno'){
+    // Aller sur l'onglet Keno et présélectionner les numéros
+    switchToTab({dataset:{tab:'casino'}});
+    setTimeout(()=>{
+      // Chercher le sélecteur de jeu casino et choisir Keno
+      const kenoBtn = document.querySelector('.casino-game-btn[data-jeu="keno"]');
+      if(kenoBtn) kenoBtn.click();
+      // Présélectionner les boules
+      setTimeout(()=>{
+        kenoSelectedNums = [];
+        nums.forEach(n=>{
+          const btn = document.getElementById('keno-ball-'+n);
+          if(btn) btn.click();
+        });
+        showNotif('🔄 '+nums.length+' numéros Keno présélectionnés','ok');
+      }, 500);
+    }, 200);
+  } else if(jeu==='lucky6'){
+    switchToTab({dataset:{tab:'casino'}});
+    setTimeout(()=>{
+      setTimeout(()=>{
+        l6SelectedNums = [];
+        nums.forEach(n=>{
+          const btn = document.getElementById('l6-ball-'+n);
+          if(btn) btn.click();
+        });
+        showNotif('🔄 '+nums.length+' numéros Lucky 6 présélectionnés','ok');
+      }, 500);
+    }, 200);
+  } else if(jeu==='luckyx'){
+    // Aller sur Lucky X
+    switchToTab({dataset:{tab:'luckyx'}});
+    setTimeout(()=>{
+      nums.forEach(n=>{ if(typeof lxToggleBall==='function') lxToggleBall(n); });
+      showNotif('🔄 '+nums.length+' numéros Lucky X présélectionnés','ok');
+    }, 400);
+  }
+}
+
 function selHistTab(tab, el){
-  ['depot','lotto','casino','sports','all'].forEach(t=>{
+  ['depot','lotto','casino','sports','all','bets'].forEach(t=>{
     const sec=document.getElementById('hsec-'+t);
     const btn=document.getElementById('htab-'+t);
     if(sec) sec.style.display = t===tab ? '' : 'none';
     if(btn) btn.classList.toggle('active', t===tab);
   });
   if(tab==='sports') renderJBets();
+  else if(tab==='bets') renderJMesParis();
   else renderJHistCat(tab);
 }
 
