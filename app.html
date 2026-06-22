@@ -9529,72 +9529,41 @@ function imprimerTicketFootballDirect(){
   pw.onload = ()=>{ pw.focus(); pw.print(); };
 }
 
-// Rejouer un ticket perdu depuis l'historique caissier
+// Rejouer un ticket perdu — ajoute DIRECTEMENT au panier
 function caisseRejouterTicket(jeu, numsStr, mise){
   const nums = numsStr.split(',').map(n=>parseInt(n.trim())).filter(n=>!isNaN(n)&&n>0);
   if(!nums.length){ showNotif('Numéros invalides','err'); return; }
-
-  // Changer le select sur le bon jeu
-  const sel = document.getElementById('caisse-jeu-type');
-  if(sel){ sel.value = jeu; updateCaisseForm(); }
+  mise = parseFloat(mise)||50;
 
   if(jeu==='keno'){
-    // Présélectionner dans la grille keno caissier
-    setTimeout(()=>{
-      // Reset sélection actuelle
-      document.querySelectorAll('.caisse-keno-ball.selected').forEach(b=>b.click());
-      nums.forEach(n=>{
-        const btn = document.querySelector('#caisse-keno-grid [data-num="'+n+'"]');
-        if(btn && !btn.classList.contains('selected')) btn.click();
-      });
-      // Mettre la mise
-      const miseEl = document.getElementById('caisse-keno-mise');
-      if(miseEl) miseEl.value = mise;
-      showNotif('🔄 '+nums.length+' numéros Keno chargés','ok');
-    }, 300);
-
+    caissePanier.push({
+      id:Date.now()+Math.random(), ticketId:genTicketId(),
+      game:'keno', number:nums.join(', '), cleanNumber:nums.join(','),
+      amount:mise, jeuType:'keno', nums:[...nums]
+    });
   } else if(jeu==='lucky6'){
-    setTimeout(()=>{
-      document.querySelectorAll('.caisse-l6-ball.selected').forEach(b=>b.click());
-      nums.forEach(n=>{
-        const btn = document.querySelector('#caisse-l6-grid [data-num="'+n+'"]');
-        if(btn && !btn.classList.contains('selected')) btn.click();
-      });
-      const miseEl = document.getElementById('caisse-l6-mise');
-      if(miseEl) miseEl.value = mise;
-      showNotif('🔄 '+nums.length+' numéros Lucky 6 chargés','ok');
-    }, 300);
-
+    caissePanier.push({
+      id:Date.now()+Math.random(), ticketId:genTicketId(),
+      game:'lucky6', number:nums.join(', '), cleanNumber:nums.join(','),
+      amount:mise, jeuType:'lucky6', nums:[...nums]
+    });
   } else if(jeu==='luckyx'){
-    setTimeout(()=>{
-      // Reset Lucky X caissier
-      caisseLXSel = [];
-      initCaisseLuckyX();
-      setTimeout(()=>{
-        nums.forEach(n=>{
-          const btn = document.getElementById('clx-'+n);
-          if(btn) btn.onclick();
-        });
-        const miseEl = document.getElementById('caisse-luckyx-mise');
-        if(miseEl) miseEl.value = mise;
-        showNotif('🔄 '+nums.length+' numéros Lucky X chargés','ok');
-      }, 200);
-    }, 300);
-
+    caissePanier.push({
+      id:Date.now()+Math.random(), ticketId:genTicketId(),
+      game:'luckyx', number:nums.join(', '), cleanNumber:nums.join(','),
+      amount:mise, jeuType:'luckyx', nums:[...nums]
+    });
   } else {
-    // Borlette/lotto — mettre le numéro dans le champ
-    setTimeout(()=>{
-      const numEl = document.getElementById('caisse-bor-num');
-      if(numEl) numEl.value = nums[0];
-      const miseEl = document.getElementById('caisse-bor-mise');
-      if(miseEl) miseEl.value = mise;
-      showNotif('🔄 Numéro '+nums[0]+' chargé','ok');
-    }, 300);
+    // Borlette/lotto
+    caissePanier.push({
+      id:Date.now()+Math.random(), ticketId:genTicketId(),
+      game:jeu, number:nums[0]+'', cleanNumber:nums[0]+'',
+      amount:mise, jeuType:jeu
+    });
   }
 
-  // Scroller vers le formulaire
-  const form = document.getElementById('caisse-'+jeu+'-form') || document.getElementById('caisse-borlette-form');
-  if(form) form.scrollIntoView({behavior:'smooth', block:'start'});
+  renderPanierCaisse();
+  showNotif('🔄 Ticket rejoué ajouté au panier','ok');
 }
 </script>
 </body>
