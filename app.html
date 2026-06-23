@@ -2403,6 +2403,20 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
 </div><!-- fin sc-admin -->
 
 <!-- OVERLAY TICKETS GAGNANTS -->
+<!-- MODAL REJOUER TICKET -->
+<div id="rejouer-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9500;align-items:center;justify-content:center;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;width:90%;max-width:340px;">
+    <div style="font-size:15px;font-weight:900;color:var(--gold);margin-bottom:6px;">🔄 Rejouer ce ticket</div>
+    <div id="rejouer-info" style="font-size:12px;color:var(--muted);margin-bottom:14px;background:var(--bg2);padding:8px;border-radius:8px;"></div>
+    <label style="font-size:12px;color:var(--muted);font-weight:600;display:block;margin-bottom:5px;">Montant (Gd)</label>
+    <input type="number" id="rejouer-montant" min="1" style="width:100%;padding:10px;background:var(--bg2);color:#fff;border:2px solid var(--gold);border-radius:8px;font-size:18px;font-weight:900;outline:none;margin-bottom:14px;box-sizing:border-box;">
+    <div style="display:flex;gap:8px;">
+      <button onclick="fermerRejouterModal()" style="flex:1;padding:10px;background:var(--bg2);color:var(--muted);border:1px solid var(--border);border-radius:8px;font-weight:700;cursor:pointer;">Annuler</button>
+      <button onclick="confirmerRejouer()" style="flex:2;padding:10px;background:linear-gradient(135deg,#1a237e,#0d47a1);color:#fff;border:none;border-radius:8px;font-weight:900;font-size:14px;cursor:pointer;">✅ Ajouter au panier</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODE DÉMO — Vidéos en boucle plein écran -->
 <div id="demo-overlay" style="display:none;position:fixed;inset:0;background:#000;z-index:9100;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;" onclick="arreterModeDemo()">
   <!-- Bouton fermer -->
@@ -9565,6 +9579,35 @@ function caisseRejouterTicket(jeu, numsStr, mise){
   renderPanierCaisse();
   showNotif('🔄 Ticket rejoué ajouté au panier','ok');
 }
+
+// ═══ MODAL REJOUER TICKET ════════════════════════════════════
+let _rejouterData = null;
+
+function ouvrirRejouterModal(jeu, numsStr, miseInitiale){
+  _rejouterData = {jeu, numsStr};
+  const nums = numsStr.split(',').map(n=>n.trim()).filter(Boolean);
+  const infoEl = document.getElementById('rejouer-info');
+  const montantEl = document.getElementById('rejouer-montant');
+  const modal = document.getElementById('rejouer-modal');
+  if(infoEl) infoEl.innerHTML = '<b>Jeu:</b> '+(JEU_LABELS[jeu]||jeu.toUpperCase())+'<br><b>Numéros:</b> '+nums.join(', ');
+  if(montantEl){ montantEl.value = miseInitiale; setTimeout(()=>montantEl.select(),100); }
+  if(modal){ modal.style.display='flex'; }
+}
+
+function fermerRejouterModal(){
+  const modal = document.getElementById('rejouer-modal');
+  if(modal) modal.style.display='none';
+  _rejouterData = null;
+}
+
+function confirmerRejouer(){
+  if(!_rejouterData) return;
+  const montant = parseFloat(document.getElementById('rejouer-montant')?.value)||0;
+  if(montant<=0){ showNotif('Entrez un montant valide','err'); return; }
+  caisseRejouterTicket(_rejouterData.jeu, _rejouterData.numsStr, montant);
+  fermerRejouterModal();
+}
+// ═════════════════════════════════════════════════════════════
 </script>
 </body>
 </html>
