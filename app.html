@@ -3531,9 +3531,9 @@ async function refreshCaisseBets(){
             <div style="font-weight:800;color:${gain>0?'var(--green2)':'var(--red)'};">${gain>0?'+'+gain+' Gd':'Perdu'}</div>
           </div>
         </div>
-        ${canReplay ? `<button onclick="caisseRejouterTicket('${jeu}','${numsClean}',${mise})"
+        ${canReplay ? `<button onclick="ouvrirRejouterModal('${jeu}','${numsClean}',${mise})"
           style="margin-top:5px;width:100%;padding:6px;background:linear-gradient(135deg,#1a237e,#0d47a1);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.5px;">
-          🔄 Rejouer ce ticket (${mise} Gd)
+          🔄 Rejouer ce ticket
         </button>` : ''}
       </div>`;
     }).join('');
