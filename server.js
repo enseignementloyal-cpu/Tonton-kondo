@@ -1911,11 +1911,25 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
     }
 
     // Indices des paris qui vont gagner (aléatoires)
+    // Détecter les numéros dupliqués entre tickets — ceux-là perdent toujours
+    const numsSignatures = paris.map(p => {
+      const nums = p.nums || (p.cleanNumber||'').split(',').map(n=>n.trim()).filter(Boolean).sort();
+      return nums.join(',');
+    });
+    const sigCount = {};
+    numsSignatures.forEach(s=>{ sigCount[s]=(sigCount[s]||0)+1; });
+    const idxDuplicates = new Set(
+      numsSignatures.map((s,i)=> sigCount[s]>1 ? i : -1).filter(i=>i>=0)
+    );
+
+    // Choisir les indices gagnants parmi les non-dupliqués
+    const eligibles = paris.map((_,i)=>i).filter(i=>!idxDuplicates.has(i));
     const idxGagnants = new Set();
-    while(idxGagnants.size < Math.min(nbGagnants, nbParis)){
-      idxGagnants.add(Math.floor(Math.random()*nbParis));
+    const eligiblesShuffled = eligibles.sort(()=>Math.random()-.5);
+    for(let i=0; i<Math.min(nbGagnants, eligiblesShuffled.length); i++){
+      idxGagnants.add(eligiblesShuffled[i]);
     }
-    console.log(`caisse/lancer: ${nbParis} paris, diff=${diffGlobal}%, probGain=${(probGain*100).toFixed(0)}%, gagnants=${idxGagnants.size}`);
+    console.log(`caisse/lancer: ${nbParis} paris, diff=${diffGlobal}%, probGain=${(probGain*100).toFixed(0)}%, gagnants=${idxGagnants.size}, dupes=${idxDuplicates.size}`);
 
     let pariIdx = 0;
     for (const pari of paris) {
@@ -1957,7 +1971,10 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
 
         const winNums = [...joues.slice(0,nbHits), ...autres.slice(0,20-nbHits)].sort((a,b)=>a-b);
         const hits = nums.filter(n=>winNums.includes(n)).length;
-        const mult = getKenoMultiplier(hits, nbJoues, difficulte);
+        const multBase = getKenoMultiplier(hits, nbJoues, difficulte);
+        // Variation aléatoire ±20% pour que le gain ne soit jamais identique
+        const variation = 0.8 + Math.random() * 0.4;
+        const mult = multBase > 0 ? Math.round(multBase * variation * 100) / 100 : 0;
         gain = mult > 0 ? Math.round(mise * mult * 100) / 100 : 0;
         winData = { winningNumbers: winNums, hits, multiplier: mult };
         resultMsg = gain>0 ? `${hits}/${nbJoues} boules ×${mult} → +${gain} Gd` : `${hits}/${nbJoues} boules → Perdu`;
@@ -1972,9 +1989,10 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
         const wantHits = shouldWin ? Math.min(nums.length, 6) : Math.floor(Math.random()*4);
         const winNums = [...joues.slice(0,wantHits), ...autres.slice(0,35-wantHits)].sort((a,b)=>a-b);
         const hits = nums.filter(n=>winNums.includes(n)).length;
-        const MULT = {3:1,4:2,5:5,6:10,7:50,8:200,9:1000,10:5000};
-        const mult = MULT[hits] || 0;
-        gain = mult > 0 ? Math.round(mise * mult) : 0;
+        const MULT_BASE = {3:1,4:2,5:5,6:10,7:50,8:200,9:1000,10:5000};
+        const multLX = MULT_BASE[hits] || 0;
+        const lxvar = 0.85 + Math.random()*0.3;
+        gain = multLX > 0 ? Math.round(mise * multLX * lxvar) : 0;
         winData = { winningNumbers: winNums, hits, multiplier: mult };
         resultMsg = gain>0 ? `${hits}/${nums.length} → ×${mult} +${gain} Gd` : `${hits}/${nums.length} → Perdu`;
 
@@ -1986,7 +2004,8 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
         const wantHits = shouldWin ? 6 : Math.floor(Math.random()*4);
         const winNums = [...joues.slice(0,wantHits), ...autres.slice(0,35-wantHits)].sort((a,b)=>a-b);
         const hits = nums.filter(n=>winNums.includes(n)).length;
-        gain = hits===6 ? Math.round(mise*30) : hits===5 ? Math.round(mise*5) : 0;
+        const l6var = 0.85 + Math.random()*0.3; // variation ±15%
+        gain = hits===6 ? Math.round(mise*30*l6var) : hits===5 ? Math.round(mise*5*l6var) : 0;
         winData = { winningNumbers: winNums, hits };
         resultMsg = gain>0 ? `${hits}/6 numéros → +${gain} Gd` : `${hits}/6 numéros → Perdu`;
 
@@ -1996,7 +2015,8 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
         const boost = shouldWin ? 0.85 : 0.1;
         const winner = Math.random()<boost ? carId : Math.ceil(Math.random()*6);
         const ranking = [winner, ...[1,2,3,4,5,6].filter(i=>i!==winner)];
-        gain = winner===carId ? parseFloat((mise*(COTES[carId]||2)).toFixed(2)) : 0;
+        const courseVar = 0.9 + Math.random()*0.2;
+        gain = winner===carId ? parseFloat((mise*(COTES[carId]||2)*courseVar).toFixed(2)) : 0;
         winData = { winner, ranking };
         resultMsg = gain>0 ? `Voiture #${winner} gagne → +${gain} Gd` : `Voiture #${winner} gagne → Perdu`;
 
