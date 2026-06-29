@@ -2466,9 +2466,9 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
 .lx-ball-item{width:clamp(52px,6vw,80px);height:clamp(52px,6vw,80px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:clamp(14px,1.6vw,22px);font-weight:900;animation:ballPop .35s cubic-bezier(.34,1.56,.64,1) both;position:relative;flex-shrink:0;}
 .lx-ball-item::before{content:'';position:absolute;top:15%;left:20%;width:30%;height:18%;background:rgba(255,255,255,.25);border-radius:50%;transform:rotate(-25deg);}
 .lx-empty-slot{width:clamp(52px,6vw,80px);height:clamp(52px,6vw,80px);border-radius:50%;background:radial-gradient(circle,#1a3a6e,#0d1f3e);border:2px solid rgba(255,255,255,.1);flex-shrink:0;}
-.lx-drum-center{position:relative;flex-shrink:0;display:flex;flex-direction:column;align-items:center;}
-.lx-drum-canvas-wrap{position:relative;width:clamp(200px,30vw,420px);height:clamp(200px,30vw,420px);}
-.lx-drum-canvas-wrap canvas{width:100%;height:100%;display:block;}
+.lx-video-center{position:relative;flex-shrink:0;}
+.lx-video-round{width:clamp(220px,32vw,480px);height:clamp(220px,32vw,480px);border-radius:50%;overflow:hidden;border:6px solid #2a3850;box-shadow:0 0 0 4px #1a2540,0 0 0 8px #2a3860,0 0 60px rgba(0,0,0,.9);}
+.lx-video-round video{width:100%;height:100%;object-fit:cover;}
 .lx-seq-box{background:#0d1520;border:2px solid #2a3850;border-top:none;border-radius:0 0 14px 14px;padding:clamp(4px,0.8vh,10px) clamp(20px,3vw,40px) clamp(6px,1vh,14px);text-align:center;margin-top:-2px;}
 .lx-seq-num{font-size:clamp(44px,6vw,80px);font-weight:900;color:#fff;line-height:1;letter-spacing:-2px;}
 .lx-seq-lbl{font-size:clamp(7px,0.8vw,11px);color:#8aaccc;font-weight:700;letter-spacing:3px;}
@@ -2481,10 +2481,10 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
         <div class="lx-col" id="canim-keno-left1"></div>
         <div class="lx-col" id="canim-keno-left2"></div>
       </div>
-      <!-- Tambour canvas Keno -->
-      <div class="lx-drum-center">
-        <div class="lx-drum-canvas-wrap">
-          <canvas id="canvas-keno"></canvas>
+      <!-- Vidéo ronde centre -->
+      <div class="lx-video-center">
+        <div class="lx-video-round">
+          <video id="vid-keno" src="1.mp4" autoplay loop muted playsinline></video>
         </div>
         <div class="lx-seq-box">
           <div class="lx-seq-num" id="canim-keno-seq">0</div>
@@ -2505,9 +2505,9 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
   <div id="canim-lucky6" style="display:none;flex:1;width:100%;flex-direction:column;align-items:center;">
     <div class="lx-anim-wrap">
       <div class="lx-cols"><div class="lx-col" id="canim-l6-left1"></div><div class="lx-col" id="canim-l6-left2"></div></div>
-      <div class="lx-drum-center">
-        <div class="lx-drum-canvas-wrap">
-          <canvas id="canvas-lucky6"></canvas>
+      <div class="lx-video-center">
+        <div class="lx-video-round">
+          <video id="vid-lucky6" src="2.mp4" autoplay loop muted playsinline></video>
         </div>
         <div class="lx-seq-box">
           <div class="lx-seq-num" id="canim-l6-seq">0</div>
@@ -2545,9 +2545,9 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
   <div id="canim-luckyx" style="display:none;flex:1;width:100%;flex-direction:column;align-items:center;">
     <div class="lx-anim-wrap">
       <div class="lx-cols"><div class="lx-col" id="lxc-left1"></div><div class="lx-col" id="lxc-left2"></div></div>
-      <div class="lx-drum-center">
-        <div class="lx-drum-canvas-wrap">
-          <canvas id="canvas-luckyx"></canvas>
+      <div class="lx-video-center">
+        <div class="lx-video-round">
+          <video id="vid-luckyx" src="3.mp4" autoplay loop muted playsinline></video>
         </div>
         <div class="lx-seq-box">
           <div class="lx-seq-num" id="lxc-seq">0</div>
@@ -5468,19 +5468,39 @@ async function jouerAnimationCaisse(jeuType, resultats){
 async function animCaisseLuckyX(resultats){
   if(!resultats.length) return;
   const allTickets=resultats.map(rt=>({numbers:rt.pari?.nums||(rt.pari?.cleanNumber||'').split(',').map(n=>parseInt(n.trim())).filter(Boolean),gain:rt.gain}));
-  const winNums=resultats[0]?.winData?.winningNumbers||resultats[0]?.winData?.numeros||(()=>{const p=Array.from({length:48},(_,i)=>i+1).sort(()=>Math.random()-.5);return p.slice(0,30);})();
-  const playerNums=[...new Set(allTickets.flatMap(t=>t.numbers))];
-  const totalGain=resultats.reduce((s,r2)=>s+r2.gain,0);
+  const winNums=resultats[0]?.winData?.winningNumbers||(()=>{const p=Array.from({length:48},(_,i)=>i+1).sort(()=>Math.random()-.5);return p.slice(0,30);})();
+  const allPickedNums=new Set(allTickets.flatMap(t=>t.numbers));
   document.getElementById('canim-luckyx').style.display='flex';
   document.getElementById('canim-title').textContent='🌟 LUCKY X — TIRAGE';
-  _drawMgrInit();
-  _drawMgr.resetMachine('luckyx');
-  await new Promise(res=>setTimeout(res,400));
-  await _drawMgr.animateDraw('luckyx',winNums,playerNums,
-    {leftColIds:['lxc-left1','lxc-left2'],rightColIds:['lxc-right1','lxc-right2'],ballsPerCol:8},
-    {seqEl:document.getElementById('lxc-seq'),statusEl:document.getElementById('lxc-status'),resultEl:document.getElementById('lxc-result'),badgesEl:document.getElementById('lxc-badges')},
-    700,totalGain
-  );
+  const seqEl=document.getElementById('lxc-seq');
+  const statusEl=document.getElementById('lxc-status');
+  const badgesEl=document.getElementById('lxc-badges');
+  const resultEl=document.getElementById('lxc-result');
+  resultEl.textContent='';if(badgesEl)badgesEl.innerHTML='';
+  initSlots2Col('lxc-left1','lxc-left2',15);
+  initSlots2Col('lxc-right1','lxc-right2',15);
+  const vid=document.getElementById('vid-luckyx');
+  if(vid){vid.currentTime=0;vid.play().catch(()=>{});}
+  const RING=["#e74c3c","#ff7043","#ffd700","#4caf50","#2196f3","#e91e63","#9c27b0","#90a4ae"];
+  const getRing=n=>RING[(n-1)%RING.length];
+  const delay=Math.floor(90000/Math.max(winNums.length,1));
+  const drawnSet=new Set();
+  for(let i=0;i<winNums.length;i++){
+    await new Promise(res=>setTimeout(res,delay));
+    const num=winNums[i];const isMatch=allPickedNums.has(num);
+    drawnSet.add(num);if(seqEl)seqEl.textContent=i+1;
+    placeBallInGrid({number:num,color:getRing(num),isMatch},i,'lxc-left1','lxc-left2','lxc-right1','lxc-right2');
+    if(badgesEl)badgesEl.innerHTML=allTickets.map((t,ti)=>{
+      const m=t.numbers.filter(n=>drawnSet.has(n)).length;
+      const P={3:'10',4:'50',5:'150',6:'250',7:'500',8:'1K',9:'5K',10:'10K'};
+      return '<div style="background:'+(P[m]?'rgba(255,215,0,.2)':'rgba(0,0,0,.4)')+';border:1px solid '+(P[m]?'#ffd70066':'rgba(255,255,255,.1)')+';border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700;color:'+(P[m]?'#ffd700':'#8aaccc')+';"> T'+(ti+1)+':'+m+'✓'+(P[m]?' +'+P[m]+'Gd':'')+'</div>';
+    }).join('');
+    statusEl.textContent='Boule '+(i+1)+'/'+winNums.length+' — '+Math.round((winNums.length-i-1)*delay/1000)+'s';
+  }
+  const totalGain=resultats.reduce((s,r2)=>s+r2.gain,0);
+  resultEl.textContent=totalGain>0?'🏆 GAGNÉ → +'+totalGain+' Gd':'❌ Perdu';
+  resultEl.style.color=totalGain>0?'var(--green2)':'var(--red)';
+  await new Promise(res=>setTimeout(res,3000));
 }
 
 window.animLXRejouer = function(){
@@ -5523,38 +5543,79 @@ function getRingColor(n, fallback){
   return fallback || ['#c0152a','#e87722','#d4a800','#1b5e20','#1565c0','#6a1b9a','#880e4f','#004d40','#1a237e','#37474f'][Math.floor((n-1)/10)] || '#888';
 }
 
+// Init slots vides pour 2 colonnes (15 boules par côté = 8+7 par col)
+function initSlots2Col(col1Id, col2Id, count){
+  const c1 = document.getElementById(col1Id);
+  const c2 = document.getElementById(col2Id);
+  if(!c1||!c2) return;
+  c1.innerHTML=''; c2.innerHTML='';
+  const nb = Math.ceil(count/2);
+  for(let i=0;i<nb;i++){
+    const e1=document.createElement('div');e1.className='lx-empty-slot';c1.appendChild(e1);
+    const e2=document.createElement('div');e2.className='lx-empty-slot';c2.appendChild(e2);
+  }
+}
 async function animCaisseKeno(resultats){
   if(!resultats.length) return;
   const r=resultats[0];
-  const winNums=r.winData?.winningNumbers||r.winData?.numeros||[];
+  const winNums=r.winData?.winningNumbers||[];
   const jouedNums=r.pari?.nums||(r.pari?.cleanNumber||'').split(',').map(n=>parseInt(n.trim())).filter(Boolean);
   document.getElementById('canim-keno').style.display='flex';
-  document.getElementById('canim-title').textContent='🎱 KENO LUCKY — TIRAGE';
-  _drawMgrInit();
-  _drawMgr.resetMachine('keno');
-  await new Promise(res=>setTimeout(res,400));
-  await _drawMgr.animateDraw('keno',winNums,jouedNums,
-    {leftColIds:['canim-keno-left1','canim-keno-left2'],rightColIds:['canim-keno-right1','canim-keno-right2'],ballsPerCol:5},
-    {seqEl:document.getElementById('canim-keno-seq'),statusEl:document.getElementById('canim-keno-status'),resultEl:document.getElementById('canim-keno-result'),badgesEl:null},
-    800,r.gain||0
-  );
+  document.getElementById('canim-title').textContent='🎱 KENO — TIRAGE';
+  const seqEl=document.getElementById('canim-keno-seq');
+  const statusEl=document.getElementById('canim-keno-status');
+  const resultEl=document.getElementById('canim-keno-result');
+  resultEl.textContent='';
+  initSlots2Col('canim-keno-left1','canim-keno-left2',15);
+  initSlots2Col('canim-keno-right1','canim-keno-right2',15);
+  const vid=document.getElementById('vid-keno');
+  if(vid){vid.currentTime=0;vid.play().catch(()=>{});}
+  const KCOL=['#c0152a','#e87722','#d4a800','#1b5e20','#1565c0','#6a1b9a','#880e4f','#004d40','#1a237e','#37474f'];
+  const getCol=n=>KCOL[Math.floor((n-1)/10)]||'#888';
+  const delay=Math.floor(90000/Math.max(winNums.length,1));
+  let hits=0;
+  for(let i=0;i<winNums.length;i++){
+    await new Promise(res=>setTimeout(res,delay));
+    const num=winNums[i];const isHit=jouedNums.includes(num);
+    if(isHit)hits++;if(seqEl)seqEl.textContent=i+1;
+    placeBallInGrid({number:num,color:getCol(num),isMatch:isHit},i,'canim-keno-left1','canim-keno-left2','canim-keno-right1','canim-keno-right2');
+    statusEl.textContent='Boule '+(i+1)+'/'+winNums.length+' — '+hits+'/'+jouedNums.length+' trouvés — '+Math.round((winNums.length-i-1)*delay/1000)+'s';
+  }
+  const mult=r.winData?.multiplier||0;
+  resultEl.textContent=r.gain>0?'🏆 '+hits+'/'+jouedNums.length+' ×'+mult+' → +'+r.gain+' Gd':'❌ '+hits+'/'+jouedNums.length+' — Perdu';
+  resultEl.style.color=r.gain>0?'var(--green2)':'var(--red)';
+  await new Promise(res=>setTimeout(res,3000));
 }
 
 async function animCaisseLucky6(resultats){
   if(!resultats.length) return;
   const r=resultats[0];
-  const winNums=r.winData?.winningNumbers||r.winData?.numeros||[];
+  const winNums=r.winData?.winningNumbers||[];
   const jouedNums=r.pari?.nums||(r.pari?.cleanNumber||'').split(',').map(n=>parseInt(n.trim())).filter(Boolean);
   document.getElementById('canim-lucky6').style.display='flex';
   document.getElementById('canim-title').textContent='🍀 LUCKY 6 — TIRAGE';
-  _drawMgrInit();
-  _drawMgr.resetMachine('lucky6');
-  await new Promise(res=>setTimeout(res,400));
-  await _drawMgr.animateDraw('lucky6',winNums,jouedNums,
-    {leftColIds:['canim-l6-left1','canim-l6-left2'],rightColIds:['canim-l6-right1','canim-l6-right2'],ballsPerCol:9},
-    {seqEl:document.getElementById('canim-l6-seq'),statusEl:document.getElementById('canim-l6-status'),resultEl:document.getElementById('canim-l6-result'),badgesEl:null},
-    600,r.gain||0
-  );
+  const seqEl=document.getElementById('canim-l6-seq');
+  const statusEl=document.getElementById('canim-l6-status');
+  const resultEl=document.getElementById('canim-l6-result');
+  resultEl.textContent='';
+  initSlots2Col('canim-l6-left1','canim-l6-left2',15);
+  initSlots2Col('canim-l6-right1','canim-l6-right2',15);
+  const vid=document.getElementById('vid-lucky6');
+  if(vid){vid.currentTime=0;vid.play().catch(()=>{});}
+  const L6C=['#e53935','#e91e63','#9c27b0','#3f51b5','#2196f3','#00bcd4','#4caf50','#ff9800'];
+  const getCol=n=>L6C[Math.floor((n-1)/6)]||'#888';
+  const delay=Math.floor(90000/Math.max(winNums.length,1));
+  let hits=0;
+  for(let i=0;i<winNums.length;i++){
+    await new Promise(res=>setTimeout(res,delay));
+    const num=winNums[i];const isHit=jouedNums.includes(num);
+    if(isHit)hits++;if(seqEl)seqEl.textContent=i+1;
+    placeBallInGrid({number:num,color:getCol(num),isMatch:isHit},i,'canim-l6-left1','canim-l6-left2','canim-l6-right1','canim-l6-right2');
+    statusEl.textContent='Boule '+(i+1)+'/'+winNums.length+' — '+hits+'/6 trouvés — '+Math.round((winNums.length-i-1)*delay/1000)+'s';
+  }
+  resultEl.textContent=r.gain>0?'🏆 '+hits+'/6 → +'+r.gain+' Gd':'❌ '+hits+'/6 — Perdu';
+  resultEl.style.color=r.gain>0?'var(--green2)':'var(--red)';
+  await new Promise(res=>setTimeout(res,3000));
 }
 
 async function animCaisseCourse(resultats){
@@ -9556,192 +9617,33 @@ function confirmerRejouer(){
 }
 // ═════════════════════════════════════════════════════════════
 
-// ═══ MOTEUR D'ANIMATION TAMBOUR — Keno / Lucky 6 / Lucky X ══════════════
-// Remplace les fichiers vidéo 1.mp4 / 2.mp4 / 3.mp4
-// Les boules affichées = les vrais numéros tirés par le serveur
-
-'use strict';
-(function(){
-function _hexRgb(h){return{r:parseInt(h.slice(1,3),16),g:parseInt(h.slice(3,5),16),b:parseInt(h.slice(5,7),16)};}
-function _lighten(h,a){const {r,g,b}=_hexRgb(h);return `rgb(${Math.min(255,r+a)},${Math.min(255,g+a)},${Math.min(255,b+a)})`;}
-function _darken(h,a){const {r,g,b}=_hexRgb(h);return `rgb(${Math.max(0,r-a)},${Math.max(0,g-a)},${Math.max(0,b-a)})`;}
-function _hexA(h,a){const {r,g,b}=_hexRgb(h);return `rgba(${r},${g},${b},${a})`;}
-const PALETTES={80:[{from:1,to:16,color:'#e74c3c'},{from:17,to:32,color:'#e67e22'},{from:33,to:48,color:'#f1c40f'},{from:49,to:64,color:'#27ae60'},{from:65,to:80,color:'#2980b9'}],48:[{from:1,to:12,color:'#e74c3c'},{from:13,to:24,color:'#f39c12'},{from:25,to:36,color:'#27ae60'},{from:37,to:48,color:'#2980b9'}]};
-function _ballColor(n,total){const p=PALETTES[total]||PALETTES[80];for(const e of p)if(n>=e.from&&n<=e.to)return e.color;return '#8e44ad';}
-
-class LotteryBallMachine{
-  constructor(canvas,opts={}){
-    this.canvas=canvas;this.ctx=canvas.getContext('2d');
-    this.totalBalls=opts.totalBalls||80;this.ballRadius=opts.ballRadius||13;
-    this.W=canvas.width;this.H=canvas.height;
-    this.cx=this.W/2;this.cy=this.H/2;this.drumR=Math.min(this.W,this.H)/2-10;
-    this.balls=[];this.pendingDraw=null;this.animFrame=null;this.running=false;
-    this.lastTime=0;this.drumAngle=0;this.sparks=[];
-    this._initBalls();
-  }
-  _initBalls(){
-    this.balls=[];const R=this.drumR-this.ballRadius-4;
-    for(let i=1;i<=this.totalBalls;i++){
-      const a=(i/this.totalBalls)*Math.PI*2,r=R*(0.3+Math.random()*0.6),spd=1.2+Math.random()*1.8,d=Math.random()*Math.PI*2;
-      this.balls.push({n:i,x:this.cx+Math.cos(a)*r,y:this.cy+Math.sin(a)*r,vx:Math.cos(d)*spd,vy:Math.sin(d)*spd,color:_ballColor(i,this.totalBalls),drawn:false,exitPhase:0,exitY:0,pulseT:Math.random()*Math.PI*2});
-    }
-  }
-  start(){if(this.running)return;this.running=true;this.lastTime=performance.now();this.animFrame=requestAnimationFrame(ts=>this._loop(ts));}
-  stop(){this.running=false;if(this.animFrame)cancelAnimationFrame(this.animFrame);this.animFrame=null;}
-  reset(){this.stop();this.sparks=[];this.pendingDraw=null;this._initBalls();this.drumAngle=0;}
-  drawBall(number){
-    return new Promise(resolve=>{
-      const b=this.balls.find(b=>b.n===number&&!b.drawn&&b.exitPhase===0);
-      if(!b){resolve();return;}
-      b.exitPhase=1;this.pendingDraw={number,resolve};
-      setTimeout(()=>{if(b.exitPhase===1)b.exitPhase=2;},600);
-    });
-  }
-  _loop(ts){if(!this.running)return;const dt=Math.min((ts-this.lastTime)/16.67,3);this.lastTime=ts;this._update(dt);this._render();this.animFrame=requestAnimationFrame(t=>this._loop(t));}
-  _update(dt){
-    const cx=this.cx,cy=this.cy,R=this.drumR,br=this.ballRadius;
-    this.drumAngle+=0.004*dt;
-    for(const b of this.balls){
-      if(b.drawn)continue;b.pulseT+=0.05*dt;
-      if(b.exitPhase===2){
-        const tx=cx,ty=cy+R-br*1.2;b.vx+=(tx-b.x)*0.12;b.vy+=(ty-b.y)*0.12;b.vx*=0.82;b.vy*=0.82;
-        const dx=b.x-cx,dy=b.y-cy;
-        if(Math.sqrt(dx*dx+dy*dy)>R-br*2.5&&dy>0){b.exitPhase=3;b.exitY=0;b.x=cx;b.y=cy+R-br;}
-      }else if(b.exitPhase===3){
-        b.exitY+=6*dt;b.x=cx;b.y=cy+R-br+b.exitY;
-        if(Math.random()<0.3)this.sparks.push({x:cx+(Math.random()-.5)*8,y:b.y,vx:(Math.random()-.5)*3,vy:-Math.random()*2,life:1,color:b.color});
-        if(b.exitY>55){b.drawn=true;b.exitPhase=4;const pd=this.pendingDraw;this.pendingDraw=null;if(pd)pd.resolve();}
-        continue;
-      }else{
-        const dx=b.x-cx,dy=b.y-cy,dist=Math.sqrt(dx*dx+dy*dy)||1;
-        b.vx+=(-dy/dist)*0.04*dt;b.vy+=(dx/dist)*0.04*dt;b.vy+=0.06*dt;
-        b.vx+=(Math.random()-.5)*0.12*dt;b.vy+=(Math.random()-.5)*0.12*dt;
-        const spd=Math.sqrt(b.vx*b.vx+b.vy*b.vy);if(spd>4.5){b.vx=b.vx/spd*4.5;b.vy=b.vy/spd*4.5;}
-      }
-      b.x+=b.vx*dt;b.y+=b.vy*dt;
-      if(b.exitPhase<2){const dx=b.x-cx,dy=b.y-cy,dist=Math.sqrt(dx*dx+dy*dy);if(dist>R-br){const nx=dx/dist,ny=dy/dist;b.x=cx+nx*(R-br-.5);b.y=cy+ny*(R-br-.5);const dot=b.vx*nx+b.vy*ny;if(dot>0){b.vx-=2*dot*nx*.72;b.vy-=2*dot*ny*.72;}}}
-    }
-    const active=this.balls.filter(b=>!b.drawn&&b.exitPhase<2);active.sort((a,b)=>a.x-b.x);const br2=br*2;
-    for(let i=0;i<active.length;i++){const a=active[i];for(let j=i+1;j<active.length;j++){const b=active[j];if(b.x-a.x>br2)break;const dx=b.x-a.x,dy=b.y-a.y,d=Math.sqrt(dx*dx+dy*dy);if(d<br2&&d>.1){const nx=dx/d,ny=dy/d,ov=(br2-d)*.5;a.x-=nx*ov;a.y-=ny*ov;b.x+=nx*ov;b.y+=ny*ov;const rvx=a.vx-b.vx,rvy=a.vy-b.vy,dot=rvx*nx+rvy*ny;if(dot>0){a.vx-=dot*nx*.55;a.vy-=dot*ny*.55;b.vx+=dot*nx*.55;b.vy+=dot*ny*.55;}}}}
-    this.sparks=this.sparks.filter(s=>{s.x+=s.vx;s.y+=s.vy;s.vy+=.1;s.life-=.06;return s.life>0;});
-  }
-  _render(){
-    const ctx=this.ctx,cx=this.cx,cy=this.cy,R=this.drumR,br=this.ballRadius,W=this.W,H=this.H,now=performance.now();
-    ctx.clearRect(0,0,W,H);
-    const halo=ctx.createRadialGradient(cx,cy,R*.8,cx,cy,R+20);halo.addColorStop(0,'rgba(245,200,0,0)');halo.addColorStop(.7,'rgba(245,200,0,0.15)');halo.addColorStop(1,'rgba(245,200,0,0)');ctx.beginPath();ctx.arc(cx,cy,R+20,0,Math.PI*2);ctx.fillStyle=halo;ctx.fill();
-    ctx.save();ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.clip();
-    const bg=ctx.createRadialGradient(cx,cy-R*.25,0,cx,cy,R);bg.addColorStop(0,'#1e3f80');bg.addColorStop(.55,'#0d2050');bg.addColorStop(1,'#060d1f');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
-    ctx.save();ctx.translate(cx,cy);ctx.rotate(this.drumAngle);ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=1;for(let i=0;i<12;i++){ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-R);ctx.stroke();ctx.rotate(Math.PI/6);}ctx.restore();
-    const tw=br*2+8,tOpen=cy+R-tw*.6;ctx.fillStyle='rgba(0,0,0,0.85)';ctx.fillRect(cx-tw/2,tOpen,tw,tw*1.2);
-    for(const b of this.balls){
-      if(b.drawn&&b.exitPhase!==3)continue;
-      const drawX=b.exitPhase===3?cx:b.x,drawY=b.y;
-      const alpha=b.exitPhase===3?Math.max(0,1-b.exitY/55):1,scale=b.exitPhase===3?Math.max(.3,1-b.exitY/110):1;
-      ctx.save();ctx.globalAlpha=alpha;ctx.translate(drawX,drawY);ctx.scale(scale,scale);
-      if(b.exitPhase!==3){ctx.shadowColor='rgba(0,0,0,0.5)';ctx.shadowBlur=6;ctx.shadowOffsetY=2;}
-      if(b.exitPhase===1||b.exitPhase===2){const pulse=.5+.5*Math.sin(now*.012+b.pulseT);ctx.shadowColor=b.color;ctx.shadowBlur=20+pulse*20;}
-      const grad=ctx.createRadialGradient(-br*.3,-br*.35,1,0,0,br);grad.addColorStop(0,_lighten(b.color,55));grad.addColorStop(.45,b.color);grad.addColorStop(1,_darken(b.color,35));ctx.beginPath();ctx.arc(0,0,br,0,Math.PI*2);ctx.fillStyle=grad;ctx.fill();
-      const shine=ctx.createRadialGradient(-br*.32,-br*.38,0,-br*.3,-br*.35,br*.55);shine.addColorStop(0,'rgba(255,255,255,0.55)');shine.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=shine;ctx.fill();
-      if(b.exitPhase===1||b.exitPhase===2){ctx.beginPath();ctx.arc(0,0,br+2,0,Math.PI*2);ctx.strokeStyle='#ffd700';ctx.lineWidth=2.5;ctx.stroke();}
-      ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.fillStyle='#fff';ctx.font=`900 ${br>12?11:9}px 'Barlow',Arial`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(b.n,0,.5);
-      ctx.restore();
-    }
-    const glass=ctx.createLinearGradient(cx,cy-R,cx,cy-R*.3);glass.addColorStop(0,'rgba(255,255,255,0.08)');glass.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=glass;ctx.fillRect(0,0,W,H);
-    ctx.restore();
-    ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.strokeStyle='rgba(245,200,0,0.8)';ctx.lineWidth=3;ctx.stroke();
-    ctx.beginPath();ctx.arc(cx,cy,R+1.5,0,Math.PI*2);ctx.strokeStyle='rgba(245,200,0,0.2)';ctx.lineWidth=6;ctx.stroke();
-    const tw2=br*2+8,tyS=cy+R-4;ctx.fillStyle='rgba(6,13,31,0.9)';ctx.fillRect(cx-tw2/2,tyS,tw2,50);ctx.strokeStyle='rgba(245,200,0,0.5)';ctx.lineWidth=1.5;ctx.strokeRect(cx-tw2/2,tyS,tw2,50);
-    ctx.fillStyle='rgba(245,200,0,0.7)';const ay=tyS+20;ctx.beginPath();ctx.moveTo(cx,ay+14);ctx.lineTo(cx-7,ay);ctx.lineTo(cx+7,ay);ctx.closePath();ctx.fill();
-    for(const s of this.sparks){ctx.save();ctx.globalAlpha=s.life;ctx.fillStyle=s.color;ctx.beginPath();ctx.arc(s.x,s.y,2*s.life,0,Math.PI*2);ctx.fill();ctx.restore();}
-  }
-}
-
-class DrawAnimationManager{
-  constructor(){this.machines={};}
-  init(gameId,canvasId){
-    const canvas=document.getElementById(canvasId);if(!canvas)return;
-    const totalBalls=(gameId==='keno')?80:48;const wrap=canvas.parentElement;
-    const sz=Math.round(wrap?wrap.offsetWidth:300)||300;canvas.width=sz;canvas.height=sz;
-    const br=Math.max(9,Math.min(Math.floor(sz/18),16));
-    this.machines[gameId]=new LotteryBallMachine(canvas,{totalBalls,ballRadius:br});
-  }
-  startMachine(id){this.machines[id]?.start();}
-  stopMachine(id){this.machines[id]?.stop();}
-  resetMachine(id){this.machines[id]?.reset();this.machines[id]?.start();}
-  async animateDraw(gameId,numbers,playerNums,slotConfig,displayEls,delayMs,totalGain){
-    const machine=this.machines[gameId];if(!machine)return;
-    const playerSet=new Set(playerNums),drawnSet=new Set();
-    const {leftColIds,rightColIds,ballsPerCol}=slotConfig;
-    const allColIds=[...leftColIds,...rightColIds];let slotIndex=0;
-    allColIds.forEach(colId=>{const col=document.getElementById(colId);if(!col)return;col.innerHTML='';for(let i=0;i<ballsPerCol;i++){const s=document.createElement('div');s.className='draw-slot-empty';col.appendChild(s);}});
-    for(let i=0;i<numbers.length;i++){
-      const num=numbers[i],isHit=playerSet.has(num);drawnSet.add(num);
-      if(displayEls.seqEl)displayEls.seqEl.textContent=i+1;
-      machine.onBallExited=null;
-      const exitProm=machine.drawBall(num);
-      await new Promise(res=>setTimeout(res,Math.max(50,delayMs-400)));
-      await exitProm;
-      const colIdx=slotIndex%allColIds.length,rowIdx=Math.floor(slotIndex/allColIds.length);
-      const targetCol=document.getElementById(allColIds[colIdx]);
-      const slotEl=targetCol?targetCol.children[rowIdx]:null;
-      if(slotEl)_flyBallToSlot(num,isHit,_ballColor(num,machine.totalBalls),slotEl,machine.canvas);
-      slotIndex++;
-      if(displayEls.badgesEl){
-        const matched=playerNums.filter(n=>drawnSet.has(n)).length;
-        if(displayEls.badgesEl.tagName==='DIV'&&!displayEls.badgesEl.id?.includes('badges')){
-          displayEls.badgesEl.textContent=matched+' / '+playerNums.length+' trouvé'+(matched>1?'s':'');
-          displayEls.badgesEl.style.color=matched>0?'#ffd700':'#8aaccc';
-        }else if(displayEls.badgesEl){
-          const P={3:'10',4:'50',5:'150',6:'250',7:'500',8:'1K',9:'5K',10:'10K'};
-          displayEls.badgesEl.textContent=matched+'✓'+(P[matched]?' +'+P[matched]+'Gd':'');
-          displayEls.badgesEl.style.color=P[matched]?'#ffd700':'#8aaccc';
-        }
-      }
-      const remaining=numbers.length-i-1;
-      if(displayEls.statusEl)displayEls.statusEl.textContent='Boule '+(i+1)+' / '+numbers.length+(remaining>0?' — '+remaining+' restante'+(remaining>1?'s':''):'');
-      await new Promise(res=>setTimeout(res,200));
-    }
-    if(displayEls.resultEl){displayEls.resultEl.textContent=totalGain>0?'🏆 GAGNÉ → +'+totalGain.toLocaleString('fr-FR')+' Gd':'❌ Pas de gain cette fois';displayEls.resultEl.style.color=totalGain>0?'#28b04e':'#e63946';}
-    await new Promise(res=>setTimeout(res,2800));
-  }
-}
-
-function _flyBallToSlot(num,isHit,color,slotEl,canvas){
-  const cr=canvas.getBoundingClientRect();const srcX=cr.left+cr.width/2,srcY=cr.top+cr.height/2+cr.height*.42;
-  const dr=slotEl.getBoundingClientRect();const dstX=dr.left+dr.width/2,dstY=dr.top+dr.height/2;
-  const sz=Math.round(dr.width*.95);const fly=document.createElement('div');
-  fly.style.cssText=`position:fixed;left:${srcX-sz/2}px;top:${srcY-sz/2}px;width:${sz}px;height:${sz}px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:${Math.round(sz*.38)}px;font-weight:900;color:#fff;font-family:'Barlow',Arial;background:radial-gradient(circle at 35% 30%,${_lighten(color,50)},${color} 55%,${_darken(color,30)});box-shadow:0 0 18px ${_hexA(color,.8)};pointer-events:none;z-index:99999;--dx:${dstX-srcX}px;--dy:${dstY-srcY}px;animation:_ballFly .55s cubic-bezier(.25,.46,.45,.94) forwards;`;
-  fly.textContent=num;document.body.appendChild(fly);
-  fly.addEventListener('animationend',()=>{fly.remove();slotEl.className=isHit?'draw-slot-ball draw-slot-hit':'draw-slot-ball';slotEl.style.background=`radial-gradient(circle at 35% 30%,${_lighten(color,50)},${color} 55%,${_darken(color,30)})`;slotEl.style.boxShadow=isHit?`0 0 14px ${_hexA(color,.9)},0 0 6px rgba(255,215,0,.6)`:'0 2px 6px rgba(0,0,0,.5)';slotEl.textContent=num;slotEl.style.animation='_ballAppear .3s cubic-bezier(.34,1.56,.64,1) both';});
-}
-
-(function _injectStyles(){
-  if(document.getElementById('_lbm-styles'))return;
-  const s=document.createElement('style');s.id='_lbm-styles';
-  s.textContent=`@keyframes _ballFly{0%{transform:translate(0,0) scale(1);opacity:1}40%{transform:translate(calc(var(--dx)*.4),calc(var(--dy)*.4 - 40px)) scale(1.25)}100%{transform:translate(var(--dx),var(--dy)) scale(.85);opacity:.85}}@keyframes _ballAppear{0%{transform:scale(.4);opacity:.5}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}.draw-slot-empty{border-radius:50%;background:radial-gradient(circle,#1a3a6e,#0d1f3e);border:2px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:transparent;aspect-ratio:1;width:clamp(42px,5.2vw,68px)}.draw-slot-ball{border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#fff;border:2px solid rgba(255,255,255,.3);position:relative;aspect-ratio:1;width:clamp(42px,5.2vw,68px)}.draw-slot-ball::before{content:'';position:absolute;top:15%;left:20%;width:30%;height:18%;background:rgba(255,255,255,.28);border-radius:50%;transform:rotate(-25deg)}.draw-slot-hit{border:2.5px solid #ffd700!important}`;
-  document.head.appendChild(s);
-})();
-
-window.LotteryBallMachine=LotteryBallMachine;
-window.DrawAnimationManager=DrawAnimationManager;
-})();
-
-// Gestionnaire global utilisé par animCaisseKeno / animCaisseLucky6 / animCaisseLuckyX
-let _drawMgr=null;
-function _drawMgrInit(){
-  if(_drawMgr)return;
-  _drawMgr=new DrawAnimationManager();
-  ['keno','lucky6','luckyx'].forEach(gameId=>{
-    const canvasId='canvas-'+gameId;
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      const canvas=document.getElementById(canvasId);if(!canvas||canvas._lbmOk)return;
-      const wrap=canvas.parentElement;const sz=Math.round(wrap?wrap.offsetWidth:300)||300;
-      canvas.width=sz;canvas.height=sz;canvas._lbmOk=true;
-      const br=Math.max(9,Math.min(Math.floor(sz/18),16));
-      const total=(gameId==='keno')?80:48;
-      _drawMgr.machines[gameId]=new LotteryBallMachine(canvas,{totalBalls:total,ballRadius:br});
-    }));
-  });
+// ═══ ANIMATION VOL BOULE depuis vidéo vers slot ══════════════
+function flyBallFromVideo(ballEl, slotEl, ring, num){
+  if(!ballEl || !slotEl) return;
+  // Position du centre de la vidéo (source)
+  const videoWrap = document.querySelector('.lx-video-round');
+  if(!videoWrap) return;
+  const vRect = videoWrap.getBoundingClientRect();
+  const srcX = vRect.left + vRect.width/2;
+  const srcY = vRect.top + vRect.height/2;
+  // Position du slot (destination)
+  const dRect = slotEl.getBoundingClientRect();
+  const dstX = dRect.left + dRect.width/2;
+  const dstY = dRect.top + dRect.height/2;
+  // Créer boule flottante
+  const size = Math.round(dRect.width);
+  const fly = document.createElement('div');
+  fly.className = 'ball-fly';
+  fly.textContent = num;
+  fly.style.cssText = `
+    width:${size}px;height:${size}px;font-size:${Math.round(size*0.35)}px;
+    background:radial-gradient(circle at 35% 30%,${ring}dd,${ring});
+    color:#fff;border:2px solid ${ring};
+    box-shadow:0 0 16px ${ring}99;
+    left:${srcX - size/2}px;top:${srcY - size/2}px;
+    --fly-x:${dstX - srcX}px;--fly-y:${dstY - srcY}px;`;
+  document.body.appendChild(fly);
+  fly.addEventListener('animationend',()=>fly.remove());
 }
 // ═════════════════════════════════════════════════════════════
 </script>
