@@ -1986,21 +1986,22 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
         console.log(`[keno] shouldWin=${shouldWin} difficulte=${difficulte} nbJoues=${nbJoues} nbHits_target=${nbHits} hits_reel=${hits} mult=${mult} gain=${gain}`);
 
       } else if (jeuType === 'luckyx') {
-        // Lucky X - même logique que Lucky 6
+        // Lucky X — 48 boules, on tire 30 numéros (grille 4 cols × 8 = 32 slots)
         const nums = pari.nums || pari.cleanNumber.split(',').map(Number);
         const pool48 = Array.from({length:48},(_,i)=>i+1);
         const joues  = pool48.filter(n=>nums.includes(n)).sort(()=>Math.random()-.5);
         const autres = pool48.filter(n=>!nums.includes(n)).sort(()=>Math.random()-.5);
-        const l6MaxLose = difficulte >= 70 ? 2 : difficulte >= 40 ? 3 : 4;
-        const wantHits = shouldWin ? Math.min(nums.length, 6) : Math.floor(Math.random()*(l6MaxLose+1));
-        const winNums = [...joues.slice(0,wantHits), ...autres.slice(0,35-wantHits)].sort((a,b)=>a-b);
+        const lxMaxLose = difficulte >= 70 ? 2 : difficulte >= 40 ? 3 : 4;
+        const wantHits = shouldWin ? Math.min(nums.length, 6) : Math.floor(Math.random()*(lxMaxLose+1));
+        // 30 numéros tirés au total (wantHits du joueur + le reste depuis les autres)
+        const winNums = [...joues.slice(0,wantHits), ...autres.slice(0,30-wantHits)].sort((a,b)=>a-b);
         const hits = nums.filter(n=>winNums.includes(n)).length;
-        const MULT_BASE = {3:1,4:2,5:5,6:10,7:50,8:200,9:1000,10:5000};
-        const multLX = MULT_BASE[hits] || 0;
+        const MULT_BASE_LX = {3:1,4:2,5:5,6:10,7:50,8:200,9:1000,10:5000};
+        const multLX = MULT_BASE_LX[hits] || 0;
         const lxvar = 0.85 + Math.random()*0.3;
         gain = multLX > 0 ? Math.round(mise * multLX * lxvar) : 0;
-        winData = { winningNumbers: winNums, hits, multiplier: mult };
-        resultMsg = gain>0 ? `${hits}/${nums.length} → ×${mult} +${gain} Gd` : `${hits}/${nums.length} → Perdu`;
+        winData = { winningNumbers: winNums, hits, multiplier: multLX };
+        resultMsg = gain>0 ? `${hits}/${nums.length} → ×${multLX} +${gain} Gd` : `${hits}/${nums.length} → Perdu`;
 
       } else if (jeuType === 'lucky6') {
         const nums = pari.nums || pari.cleanNumber.split(',').map(Number);
