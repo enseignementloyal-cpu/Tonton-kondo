@@ -2579,6 +2579,12 @@ h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,3.2rem);letter-s
 @keyframes lxBounce4{0%{transform:translate(0,0)}100%{transform:translate(-2px,-5px)}}
 @keyframes lxBounce5{0%{transform:translate(0,0)}100%{transform:translate(3px,-4px)}}
 @keyframes lxBallDrop{0%{transform:scale(0) translateY(-15px);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+@keyframes ballFlyOut{
+  0%{transform:translate(0,0) scale(1.4);opacity:1}
+  60%{transform:translate(var(--fly-x),var(--fly-y)) scale(0.9);opacity:.9}
+  100%{transform:translate(var(--fly-x),var(--fly-y)) scale(0);opacity:0}
+}
+.ball-fly{position:fixed;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;pointer-events:none;z-index:9999;animation:ballFlyOut 0.7s cubic-bezier(.4,0,.2,1) forwards;}
 @keyframes kenoDrumSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
 @keyframes ballPop { 0%{transform:scale(0) rotate(-30deg);opacity:0} 70%{transform:scale(1.3)} 100%{transform:scale(1);opacity:1} }
 @keyframes ballGlow { 0%,100%{box-shadow:0 0 8px currentColor} 50%{box-shadow:0 0 20px currentColor,0 0 40px currentColor} }
@@ -5527,6 +5533,8 @@ function placeBallInGrid(ball, idx, col1IdLeft, col2IdLeft, col1IdRight, col2IdR
   ballEl.style.color = '#fff';
   ballEl.style.border = isMatch ? '3px solid #ffd700' : `2px solid ${ring}88`;
   ballEl.style.boxShadow = isMatch ? '0 0 14px rgba(255,215,0,.8)' : '0 2px 8px rgba(0,0,0,.5)';
+  // Lancer l'animation de vol AVANT de placer la boule
+  flyBallFromVideo(ballEl, slot, ring, ball.number);
   if(slot) col.replaceChild(ballEl, slot);
   else col.appendChild(ballEl);
 }
@@ -9606,6 +9614,36 @@ function confirmerRejouer(){
   if(montant<=0){ showNotif('Entrez un montant valide','err'); return; }
   caisseRejouterTicket(_rejouterData.jeu, _rejouterData.numsStr, montant);
   fermerRejouterModal();
+}
+// ═════════════════════════════════════════════════════════════
+
+// ═══ ANIMATION VOL BOULE depuis vidéo vers slot ══════════════
+function flyBallFromVideo(ballEl, slotEl, ring, num){
+  if(!ballEl || !slotEl) return;
+  // Position du centre de la vidéo (source)
+  const videoWrap = document.querySelector('.lx-video-round');
+  if(!videoWrap) return;
+  const vRect = videoWrap.getBoundingClientRect();
+  const srcX = vRect.left + vRect.width/2;
+  const srcY = vRect.top + vRect.height/2;
+  // Position du slot (destination)
+  const dRect = slotEl.getBoundingClientRect();
+  const dstX = dRect.left + dRect.width/2;
+  const dstY = dRect.top + dRect.height/2;
+  // Créer boule flottante
+  const size = Math.round(dRect.width);
+  const fly = document.createElement('div');
+  fly.className = 'ball-fly';
+  fly.textContent = num;
+  fly.style.cssText = `
+    width:${size}px;height:${size}px;font-size:${Math.round(size*0.35)}px;
+    background:radial-gradient(circle at 35% 30%,${ring}dd,${ring});
+    color:#fff;border:2px solid ${ring};
+    box-shadow:0 0 16px ${ring}99;
+    left:${srcX - size/2}px;top:${srcY - size/2}px;
+    --fly-x:${dstX - srcX}px;--fly-y:${dstY - srcY}px;`;
+  document.body.appendChild(fly);
+  fly.addEventListener('animationend',()=>fly.remove());
 }
 // ═════════════════════════════════════════════════════════════
 </script>

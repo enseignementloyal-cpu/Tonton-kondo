@@ -1964,8 +1964,13 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
           nbHits = Math.min(target, nbJoues);
           if (nbHits < 5) nbHits = Math.min(5, nbJoues); // si le joueur a joué <5, max possible
         } else {
-          // Perdant: moins de 5 hits (0-4), plafonné par nbJoues
-          nbHits = Math.floor(Math.random() * Math.min(5, nbJoues));
+          // Perdant: jamais 5+ hits (sinon le joueur gagnerait malgré shouldWin=false)
+          // Difficulte haute → très peu de boules du joueur dans le tirage (1-2 max)
+          // Difficulte basse → un peu plus (3-4 max) pour créer la tension "presque gagné"
+          const maxHitsLose = difficulte >= 70 ? 2 : difficulte >= 40 ? 3 : 4;
+          nbHits = Math.floor(Math.random() * (maxHitsLose + 1));
+          // S'assurer que nbHits ne dépasse jamais nbJoues-1 (jamais toutes les boules)
+          nbHits = Math.min(nbHits, Math.min(4, nbJoues - 1));
         }
         nbHits = Math.max(0, Math.min(nbHits, Math.min(nbJoues, 20)));
 
@@ -1986,7 +1991,8 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
         const pool48 = Array.from({length:48},(_,i)=>i+1);
         const joues  = pool48.filter(n=>nums.includes(n)).sort(()=>Math.random()-.5);
         const autres = pool48.filter(n=>!nums.includes(n)).sort(()=>Math.random()-.5);
-        const wantHits = shouldWin ? Math.min(nums.length, 6) : Math.floor(Math.random()*4);
+        const l6MaxLose = difficulte >= 70 ? 2 : difficulte >= 40 ? 3 : 4;
+        const wantHits = shouldWin ? Math.min(nums.length, 6) : Math.floor(Math.random()*(l6MaxLose+1));
         const winNums = [...joues.slice(0,wantHits), ...autres.slice(0,35-wantHits)].sort((a,b)=>a-b);
         const hits = nums.filter(n=>winNums.includes(n)).length;
         const MULT_BASE = {3:1,4:2,5:5,6:10,7:50,8:200,9:1000,10:5000};
@@ -2001,7 +2007,8 @@ app.post('/api/caisse/lancer', requireAuth, async (req, res) => {
         const pool48 = Array.from({length:48},(_,i)=>i+1);
         const joues  = pool48.filter(n=>nums.includes(n)).sort(()=>Math.random()-.5);
         const autres = pool48.filter(n=>!nums.includes(n)).sort(()=>Math.random()-.5);
-        const wantHits = shouldWin ? 6 : Math.floor(Math.random()*4);
+        const lxMaxLose = difficulte >= 70 ? 2 : difficulte >= 40 ? 3 : 4;
+        const wantHits = shouldWin ? 6 : Math.floor(Math.random()*(lxMaxLose+1));
         const winNums = [...joues.slice(0,wantHits), ...autres.slice(0,35-wantHits)].sort((a,b)=>a-b);
         const hits = nums.filter(n=>winNums.includes(n)).length;
         const l6var = 0.85 + Math.random()*0.3; // variation ±15%
