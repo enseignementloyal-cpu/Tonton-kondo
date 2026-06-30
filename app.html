@@ -5480,6 +5480,9 @@ async function animCaisseLuckyX(resultats){
   const totalGain=resultats.reduce((s,r2)=>s+r2.gain,0);
   document.getElementById('canim-luckyx').style.display='flex';
   document.getElementById('canim-title').textContent='🌟 LUCKY X — TIRAGE';
+  // Thème Lucky X : royal violet
+  const _ovLX=document.getElementById('caisse-anim-overlay');
+  if(_ovLX) _ovLX.style.background='radial-gradient(ellipse at 50% 20%,#160826 0%,#06010e 100%)';
   _drawMgrInit('luckyx');
   _drawMgr.startMachine('luckyx');
   await new Promise(res=>setTimeout(res,400));
@@ -5537,6 +5540,9 @@ async function animCaisseKeno(resultats){
   const jouedNums=r.pari?.nums||(r.pari?.cleanNumber||'').split(',').map(n=>parseInt(n.trim())).filter(Boolean);
   document.getElementById('canim-keno').style.display='flex';
   document.getElementById('canim-title').textContent='🎱 KENO LUCKY — TIRAGE';
+  // Thème Keno : océan profond (bleu cyan)
+  const _ovKeno=document.getElementById('caisse-anim-overlay');
+  if(_ovKeno) _ovKeno.style.background='radial-gradient(ellipse at 50% 20%,#0b1d3a 0%,#04090f 100%)';
   _drawMgrInit('keno');
   _drawMgr.startMachine('keno');
   await new Promise(res=>setTimeout(res,400));
@@ -5554,6 +5560,9 @@ async function animCaisseLucky6(resultats){
   const jouedNums=r.pari?.nums||(r.pari?.cleanNumber||'').split(',').map(n=>parseInt(n.trim())).filter(Boolean);
   document.getElementById('canim-lucky6').style.display='flex';
   document.getElementById('canim-title').textContent='🍀 LUCKY 6 — TIRAGE';
+  // Thème Lucky 6 : bleu ciel vif (comme l'original Lucky 6)
+  const _ovL6=document.getElementById('caisse-anim-overlay');
+  if(_ovL6) _ovL6.style.background='linear-gradient(160deg,#0077cc 0%,#0055aa 35%,#003388 70%,#001d55 100%)';
   _drawMgrInit('lucky6');
   _drawMgr.startMachine('lucky6');
   await new Promise(res=>setTimeout(res,400));
@@ -5652,71 +5661,112 @@ async function animCaisseRoulette(resultats){
   if(!resultats.length) return;
   const r = resultats[0];
   document.getElementById('canim-roulette').style.display = '';
-  // Masquer les autres sections
   ['canim-keno','canim-lucky6','canim-course','canim-borlette'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.style.display='none';
   });
-  document.getElementById('canim-title').textContent = '🎡 ROULETTE — TIRAGE';
+  document.getElementById('canim-title').textContent = '𓂀 ROULETTE ÉGYPTIENNE';
+  // Fond sable/or égyptien
+  const _ovRou = document.getElementById('caisse-anim-overlay');
+  if(_ovRou) _ovRou.style.background='radial-gradient(ellipse at 50% 30%,#1c1000 0%,#0a0700 100%)';
 
+  // Agrandir le canvas pour une belle roulette
   const canvas = document.getElementById('canim-rou-canvas');
-  const ctx    = canvas.getContext('2d');
-  const cx = canvas.width/2, cy = canvas.height/2, rad = cx - 10;
+  canvas.style.border='none';
+  const size = Math.min(window.innerWidth - 32, 320);
+  canvas.width = size; canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const cx = size/2, cy = size/2, rad = cx - 12;
 
+  // Ordre européen standard de la roulette
+  const ORDER = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
   const ROUGE = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
-  const nums  = [0,...Array.from({length:36},(_,i)=>i+1)];
-  const slice = (Math.PI*2) / nums.length;
+  const N = ORDER.length;
+  const slice = (Math.PI*2)/N;
 
-  function drawWheel(angle){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    nums.forEach((n,i)=>{
-      const start = angle + i*slice, end = start + slice;
-      ctx.beginPath();
-      ctx.moveTo(cx,cy);
-      ctx.arc(cx,cy,rad,start,end);
-      ctx.fillStyle = n===0?'#2d7a2d': ROUGE.includes(n)?'#c0152a':'#1a1a2e';
+  function drawEgyptianWheel(angle){
+    ctx.clearRect(0,0,size,size);
+
+    // Fond sombre derrière la roue
+    ctx.beginPath();ctx.arc(cx,cy,rad+14,0,Math.PI*2);
+    const outerGrad=ctx.createRadialGradient(cx,cy,rad,cx,cy,rad+14);
+    outerGrad.addColorStop(0,'#c9a84c');outerGrad.addColorStop(.5,'#8b6914');outerGrad.addColorStop(1,'#3d2d00');
+    ctx.fillStyle=outerGrad;ctx.fill();
+
+    // Motifs décoratifs extérieurs (losanges égyptiens)
+    for(let i=0;i<N;i++){
+      const a=angle+i*slice+slice/2;const dr=rad+8;
+      ctx.save();ctx.translate(cx+Math.cos(a)*dr,cy+Math.sin(a)*dr);ctx.rotate(a+Math.PI/4);
+      ctx.fillStyle='#3d2d00';ctx.beginPath();
+      ctx.rect(-2,-2,4,4);ctx.fill();ctx.restore();
+    }
+
+    // Secteurs
+    ORDER.forEach((n,i)=>{
+      const start=angle+i*slice-Math.PI/2,end=start+slice;
+      ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,rad,start,end);
+      if(n===0) ctx.fillStyle='#005c1e';
+      else if(ROUGE.includes(n)) ctx.fillStyle='#6b000e';
+      else ctx.fillStyle='#0a0500';
       ctx.fill();
-      ctx.strokeStyle='#fff3'; ctx.lineWidth=1; ctx.stroke();
-      // Numéro
-      ctx.save();
-      ctx.translate(cx,cy);
-      ctx.rotate(start+slice/2);
-      ctx.fillStyle='#fff'; ctx.font='bold 9px Arial'; ctx.textAlign='right';
-      ctx.fillText(n, rad-4, 3);
+      // Séparateur or
+      ctx.strokeStyle='#c9a84c';ctx.lineWidth=.7;ctx.stroke();
+    });
+
+    // Bande de numéros
+    ORDER.forEach((n,i)=>{
+      const mid=angle+i*slice-Math.PI/2+slice/2;
+      ctx.save();ctx.translate(cx,cy);ctx.rotate(mid);
+      // Fond de numéro
+      ctx.fillStyle=n===0?'#007a28':ROUGE.includes(n)?'#8b000e':'#1a0e00';
+      ctx.beginPath();ctx.roundRect(rad*.62,-5,rad*.3,10,3);ctx.fill();
+      ctx.fillStyle='#f5c800';ctx.font=`bold ${Math.round(rad*.11)}px 'Barlow Condensed',serif`;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(n,rad*.78,0);
       ctx.restore();
     });
-    // Centre
-    ctx.beginPath();
-    ctx.arc(cx,cy,18,0,Math.PI*2);
-    ctx.fillStyle='#111'; ctx.fill();
-    ctx.strokeStyle='#f5c800'; ctx.lineWidth=3; ctx.stroke();
-    // Pointeur
-    ctx.beginPath();
-    ctx.moveTo(cx, cy-rad+2);
-    ctx.lineTo(cx-8, cy-rad+18);
-    ctx.lineTo(cx+8, cy-rad+18);
-    ctx.fillStyle='#f5c800'; ctx.fill();
+
+    // Anneau intérieur décoratif
+    ctx.beginPath();ctx.arc(cx,cy,rad*.55,0,Math.PI*2);
+    ctx.strokeStyle='#c9a84c';ctx.lineWidth=2;ctx.stroke();
+    ctx.beginPath();ctx.arc(cx,cy,rad*.54,0,Math.PI*2);
+    ctx.strokeStyle='rgba(201,168,76,0.3)';ctx.lineWidth=5;ctx.stroke();
+
+    // Centre — médaillon égyptien
+    const cg=ctx.createRadialGradient(cx,cy-4,2,cx,cy,22);
+    cg.addColorStop(0,'#f5c800');cg.addColorStop(.5,'#c9a84c');cg.addColorStop(1,'#6b4500');
+    ctx.beginPath();ctx.arc(cx,cy,22,0,Math.PI*2);ctx.fillStyle=cg;ctx.fill();
+    ctx.beginPath();ctx.arc(cx,cy,22,0,Math.PI*2);ctx.strokeStyle='#3d2000';ctx.lineWidth=2;ctx.stroke();
+    // Oeil d'Horus stylisé
+    ctx.fillStyle='#1a0a00';ctx.beginPath();ctx.ellipse(cx,cy,9,5,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#f5c800';ctx.beginPath();ctx.arc(cx,cy,3,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#3d2000';ctx.beginPath();ctx.arc(cx,cy,1.5,0,Math.PI*2);ctx.fill();
+
+    // Pointeur doré fixe (en haut)
+    const py=cy-rad-2;
+    ctx.fillStyle='#f5c800';ctx.strokeStyle='#3d2000';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(cx,py+18);ctx.lineTo(cx-7,py+2);ctx.lineTo(cx+7,py+2);ctx.closePath();
+    ctx.fill();ctx.stroke();
+
+    // Bord externe or brillant
+    ctx.beginPath();ctx.arc(cx,cy,rad+.5,0,Math.PI*2);ctx.strokeStyle='#f5c800';ctx.lineWidth=2.5;ctx.stroke();
   }
 
-  // Résultat depuis le serveur
-  const winNum = r.winData?.result ?? Math.floor(Math.random()*37);
+  const winNum = r.winData?.result ?? r.winData?.isRouge != null ? r.winData.result : Math.floor(Math.random()*37);
   const isRouge = ROUGE.includes(winNum);
-  const winIdx  = nums.indexOf(winNum);
-  const targetAngle = -(winIdx*slice + slice/2) + Math.PI/2;
-
-  // Animation : tourner 5 tours + s'arrêter sur le bon numéro
-  const totalRot = Math.PI*2*5 + ((targetAngle % (Math.PI*2)) + Math.PI*2) % (Math.PI*2);
-  const duration = 6000;
-  const start    = performance.now();
-  let   angle    = 0;
+  const winIdx  = ORDER.indexOf(winNum);
+  // Angle cible : amener winIdx au pointeur (haut = -π/2)
+  const targetAngle = -(winIdx*slice) + Math.PI*2*6;
+  const duration = 7000;
+  const startT   = performance.now();
 
   await new Promise(resolve=>{
     function frame(now){
-      const t = Math.min((now-start)/duration, 1);
-      const ease = 1-Math.pow(1-t,4);
-      angle = ease * totalRot;
-      drawWheel(angle);
-      if(t < 1){ requestAnimationFrame(frame); }
-      else { drawWheel(targetAngle % (Math.PI*2)); resolve(); }
+      const t=Math.min((now-startT)/duration,1);
+      // Easing exponentielle + décélération finale réaliste
+      const ease=t<1?1-Math.pow(1-t,3.5):1;
+      drawEgyptianWheel(ease*targetAngle);
+      if(t<1){requestAnimationFrame(frame);}
+      else{drawEgyptianWheel(targetAngle%(Math.PI*2));resolve();}
     }
     requestAnimationFrame(frame);
   });
@@ -5724,14 +5774,12 @@ async function animCaisseRoulette(resultats){
   const resEl = document.getElementById('canim-rou-result');
   const stEl  = document.getElementById('canim-rou-status');
   resEl.textContent = winNum;
-  resEl.style.color = winNum===0?'#2d7a2d': isRouge?'#c0152a':'#fff';
-  stEl.textContent  = winNum===0?'ZÉRO — Vert': isRouge?`${winNum} — ROUGE`:`${winNum} — NOIR`;
-  stEl.style.color  = r.gain>0?'var(--green2)':'var(--red)';
-  if(r.gain>0){
-    resEl.style.textShadow='0 0 20px var(--gold)';
-    document.getElementById('canim-title').textContent='🏆 GAGNÉ!';
-  }
-  await new Promise(res=>setTimeout(res, 3000));
+  resEl.style.color = winNum===0?'#00c040': isRouge?'#ff2244':'#e0c080';
+  resEl.style.textShadow = `0 0 24px ${winNum===0?'#00c040':isRouge?'#ff2244':'#e0c080'}`;
+  stEl.textContent = winNum===0?'𓂀 ZÉRO — Vert':isRouge?`𓂀 ${winNum} — ROUGE`:`𓂀 ${winNum} — NOIR`;
+  stEl.style.color = r.gain>0?'#00e060':'#ff4444';
+  if(r.gain>0) document.getElementById('canim-title').textContent='𓂀 GAGNÉ — BÉNI DES DIEUX!';
+  await new Promise(res=>setTimeout(res,3500));
 }
 
 async function animCaissePenalty(resultats){
@@ -9584,6 +9632,8 @@ class LotteryBallMachine{
     this.cx=this.W/2;this.cy=this.H/2;this.drumR=Math.min(this.W,this.H)/2-10;
     this.balls=[];this.pendingDraw=null;this.animFrame=null;this.running=false;
     this.lastTime=0;this.drumAngle=0;this.sparks=[];
+    // Thème visuel par jeu
+    this.theme=opts.theme||{rimColor:'#ffd700',rimGlow:'rgba(255,215,0,0.2)',bgFrom:'#1e3f80',bgMid:'#0d2050',bgTo:'#060d1f',lineColor:'rgba(255,255,255,0.05)'};
     this._initBalls();
   }
   _initBalls(){
@@ -9607,7 +9657,7 @@ class LotteryBallMachine{
   _loop(ts){if(!this.running)return;const dt=Math.min((ts-this.lastTime)/16.67,3);this.lastTime=ts;this._update(dt);this._render();this.animFrame=requestAnimationFrame(t=>this._loop(t));}
   _update(dt){
     const cx=this.cx,cy=this.cy,R=this.drumR,br=this.ballRadius;
-    this.drumAngle+=0.004*dt;
+    this.drumAngle+=0.018*dt;
     for(const b of this.balls){
       if(b.drawn)continue;b.pulseT+=0.05*dt;
       if(b.exitPhase===2){
@@ -9634,32 +9684,126 @@ class LotteryBallMachine{
   }
   _render(){
     const ctx=this.ctx,cx=this.cx,cy=this.cy,R=this.drumR,br=this.ballRadius,W=this.W,H=this.H,now=performance.now();
+    const T=this.theme;const rim=T.rimColor||'#ffd700',rimG=T.rimGlow||'rgba(255,215,0,0.2)';
+    const metal=!!T.metalFrame;
     ctx.clearRect(0,0,W,H);
-    const halo=ctx.createRadialGradient(cx,cy,R*.8,cx,cy,R+20);halo.addColorStop(0,'rgba(245,200,0,0)');halo.addColorStop(.7,'rgba(245,200,0,0.15)');halo.addColorStop(1,'rgba(245,200,0,0)');ctx.beginPath();ctx.arc(cx,cy,R+20,0,Math.PI*2);ctx.fillStyle=halo;ctx.fill();
+
+    if(metal){
+      // ── CADRE MÉTALLIQUE LUCKY 6 STYLE ──────────────────────────
+      // Anneau extérieur chromé (avant le clip pour effet porthole)
+      for(let i=0;i<4;i++){
+        const rr=R+18-i*3.5;
+        const mg=ctx.createLinearGradient(cx-rr,cy-rr,cx+rr,cy+rr);
+        mg.addColorStop(0,'#e8e8e8');mg.addColorStop(.25,'#b0b8c0');mg.addColorStop(.5,'#686e78');mg.addColorStop(.75,'#a8b0ba');mg.addColorStop(1,'#d8e0e8');
+        ctx.beginPath();ctx.arc(cx,cy,rr,0,Math.PI*2);ctx.strokeStyle=mg;ctx.lineWidth=3.5;ctx.stroke();
+      }
+      // Boulons/rivets décoratifs
+      for(let i=0;i<10;i++){
+        const a=(i/10)*Math.PI*2;const bx=cx+Math.cos(a)*(R+6),by=cy+Math.sin(a)*(R+6);
+        const bg2=ctx.createRadialGradient(bx-1,by-1,0,bx,by,4);
+        bg2.addColorStop(0,'#d8e0e8');bg2.addColorStop(.4,'#909aa8');bg2.addColorStop(1,'#485060');
+        ctx.beginPath();ctx.arc(bx,by,4,0,Math.PI*2);ctx.fillStyle=bg2;ctx.fill();
+      }
+    } else {
+      // Halo extérieur coloré (autres jeux)
+      const halo=ctx.createRadialGradient(cx,cy,R*.75,cx,cy,R+24);
+      halo.addColorStop(0,'rgba(0,0,0,0)');halo.addColorStop(.6,rimG);halo.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.beginPath();ctx.arc(cx,cy,R+24,0,Math.PI*2);ctx.fillStyle=halo;ctx.fill();
+    }
+
+    // Clip intérieur tambour
     ctx.save();ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.clip();
-    const bg=ctx.createRadialGradient(cx,cy-R*.25,0,cx,cy,R);bg.addColorStop(0,'#1e3f80');bg.addColorStop(.55,'#0d2050');bg.addColorStop(1,'#060d1f');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
-    ctx.save();ctx.translate(cx,cy);ctx.rotate(this.drumAngle);ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=1;for(let i=0;i<12;i++){ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-R);ctx.stroke();ctx.rotate(Math.PI/6);}ctx.restore();
-    const tw=br*2+8,tOpen=cy+R-tw*.6;ctx.fillStyle='rgba(0,0,0,0.85)';ctx.fillRect(cx-tw/2,tOpen,tw,tw*1.2);
+
+    // Fond intérieur (thème)
+    const bg=ctx.createRadialGradient(cx,cy-R*.2,0,cx,cy,R);
+    bg.addColorStop(0,T.bgFrom||'#1e3f80');bg.addColorStop(.5,T.bgMid||'#0d2050');bg.addColorStop(1,T.bgTo||'#060d1f');
+    ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+
+    if(metal){
+      // Halo interne bleuté pour Lucky 6 (reflet de la sphère)
+      const ibg=ctx.createRadialGradient(cx,cy-R*.3,R*.05,cx,cy,R);
+      ibg.addColorStop(0,'rgba(20,40,80,0.6)');ibg.addColorStop(.6,'rgba(0,0,0,0)');
+      ctx.fillStyle=ibg;ctx.fillRect(0,0,W,H);
+    }
+
+    // Rayons rotatifs (thème)
+    ctx.save();ctx.translate(cx,cy);ctx.rotate(this.drumAngle);ctx.strokeStyle=T.lineColor||'rgba(255,255,255,0.05)';ctx.lineWidth=1;
+    for(let i=0;i<18;i++){ctx.beginPath();ctx.moveTo(0,R*.2);ctx.lineTo(0,-R);ctx.stroke();ctx.rotate(Math.PI/9);}
+    ctx.restore();
+
+    // Trappe de sortie
+    const tw=br*2+10,tOpen=cy+R-tw*.55;
+    ctx.fillStyle='rgba(0,0,0,0.92)';ctx.fillRect(cx-tw/2,tOpen,tw,tw*1.4);
+
+    // Boules
     for(const b of this.balls){
       if(b.drawn&&b.exitPhase!==3)continue;
       const drawX=b.exitPhase===3?cx:b.x,drawY=b.y;
       const alpha=b.exitPhase===3?Math.max(0,1-b.exitY/55):1,scale=b.exitPhase===3?Math.max(.3,1-b.exitY/110):1;
+      // Couleur individuelle (Lucky 6) ou par palette (Keno/LuckyX)
+      const bColor=T.ballColors?T.ballColors[(b.n-1)%T.ballColors.length]:b.color;
       ctx.save();ctx.globalAlpha=alpha;ctx.translate(drawX,drawY);ctx.scale(scale,scale);
-      if(b.exitPhase!==3){ctx.shadowColor='rgba(0,0,0,0.5)';ctx.shadowBlur=6;ctx.shadowOffsetY=2;}
-      if(b.exitPhase===1||b.exitPhase===2){const pulse=.5+.5*Math.sin(now*.012+b.pulseT);ctx.shadowColor=b.color;ctx.shadowBlur=20+pulse*20;}
-      const grad=ctx.createRadialGradient(-br*.3,-br*.35,1,0,0,br);grad.addColorStop(0,_lighten(b.color,55));grad.addColorStop(.45,b.color);grad.addColorStop(1,_darken(b.color,35));ctx.beginPath();ctx.arc(0,0,br,0,Math.PI*2);ctx.fillStyle=grad;ctx.fill();
-      const shine=ctx.createRadialGradient(-br*.32,-br*.38,0,-br*.3,-br*.35,br*.55);shine.addColorStop(0,'rgba(255,255,255,0.55)');shine.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=shine;ctx.fill();
-      if(b.exitPhase===1||b.exitPhase===2){ctx.beginPath();ctx.arc(0,0,br+2,0,Math.PI*2);ctx.strokeStyle='#ffd700';ctx.lineWidth=2.5;ctx.stroke();}
-      ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.fillStyle='#fff';ctx.font=`900 ${br>12?11:9}px 'Barlow',Arial`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(b.n,0,.5);
+      const pulse=.5+.5*Math.sin(now*.014+b.pulseT);
+      if(b.exitPhase===1||b.exitPhase===2){ctx.shadowColor=bColor;ctx.shadowBlur=22+pulse*22;}
+      else{ctx.shadowColor='rgba(0,0,0,0.7)';ctx.shadowBlur=8;ctx.shadowOffsetY=3;}
+      // Bague blanche extérieure (style Lucky 6 officiel)
+      if(metal){
+        ctx.beginPath();ctx.arc(0,0,br+1.5,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.85)';ctx.fill();
+      }
+      // Sphère principale — gradient 3D
+      const grad=ctx.createRadialGradient(-br*.35,-br*.4,br*.05,br*.1,br*.12,br*1.1);
+      grad.addColorStop(0,_lighten(bColor,80));grad.addColorStop(.25,_lighten(bColor,35));
+      grad.addColorStop(.65,bColor);grad.addColorStop(1,_darken(bColor,55));
+      ctx.beginPath();ctx.arc(0,0,br,0,Math.PI*2);ctx.fillStyle=grad;ctx.fill();
+      // Reflet principal haut-gauche
+      const sh1=ctx.createRadialGradient(-br*.36,-br*.42,0,-br*.3,-br*.36,br*.52);
+      sh1.addColorStop(0,'rgba(255,255,255,0.68)');sh1.addColorStop(.5,'rgba(255,255,255,0.18)');sh1.addColorStop(1,'rgba(255,255,255,0)');
+      ctx.fillStyle=sh1;ctx.fill();
+      // Reflet secondaire bas-droit
+      const sh2=ctx.createRadialGradient(br*.3,br*.35,0,br*.28,br*.32,br*.4);
+      sh2.addColorStop(0,'rgba(255,255,255,0.18)');sh2.addColorStop(1,'rgba(255,255,255,0)');
+      ctx.fillStyle=sh2;ctx.fill();
+      // Anneau équatorial
+      ctx.beginPath();ctx.arc(0,0,br*.82,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=br*.18;ctx.stroke();
+      // Bague dorée si sélectionnée (autres jeux) / blanche Lucky 6
+      if(b.exitPhase===1||b.exitPhase===2){
+        ctx.beginPath();ctx.arc(0,0,br+(metal?2:2.5),0,Math.PI*2);
+        ctx.strokeStyle=metal?'#fff':rim;ctx.lineWidth=metal?2:2.5+pulse*1.5;ctx.stroke();
+      }
+      ctx.shadowBlur=0;ctx.shadowColor='transparent';ctx.shadowOffsetY=0;
+      // Numéro
+      const fSize=br>14?Math.round(br*.75):br>10?Math.round(br*.8):Math.round(br*.85);
+      ctx.fillStyle='#fff';ctx.font=`900 ${fSize}px 'Barlow Condensed','Barlow',Arial`;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(b.n,0,fSize*.06);
       ctx.restore();
     }
-    const glass=ctx.createLinearGradient(cx,cy-R,cx,cy-R*.3);glass.addColorStop(0,'rgba(255,255,255,0.08)');glass.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=glass;ctx.fillRect(0,0,W,H);
+    // Reflet vitre bombée
+    const glass=ctx.createLinearGradient(cx,cy-R,cx,cy-R*.25);
+    glass.addColorStop(0,metal?'rgba(255,255,255,0.06)':'rgba(255,255,255,0.1)');glass.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=glass;ctx.fillRect(0,0,W,H);
     ctx.restore();
-    ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.strokeStyle='rgba(245,200,0,0.8)';ctx.lineWidth=3;ctx.stroke();
-    ctx.beginPath();ctx.arc(cx,cy,R+1.5,0,Math.PI*2);ctx.strokeStyle='rgba(245,200,0,0.2)';ctx.lineWidth=6;ctx.stroke();
-    const tw2=br*2+8,tyS=cy+R-4;ctx.fillStyle='rgba(6,13,31,0.9)';ctx.fillRect(cx-tw2/2,tyS,tw2,50);ctx.strokeStyle='rgba(245,200,0,0.5)';ctx.lineWidth=1.5;ctx.strokeRect(cx-tw2/2,tyS,tw2,50);
-    ctx.fillStyle='rgba(245,200,0,0.7)';const ay=tyS+20;ctx.beginPath();ctx.moveTo(cx,ay+14);ctx.lineTo(cx-7,ay);ctx.lineTo(cx+7,ay);ctx.closePath();ctx.fill();
-    for(const s of this.sparks){ctx.save();ctx.globalAlpha=s.life;ctx.fillStyle=s.color;ctx.beginPath();ctx.arc(s.x,s.y,2*s.life,0,Math.PI*2);ctx.fill();ctx.restore();}
+
+    if(metal){
+      // Bord chromé interne (sur le clip)
+      const mg2=ctx.createLinearGradient(cx-R,cy-R,cx+R,cy+R);
+      mg2.addColorStop(0,'#c8d4dc');mg2.addColorStop(.3,'#808890');mg2.addColorStop(.6,'#b0bcc8');mg2.addColorStop(1,'#c8d4dc');
+      ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.strokeStyle=mg2;ctx.lineWidth=5;ctx.stroke();
+    } else {
+      // Bord extérieur coloré (Keno/LuckyX)
+      ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.strokeStyle=rim;ctx.lineWidth=3.5;ctx.stroke();
+      ctx.beginPath();ctx.arc(cx,cy,R+2,0,Math.PI*2);ctx.strokeStyle=rimG;ctx.lineWidth=8;ctx.stroke();
+    }
+
+    // Trappe externe + flèche
+    const tw2=br*2+10,tyS=cy+R-5;
+    ctx.fillStyle=metal?'rgba(20,20,24,0.96)':'rgba(4,8,20,0.95)';ctx.fillRect(cx-tw2/2,tyS,tw2,52);
+    const trC=metal?'rgba(160,175,190,0.6)':rim+'99';
+    ctx.strokeStyle=trC;ctx.lineWidth=1.5;ctx.strokeRect(cx-tw2/2,tyS,tw2,52);
+    ctx.fillStyle=metal?'#a0b0c0':rim;const ay=tyS+22;
+    ctx.beginPath();ctx.moveTo(cx,ay+15);ctx.lineTo(cx-8,ay);ctx.lineTo(cx+8,ay);ctx.closePath();ctx.fill();
+    // Étincelles
+    for(const s of this.sparks){ctx.save();ctx.globalAlpha=s.life;ctx.fillStyle=s.color;ctx.shadowColor=s.color;ctx.shadowBlur=4;ctx.beginPath();ctx.arc(s.x,s.y,2.5*s.life,0,Math.PI*2);ctx.fill();ctx.restore();}
   }
 }
 
@@ -9820,22 +9964,34 @@ window.DrawAnimationManager=DrawAnimationManager;
 
 // Gestionnaire global utilisé par animCaisseKeno / animCaisseLucky6 / animCaisseLuckyX
 let _drawMgr=null;
+// Palette Lucky 6 : 48 couleurs vives distinctes (une par boule)
+const _L6_PALETTE=[
+  '#f44336','#e91e63','#9c27b0','#673ab7','#3f51b5','#2196f3',
+  '#03a9f4','#00bcd4','#009688','#4caf50','#8bc34a','#cddc39',
+  '#ffeb3b','#ffc107','#ff9800','#ff5722','#d32f2f','#c2185b',
+  '#7b1fa2','#512da8','#303f9f','#1976d2','#0288d1','#00838f',
+  '#2e7d32','#558b2f','#f9a825','#ef6c00','#d84315','#b71c1c',
+  '#880e4f','#4a148c','#1a237e','#0277bd','#00695c','#33691e',
+  '#f57f17','#e65100','#bf360c','#6d4c41','#546e7a','#ec407a',
+  '#7e57c2','#29b6f6','#26a69a','#9ccc65','#ffca28','#ff7043'
+];
+const _LBM_THEMES={
+  keno:  {rimColor:'#00d4ff',rimGlow:'rgba(0,212,255,0.25)',bgFrom:'#0c2040',bgMid:'#06101c',bgTo:'#020508',lineColor:'rgba(0,180,255,0.08)'},
+  lucky6:{rimColor:'#c0d0e0',rimGlow:'rgba(180,200,220,0.4)',bgFrom:'#111111',bgMid:'#0a0a0a',bgTo:'#060606',lineColor:'rgba(200,220,240,0.06)',ballColors:_L6_PALETTE,metalFrame:true},
+  luckyx:{rimColor:'#cc66ff',rimGlow:'rgba(200,80,255,0.25)',bgFrom:'#180830',bgMid:'#0c0418',bgTo:'#040108',lineColor:'rgba(160,40,255,0.08)'}
+};
 function _drawMgrInit(gameId){
   if(!_drawMgr) _drawMgr=new DrawAnimationManager();
-  // Initialisation synchrone immédiate pour le jeu demandé
-  // (l'overlay est déjà visible donc offsetWidth est valide)
   const canvasId='canvas-'+gameId;
   const canvas=document.getElementById(canvasId);
   if(!canvas) return;
   const wrap=canvas.parentElement;
-  // Taille: priorité au wrapper, sinon 300px par défaut
   const sz=Math.max(200, Math.round(wrap ? wrap.offsetWidth : 0) || 300);
   canvas.width=sz; canvas.height=sz;
   const br=Math.max(9,Math.min(Math.floor(sz/18),16));
   const total=(gameId==='keno')?80:48;
-  // Arrêter la machine existante avant de la recréer
   if(_drawMgr.machines[gameId]) _drawMgr.machines[gameId].stop();
-  _drawMgr.machines[gameId]=new LotteryBallMachine(canvas,{totalBalls:total,ballRadius:br});
+  _drawMgr.machines[gameId]=new LotteryBallMachine(canvas,{totalBalls:total,ballRadius:br,theme:_LBM_THEMES[gameId]||{}});
 }
 // ═════════════════════════════════════════════════════════════
 </script>
