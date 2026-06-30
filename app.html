@@ -5560,9 +5560,9 @@ async function animCaisseLucky6(resultats){
   const jouedNums=r.pari?.nums||(r.pari?.cleanNumber||'').split(',').map(n=>parseInt(n.trim())).filter(Boolean);
   document.getElementById('canim-lucky6').style.display='flex';
   document.getElementById('canim-title').textContent='🍀 LUCKY 6 — TIRAGE';
-  // Thème Lucky 6 : bleu ciel vif (comme l'original Lucky 6)
+  // Thème Lucky 6 : bleu vif éclatant identique à la référence
   const _ovL6=document.getElementById('caisse-anim-overlay');
-  if(_ovL6) _ovL6.style.background='linear-gradient(160deg,#0077cc 0%,#0055aa 35%,#003388 70%,#001d55 100%)';
+  if(_ovL6) _ovL6.style.background='linear-gradient(175deg,#00aaff 0%,#0088dd 20%,#0066cc 50%,#004aaa 75%,#003388 100%)';
   _drawMgrInit('lucky6');
   _drawMgr.startMachine('lucky6');
   await new Promise(res=>setTimeout(res,400));
@@ -9629,11 +9629,14 @@ class LotteryBallMachine{
     this.canvas=canvas;this.ctx=canvas.getContext('2d');
     this.totalBalls=opts.totalBalls||80;this.ballRadius=opts.ballRadius||13;
     this.W=canvas.width;this.H=canvas.height;
-    this.cx=this.W/2;this.cy=this.H/2;this.drumR=Math.min(this.W,this.H)/2-10;
+    this.cx=this.W/2;this.cy=this.H/2;
+    // Thème visuel par jeu — doit être défini AVANT drumR (metalFrame affecte le rayon)
+    this.theme=opts.theme||{rimColor:'#ffd700',rimGlow:'rgba(255,215,0,0.2)',bgFrom:'#1e3f80',bgMid:'#0d2050',bgTo:'#060d1f',lineColor:'rgba(255,255,255,0.05)'};
+    // Si cadre métal épais, réduire drumR pour ne pas clipper le frame hors canvas
+    const frameMargin=this.theme.metalFrame?32:12;
+    this.drumR=Math.min(this.W,this.H)/2-frameMargin;
     this.balls=[];this.pendingDraw=null;this.animFrame=null;this.running=false;
     this.lastTime=0;this.drumAngle=0;this.sparks=[];
-    // Thème visuel par jeu
-    this.theme=opts.theme||{rimColor:'#ffd700',rimGlow:'rgba(255,215,0,0.2)',bgFrom:'#1e3f80',bgMid:'#0d2050',bgTo:'#060d1f',lineColor:'rgba(255,255,255,0.05)'};
     this._initBalls();
   }
   _initBalls(){
@@ -9689,20 +9692,35 @@ class LotteryBallMachine{
     ctx.clearRect(0,0,W,H);
 
     if(metal){
-      // ── CADRE MÉTALLIQUE LUCKY 6 STYLE ──────────────────────────
-      // Anneau extérieur chromé (avant le clip pour effet porthole)
-      for(let i=0;i<4;i++){
-        const rr=R+18-i*3.5;
-        const mg=ctx.createLinearGradient(cx-rr,cy-rr,cx+rr,cy+rr);
-        mg.addColorStop(0,'#e8e8e8');mg.addColorStop(.25,'#b0b8c0');mg.addColorStop(.5,'#686e78');mg.addColorStop(.75,'#a8b0ba');mg.addColorStop(1,'#d8e0e8');
-        ctx.beginPath();ctx.arc(cx,cy,rr,0,Math.PI*2);ctx.strokeStyle=mg;ctx.lineWidth=3.5;ctx.stroke();
+      // ── BOÎTIER EXTÉRIEUR MÉTAL (disque gris sombre derrière le drum) ──
+      const housingR=R+30;
+      const hg=ctx.createRadialGradient(cx-housingR*.25,cy-housingR*.25,housingR*.1,cx,cy,housingR);
+      hg.addColorStop(0,'#3a3e46');hg.addColorStop(.4,'#242830');hg.addColorStop(.8,'#181c22');hg.addColorStop(1,'#101418');
+      ctx.beginPath();ctx.arc(cx,cy,housingR,0,Math.PI*2);ctx.fillStyle=hg;ctx.fill();
+      // ── ANNEAUX CHROME ÉPAIS ──────────────────────────────────────
+      // Anneau ombré extérieur (shadow ring)
+      ctx.beginPath();ctx.arc(cx,cy,R+26,0,Math.PI*2);
+      ctx.strokeStyle='rgba(0,0,0,0.7)';ctx.lineWidth=6;ctx.stroke();
+      // 5 anneaux concentriques chrome avec gradient linéaire haut-gauche→bas-droit
+      const chromeDefs=[
+        {r:R+23,lw:4.5,c:['#ffffff','#c8d4dc','#707880','#c0ccd4','#f0f4f8']},
+        {r:R+18,lw:5,  c:['#d8e4ec','#98a8b8','#586070','#909eb0','#d0dce8']},
+        {r:R+12,lw:5,  c:['#c0d0dc','#8898aa','#485868','#8090a4','#b8ccd8']},
+        {r:R+6, lw:4.5,c:['#a8bccb','#7888a0','#384858','#6878a0','#a0b4c8']},
+        {r:R+1, lw:3,  c:['#e8eff5','#b0bcc8','#606878','#a8b4c0','#dce8f0']},
+      ];
+      for(const {r,lw,c} of chromeDefs){
+        const mg=ctx.createLinearGradient(cx-r,cy-r,cx+r,cy+r);
+        mg.addColorStop(0,c[0]);mg.addColorStop(.2,c[1]);mg.addColorStop(.5,c[2]);mg.addColorStop(.8,c[3]);mg.addColorStop(1,c[4]);
+        ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.strokeStyle=mg;ctx.lineWidth=lw;ctx.stroke();
       }
-      // Boulons/rivets décoratifs
-      for(let i=0;i<10;i++){
-        const a=(i/10)*Math.PI*2;const bx=cx+Math.cos(a)*(R+6),by=cy+Math.sin(a)*(R+6);
-        const bg2=ctx.createRadialGradient(bx-1,by-1,0,bx,by,4);
-        bg2.addColorStop(0,'#d8e0e8');bg2.addColorStop(.4,'#909aa8');bg2.addColorStop(1,'#485060');
-        ctx.beginPath();ctx.arc(bx,by,4,0,Math.PI*2);ctx.fillStyle=bg2;ctx.fill();
+      // ── BOULONS/RIVETS ────────────────────────────────────────────
+      for(let i=0;i<12;i++){
+        const a=(i/12)*Math.PI*2;const bx=cx+Math.cos(a)*(R+15),by=cy+Math.sin(a)*(R+15);
+        const rg=ctx.createRadialGradient(bx-1.2,by-1.2,0,bx,by,5);
+        rg.addColorStop(0,'#ffffff');rg.addColorStop(.3,'#c0ccd8');rg.addColorStop(.7,'#707880');rg.addColorStop(1,'#303840');
+        ctx.beginPath();ctx.arc(bx,by,5,0,Math.PI*2);ctx.fillStyle=rg;ctx.fill();
+        ctx.beginPath();ctx.arc(bx,by,5,0,Math.PI*2);ctx.strokeStyle='rgba(0,0,0,0.4)';ctx.lineWidth=0.8;ctx.stroke();
       }
     } else {
       // Halo extérieur coloré (autres jeux)
@@ -9785,10 +9803,13 @@ class LotteryBallMachine{
     ctx.restore();
 
     if(metal){
-      // Bord chromé interne (sur le clip)
+      // Bord intérieur chrome (lisière de la sphère)
       const mg2=ctx.createLinearGradient(cx-R,cy-R,cx+R,cy+R);
-      mg2.addColorStop(0,'#c8d4dc');mg2.addColorStop(.3,'#808890');mg2.addColorStop(.6,'#b0bcc8');mg2.addColorStop(1,'#c8d4dc');
-      ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.strokeStyle=mg2;ctx.lineWidth=5;ctx.stroke();
+      mg2.addColorStop(0,'#e0eaf2');mg2.addColorStop(.25,'#a0b0c0');mg2.addColorStop(.55,'#586474');mg2.addColorStop(.8,'#98a8b8');mg2.addColorStop(1,'#d8e4ec');
+      ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.strokeStyle=mg2;ctx.lineWidth=6;ctx.stroke();
+      // Reflet interne (bord brillant en haut)
+      ctx.beginPath();ctx.arc(cx,cy-2,R-1,Math.PI*1.1,Math.PI*1.9);
+      ctx.strokeStyle='rgba(255,255,255,0.35)';ctx.lineWidth=3;ctx.stroke();
     } else {
       // Bord extérieur coloré (Keno/LuckyX)
       ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.strokeStyle=rim;ctx.lineWidth=3.5;ctx.stroke();
@@ -9849,7 +9870,16 @@ class DrawAnimationManager{
       // Remplir le demi-cercle Lucky 6 pour les 6 premiers
       if(gameId==='lucky6'&&i<6){
         const sc=document.getElementById('l6s-'+i);
-        if(sc){sc.className='l6-semi-slot-ball';sc.textContent=num;sc.style.background=`radial-gradient(circle at 35% 30%,${_lighten(color,50)},${color} 55%,${_darken(color,30)})`;sc.style.boxShadow=isHit?`0 0 8px ${_hexA(color,.9)},0 0 4px rgba(255,215,0,.7)`:'none';sc.style.border=isHit?'2px solid #ffd700':'1.5px solid rgba(255,255,255,.3)';}
+        if(sc){
+          sc.className='l6-semi-slot-ball';sc.textContent=num;
+          sc.style.background=`radial-gradient(circle at 35% 30%,${_lighten(color,70)},${color} 55%,${_darken(color,45)})`;
+          // Anneau extérieur blanc (style Lucky 6 officiel) + lueur si gagnant
+          sc.style.outline=isHit?'2.5px solid #ffd700':'2.5px solid rgba(255,255,255,0.7)';
+          sc.style.outlineOffset='1px';
+          sc.style.boxShadow=isHit?`0 0 10px ${_hexA(color,.9)},0 0 5px rgba(255,215,0,.8),inset 0 1px 4px rgba(255,255,255,.2)`:
+                                   `0 2px 6px rgba(0,0,0,.5),inset 0 1px 4px rgba(255,255,255,.15)`;
+          sc.style.border='none';
+        }
       }
       slotIndex++;
       if(displayEls.badgesEl){
@@ -9948,12 +9978,58 @@ function _flyBallToSlot(num,isHit,color,slotEl,canvas){
 .draw-slot-ball{border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#fff;border:2px solid rgba(255,255,255,.3);position:relative;aspect-ratio:1;width:clamp(38px,5vw,64px);flex-shrink:0}
 .draw-slot-ball::before{content:'';position:absolute;top:15%;left:20%;width:30%;height:18%;background:rgba(255,255,255,.28);border-radius:50%;transform:rotate(-25deg)}
 .draw-slot-hit{border:2.5px solid #ffd700!important}
-.l6-semicircle{background:linear-gradient(135deg,#0d2050,#1a3a6e);border-radius:0 50px 50px 0;border:2px solid #ffd700;border-left:none;display:flex;flex-direction:column;align-items:center;padding:10px 8px 10px 2px;margin-left:-3px;min-height:140px;gap:2px;flex-shrink:0}
-.l6-semi-label{font-size:8px;font-weight:900;color:#ffd700;letter-spacing:2px;text-align:center;margin-bottom:4px;writing-mode:vertical-rl;transform:rotate(180deg)}
-.l6-semi-slots{display:flex;flex-direction:column;gap:4px;align-items:center}
-.l6-semi-slot-empty{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.05);border:1.5px dashed rgba(255,215,0,.35);flex-shrink:0}
-.l6-semi-slot-ball{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#fff;flex-shrink:0;position:relative;animation:_ballAppear .4s cubic-bezier(.34,1.56,.64,1) both}
-.l6-semi-slot-ball::before{content:'';position:absolute;top:14%;left:18%;width:30%;height:17%;background:rgba(255,255,255,.3);border-radius:50%;transform:rotate(-25deg)}
+/* ── Tube de sortie Lucky 6 (demi-cercle chrome à droite du drum) ── */
+.l6-semicircle{
+  position:relative;
+  background:linear-gradient(180deg,#2a2e38 0%,#1a1e26 50%,#101418 100%);
+  border-radius:0 16px 16px 0;
+  border:3px solid transparent;
+  border-left:none;
+  background-clip:padding-box;
+  display:flex;flex-direction:column;align-items:center;
+  padding:10px 10px 10px 5px;
+  margin-left:-4px;
+  gap:5px;
+  flex-shrink:0;
+  min-width:46px;
+  box-shadow:
+    inset -1px 0 6px rgba(255,255,255,0.06),
+    inset 0 1px 4px rgba(255,255,255,0.08),
+    2px 0 14px rgba(0,0,0,0.5),
+    0 0 0 3px #606878,
+    0 0 0 4px #8090a0,
+    0 0 0 5px #505860;
+}
+.l6-semi-label{
+  font-size:7px;font-weight:900;color:#a0b8cc;
+  letter-spacing:1.5px;text-align:center;margin-bottom:2px;
+  writing-mode:vertical-rl;transform:rotate(180deg);
+  text-shadow:0 1px 3px rgba(0,0,0,0.8);
+}
+.l6-semi-slots{display:flex;flex-direction:column;gap:5px;align-items:center}
+.l6-semi-slot-empty{
+  width:32px;height:32px;border-radius:50%;
+  background:radial-gradient(circle,#1c2030,#0c1018);
+  border:2px solid #404858;
+  flex-shrink:0;
+  box-shadow:inset 0 2px 4px rgba(0,0,0,0.6);
+}
+.l6-semi-slot-ball{
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:900;color:#fff;
+  flex-shrink:0;position:relative;
+  animation:_ballAppear .4s cubic-bezier(.34,1.56,.64,1) both;
+  /* Anneau blanc extérieur comme les vraies boules Lucky 6 */
+  outline:2.5px solid rgba(255,255,255,0.7);
+  outline-offset:1px;
+}
+.l6-semi-slot-ball::before{
+  content:'';position:absolute;top:13%;left:17%;
+  width:30%;height:17%;
+  background:rgba(255,255,255,0.45);
+  border-radius:50%;transform:rotate(-25deg);
+}
 `;
   document.head.appendChild(s);
 })();
@@ -9977,7 +10053,7 @@ const _L6_PALETTE=[
 ];
 const _LBM_THEMES={
   keno:  {rimColor:'#00d4ff',rimGlow:'rgba(0,212,255,0.25)',bgFrom:'#0c2040',bgMid:'#06101c',bgTo:'#020508',lineColor:'rgba(0,180,255,0.08)'},
-  lucky6:{rimColor:'#c0d0e0',rimGlow:'rgba(180,200,220,0.4)',bgFrom:'#111111',bgMid:'#0a0a0a',bgTo:'#060606',lineColor:'rgba(200,220,240,0.06)',ballColors:_L6_PALETTE,metalFrame:true},
+  lucky6:{rimColor:'#c8d8e8',rimGlow:'rgba(200,220,240,0.5)',bgFrom:'#161618',bgMid:'#0a0a0b',bgTo:'#040405',lineColor:'rgba(200,220,240,0.04)',ballColors:_L6_PALETTE,metalFrame:true},
   luckyx:{rimColor:'#cc66ff',rimGlow:'rgba(200,80,255,0.25)',bgFrom:'#180830',bgMid:'#0c0418',bgTo:'#040108',lineColor:'rgba(160,40,255,0.08)'}
 };
 function _drawMgrInit(gameId){
